@@ -1,0 +1,18 @@
+Project; thinned_set_subset
+Agisoft Metashape Professional Version; 1.5.2
+Benchmark Started; 2019-08-26T15:06
+Node; c10-75
+CPU; x86_64
+Number of GPUs Found; 0
+GPU Model; 
+GPU Mask; 1
+Align Photos; 317.3
+Build Depth Maps; 4829.0
+Build Dense Cloud; 242.8
+Build DEM; 15.1
+Build Orthomosaic; 217.7
+DEM Export; 1.4
+Ortho Export; 15.7
+Las Export; 6.9
+Report; 3.2
+Benchmark Completed; 2019-08-26T16:42

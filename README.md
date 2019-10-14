@@ -16,7 +16,21 @@ KEY="#####-#####-#####-#####-#####"
 
 ## Usage
 
+Command line:
+1. Path to metashape program
+2. Path to python script
+3. Path to project folder which contains photos
 
+### Linux
+
+```
+```
+
+### Windows
+
+```
+& 'C:\Program Files\Agisoft\Metashape Pro\metashape.exe' -r C:\Users\vulpes\Documents\metashapebenchmark\benchmark_simple.py D:\Public\Pictures\Latimer_lab\thinned_set_subset >> nightfury-20190827.out
+```
 
 ## Analysis
 

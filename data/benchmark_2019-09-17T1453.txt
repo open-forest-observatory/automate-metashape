@@ -1,0 +1,18 @@
+Project; thinned_set_subset
+Agisoft Metashape Professional Version; 1.5.2
+Benchmark Started; 2019-09-17T14:53
+Node; g12-54
+CPU; x86_64
+Number of GPUs Found; 1
+GPU Model; Tesla V100-PCIE-16GB'}]
+GPU Mask; 1
+Align Photos; 159.7
+Build Depth Maps; 224.1
+Build Dense Cloud; 215.1
+Build DEM; 14.7
+Build Orthomosaic; 196.6
+DEM Export; 1.3
+Ortho Export; 15.4
+Las Export; 6.8
+Report; 3.4
+Benchmark Completed; 2019-09-17T15:09
