@@ -36,3 +36,15 @@ Command line:
 
 A log recording the times of each major step is written in the following format.
 See the R scripts in the reports folder for ways to work with the results data.
+
+## Writing Python Code
+
+You can install the Metashape python module to make writing code easier. While it will normally be executed in a Metashape env it does not need to be.
+Things like autocompletion and testing of scripts will work from your code editor.
+
+1. Download the python module from [agisoft]()
+1. Install into the python environment you want to use it in.
+
+```
+pip install ?
+```
