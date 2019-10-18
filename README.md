@@ -43,8 +43,8 @@ You can install the Metashape python module to make writing code easier. While i
 Things like autocompletion and testing of scripts will work from your code editor.
 
 1. Download the python module from [agisoft]()
-1. Install into the python environment you want to use it in.
+1. Install into the python environment you want to use it in [(details)](https://agisoft.freshdesk.com/support/solutions/articles/31000148930-how-to-install-metashape-stand-alone-python-module).
 
 ```
-pip install ?
+python3 -m pip install Metashape-1.5.2-cp35.cp36.cp37-abi3-linux_x86_64.whl
 ```
