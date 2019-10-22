@@ -13,8 +13,10 @@ import datetime
 import platform
 import os
 import sys
+from glob import glob
 
-# import the Metashape functionality (should this come before the line above? seems to work as-is)
+### import the Metashape functionality
+# If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
 import Metashape
 
 
@@ -24,7 +26,7 @@ def stamp_time():
     ''' 
     Format the timestamps as needed
     '''
-    stamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M')
+    stamp = datetime.datetime.now().strftime('%Y%m%dT%H%M')
     return stamp
 
 def diff_time(t2, t1):
@@ -40,23 +42,47 @@ def diff_time(t2, t1):
 sep = "; "
 
 #### Specify directories
+#specifically, drone photo directory, metashape products directory, metashape project directory. 
+#the processing log will go into the products directory
 
+## If running interactively, specify directories here:
+photo_path = '/storage/forestuav/imagery/missions/01c_ChipsA_120m_thinned22_subset'
+output_path = '/storage/forestuav/outputs/analysis1'
+project_path = '/storage/forestuav/metashape_projects/analysis1'
+
+## TODO: read paths from env vars
 # 1st arg is the path to the project data
+"""
 if (len(sys.argv) >= 2):
     folderpath = os.path.expanduser(sys.argv[1])
 else:
     folderpath = os.path.expanduser('/share/spatial02/latimer/forest_benchmark')
+"""
 
-photos_path = os.path.join(folderpath,'raw_images')
-photo_files = [file.path for file in os.scandir(photos_path) if file.path.endswith('.jpg')]
+##create output and project paths if they don't exist
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
+if not os.path.exists(project_path):
+    os.makedirs(project_path)
 
-# TODO: results should go to a subfolder for a particular benchmark
-unique_id = ''.join(['benchmark_', stamp_time().replace(":","")])
-# Project Name should be unique so benchmark can be run several times
-project_file = os.path.join(folderpath, '.'.join([unique_id, 'psx']) )
-log_file = os.path.join(folderpath, '.'.join([unique_id,'txt']) )
-output = os.path.join(folderpath, unique_id)
-os.mkdir(output)
+
+
+#### Set a filename template for project files and output files
+## Get the first parts of the filename (the photoset ID and location string)
+path_parts = photo_path.split("/")
+photoset_name = path_parts[-1]
+photoset_parts = photoset_name.split("_")
+set_ID = photoset_parts[0]
+location = photoset_parts[1]
+##?? OK to requre photo folders to be specified as multipart with specific order?
+
+## Project file example to make: "01c_ChipsA_YYYYMMDD-jobid.psx"
+project_id = "_".join([set_ID,location,stamp_time()])
+# TODO: If there is a JobID, append to time (separated with "-", not "_"). This will keep jobs initiated in the same minute distinct
+# TODO: Allow to specify a mnemonic for the end of the project name (from YAML?)
+
+project_file = os.path.join(project_path, '.'.join([project_id, 'psx']) )
+log_file = os.path.join(output_path, '.'.join([project_id,'txt']) )
 
 
 #### Specify CRS
@@ -130,6 +156,12 @@ file.close()
 
 #### Add photos
 
+## Get paths to all the project photos
+a = glob.iglob(os.path.join(photo_path,"**","*.[jJ][pP][gG]"))
+b = [path for path in a]
+photo_files = b
+
+## Add them
 chunk.addPhotos(photo_files)
 doc.save()
 
