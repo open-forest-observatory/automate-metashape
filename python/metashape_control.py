@@ -13,7 +13,7 @@ import datetime
 import platform
 import os
 import sys
-from glob import glob
+import glob
 
 ### import the Metashape functionality
 # If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
@@ -47,7 +47,7 @@ sep = "; "
 
 ## If running interactively, specify directories here:
 photo_path = '/storage/forestuav/imagery/missions/01c_ChipsA_120m_thinned22_subset'
-output_path = '/storage/forestuav/outputs/analysis1'
+output_path = '/storage/forestuav/metashape_outputs/analysis1'
 project_path = '/storage/forestuav/metashape_projects/analysis1'
 
 ## TODO: read paths from env vars
@@ -77,12 +77,13 @@ location = photoset_parts[1]
 ##?? OK to requre photo folders to be specified as multipart with specific order?
 
 ## Project file example to make: "01c_ChipsA_YYYYMMDD-jobid.psx"
-project_id = "_".join([set_ID,location,stamp_time()])
+timestamp = stamp_time()
+project_id = "_".join([timestamp,set_ID,location])
 # TODO: If there is a JobID, append to time (separated with "-", not "_"). This will keep jobs initiated in the same minute distinct
 # TODO: Allow to specify a mnemonic for the end of the project name (from YAML?)
 
 project_file = os.path.join(project_path, '.'.join([project_id, 'psx']) )
-log_file = os.path.join(output_path, '.'.join([project_id,'txt']) )
+log_file = os.path.join(output_path, '.'.join(['log_'+project_id,'txt']) )
 
 
 #### Specify CRS
@@ -95,12 +96,12 @@ project_crs = Metashape.CoordinateSystem("EPSG::32610")
 #### Create doc, chunk
 
 # create a handle to the Metashape object
-doc = Metashape.app.document
+doc = Metashape.Document() #When running via Metashape, can use: doc = Metashape.app.document 
 
 # Save doc (necessary for steps after point cloud because there needs to be a project file)
 doc.save(project_file)
 
-# Grab the chunk that initialized in the current document, set its CRS to WGS84 / UTM 10N
+# Initialize a chunk, set its CRS as specified
 chunk = doc.addChunk()
 chunk.crs = project_crs
 
@@ -114,7 +115,7 @@ chunk.crs = project_crs
 # https://slurm.schedmd.com/sbatch.html#lbAI
 file = open(log_file,'a')
 # write a line with the Metashape version
-file.write(sep.join(['Project', os.path.basename(folderpath)])+'\n')
+file.write(sep.join(['Project', project_id])+'\n')
 file.write(sep.join(['Agisoft Metashape Professional Version', Metashape.app.version])+'\n')
 # write a line with the date and time
 file.write(sep.join(['Benchmark Started', stamp_time()]) +'\n')
@@ -293,13 +294,13 @@ with open(log_file, 'a') as file:
 
 #### Export dem, ortho, las, report
 timer7a = time.time()
-chunk.exportDem(os.path.join(output, 'DTM.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
+chunk.exportDem(os.path.join(output_path, 'dem_'+project_id+'.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
 timer7b = time.time()
-chunk.exportOrthomosaic(os.path.join(output, 'ortho.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
+chunk.exportOrthomosaic(os.path.join(output_path, 'ortho_'+project_id+'.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
 timer7c = time.time()
-chunk.exportPoints(os.path.join(output, 'points.las'), format = Metashape.PointsFormatLAS, projection = project_crs)
+chunk.exportPoints(os.path.join(output_path, 'points_'+project_id+'.las'), format = Metashape.PointsFormatLAS, projection = project_crs)
 timer7d = time.time()
-chunk.exportReport(os.path.join(output, 'report.pdf'))
+chunk.exportReport(os.path.join(output_path, 'report_'+project_id+'.pdf'))
 timer7e = time.time()
 
 with open(log_file, 'a') as file:
@@ -312,4 +313,4 @@ with open(log_file, 'a') as file:
 
 # finish local results log and close it for the last time
 with open(log_file, 'a') as file:
-    file.write(sep.join(['Benchmark Completed', stamp_time()])+'\n')
+    file.write(sep.join(['Run Completed', stamp_time()])+'\n')
