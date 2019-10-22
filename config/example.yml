@@ -14,9 +14,14 @@ Photo_path:
 
 # Enable the GPU
 GPU:
-    GPU_use: True
-    GPU_num: 1
+    use: True
+    num: 1
 
 matchPhotos:
     # Note sure how this will work since the script expects a Python variable not a text object
     accuracy: Metashape.HighAccuracy
+
+buildDem:
+    classes:
+        - Metashape.PointClass.Ground
+        - Metashape.PointClass.HighVegetation
