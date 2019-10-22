@@ -12,7 +12,6 @@ import time
 import datetime
 import platform
 import os
-import sys
 import glob
 
 ### import the Metashape functionality
@@ -293,21 +292,11 @@ with open(log_file, 'a') as file:
 
 
 #### Export dem, ortho, las, report
-timer7a = time.time()
 chunk.exportDem(os.path.join(output_path, 'dem_'+project_id+'.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
-timer7b = time.time()
 chunk.exportOrthomosaic(os.path.join(output_path, 'ortho_'+project_id+'.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
-timer7c = time.time()
 chunk.exportPoints(os.path.join(output_path, 'points_'+project_id+'.las'), format = Metashape.PointsFormatLAS, projection = project_crs)
-timer7d = time.time()
 chunk.exportReport(os.path.join(output_path, 'report_'+project_id+'.pdf'))
-timer7e = time.time()
 
-with open(log_file, 'a') as file:
-    file.write(sep.join(['DEM Export', diff_time(timer7b, timer7a)])+'\n')
-    file.write(sep.join(['Ortho Export', diff_time(timer7c, timer7b)])+'\n')
-    file.write(sep.join(['Las Export', diff_time(timer7d, timer7c)])+'\n')
-    file.write(sep.join(['Report', diff_time(timer7e, timer7d)])+'\n')
 
 #### Finish benchmark
 
