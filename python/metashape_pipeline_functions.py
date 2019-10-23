@@ -64,6 +64,7 @@ def file_setup(photo_path, project_path, output_path):
     
     ## Project file example to make: "01c_ChipsA_YYYYMMDD-jobid.psx"
     timestamp = stamp_time()
+    # TODO: allow a nonexistent location string
     project_id = "_".join([timestamp,set_ID,location])
     # TODO: If there is a JobID, append to time (separated with "-", not "_"). ##?? This will keep jobs initiated in the same minute distinct
     # TODO: Allow to specify a mnemonic for the end of the project name (from YAML?)
@@ -94,7 +95,7 @@ def initialize_metashape_project(project_file):
 
 
 
-def log_pc_specs():
+def log_pc_specs(log_file):
     '''
     Log specs except for GPU
     '''
@@ -103,20 +104,21 @@ def log_pc_specs():
     # open the results file
     # TODO: records the Slurm values for actual cpus and ram allocated
     # https://slurm.schedmd.com/sbatch.html#lbAI
-    file = open(log_file,'a')
-    # write a line with the Metashape version
-    file.write(sep.join(['Project', project_id])+'\n')
-    file.write(sep.join(['Agisoft Metashape Professional Version', Metashape.app.version])+'\n')
-    # write a line with the date and time
-    file.write(sep.join(['Benchmark Started', stamp_time()]) +'\n')
-    # write a line with CPU info - if possible, improve the way the CPU info is found / recorded
-    file.write(sep.join(['Node', platform.node()])+'\n')
-    file.write(sep.join(['CPU', platform.processor()]) +'\n')
-    # write two lines with GPU info: count and model names - this takes multiple steps to make it look clean in the end
+    with open(log_file, 'a') as file:
+
+        # write a line with the Metashape version
+        file.write(sep.join(['Project', project_id])+'\n')
+        file.write(sep.join(['Agisoft Metashape Professional Version', Metashape.app.version])+'\n')
+        # write a line with the date and time
+        file.write(sep.join(['Benchmark Started', stamp_time()]) +'\n')
+        # write a line with CPU info - if possible, improve the way the CPU info is found / recorded
+        file.write(sep.join(['Node', platform.node()])+'\n')
+        file.write(sep.join(['CPU', platform.processor()]) +'\n')
+        # write two lines with GPU info: count and model names - this takes multiple steps to make it look clean in the end
 
     return True
 
-def enable_and_log_gpu():
+def enable_and_log_gpu(log_file):
     '''
     Enables GPU and logs GPU specs
     '''
@@ -153,7 +155,7 @@ def enable_and_log_gpu():
 
 
 
-def add_photos(photo_path):
+def add_photos(doc, photo_path):
     '''
     Add photos to project
     
@@ -171,7 +173,7 @@ def add_photos(photo_path):
     return True
 
 
-def align_photos(accuracy, adaptive_fitting):
+def align_photos(doc, log_file, accuracy, adaptive_fitting):
     '''
     Match photos, align cameras, optimize cameras
     '''
@@ -182,8 +184,8 @@ def align_photos(accuracy, adaptive_fitting):
     timer1a = time.time()
     
     # Align cameras
-    chunk.matchPhotos(accuracy=accuracy)
-    chunk.alignCameras(adaptive_fitting=adaptive_fitting)
+    doc.chunk.matchPhotos(accuracy=accuracy)
+    doc.chunk.alignCameras(adaptive_fitting=adaptive_fitting)
     doc.save()
     
     # get an ending time stamp
@@ -200,13 +202,14 @@ def align_photos(accuracy, adaptive_fitting):
 
 
 
-def optimize_cameras(adaptive_fitting):
+def optimize_cameras(doc, adaptive_fitting):
     '''
     Optimize cameras
     '''
     
     # Includes adaptive camera model fitting. I set it to optimize all parameters even though the defaults exclude a few.
-    chunk.optimizeCameras(adaptive_fitting=adaptive_fitting)
+    doc.chunk.optimizeCameras(adaptive_fitting=adaptive_fitting)
+    doc.save()
 
     return True
 
