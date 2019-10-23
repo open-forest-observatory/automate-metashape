@@ -65,6 +65,7 @@ os.mkdir(output)
 
 # Default to 4326 because it works everywhere
 # TODO: Select UTM zone based on EXIF data in the photos.
+# Wisconsin EPSG:32616
 project_crs = Metashape.CoordinateSystem("EPSG::4326")
 
 

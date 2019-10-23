@@ -1,0 +1,27 @@
+# This is an example yaml configuration for a metashape process
+
+# Project
+# This will save the project file psx and working files
+# Also the default path for exports
+Project_path: "/path/to/project"
+
+# The path to the directory of flight photos
+# If multiple folders, set path to the top level above the photos?
+# Photo folders should only include 1 set of calibration images if doing calibration
+Photo_path:
+    - "/path/to/photos"
+    - "/second/folder/of/photos"
+
+# Enable the GPU
+GPU:
+    use: True
+    num: 1
+
+matchPhotos:
+    # Note sure how this will work since the script expects a Python variable not a text object
+    accuracy: Metashape.HighAccuracy
+
+buildDem:
+    classes:
+        - Metashape.PointClass.Ground
+        - Metashape.PointClass.HighVegetation
