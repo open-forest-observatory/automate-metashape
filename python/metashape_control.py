@@ -6,7 +6,13 @@
 # 2019
 
 from python import metashape_pipeline_functions
+from python import read_yaml
 
+### import the Metashape functionality
+# If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
+import Metashape
+
+cfg = read_yaml.read_yaml("config/example.yml")
 
 
 #### Specify directories
