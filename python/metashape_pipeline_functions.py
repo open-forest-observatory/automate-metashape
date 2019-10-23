@@ -35,122 +35,123 @@ def diff_time(t2, t1):
     total = str(round(t2-t1, 1))
     return total
     
-# Set the log file name value separator
+# Set the log file name-value separator
 # Chose ; as : is in timestamps
 # TODO: Consider moving log to json formatting using a dict
 sep = "; "
 
-#### Specify directories
-#specifically, drone photo directory, metashape products directory, metashape project directory. 
-#the processing log will go into the products directory
 
-## If running interactively, specify directories here:
-photo_path = '/storage/forestuav/imagery/missions/01c_ChipsA_120m_thinned22_subset'
-output_path = '/storage/forestuav/metashape_outputs/analysis1'
-project_path = '/storage/forestuav/metashape_projects/analysis1'
-
-## TODO: read paths from env vars
-# 1st arg is the path to the project data
-"""
-if (len(sys.argv) >= 2):
-    folderpath = os.path.expanduser(sys.argv[1])
-else:
-    folderpath = os.path.expanduser('/share/spatial02/latimer/forest_benchmark')
-"""
-
-##create output and project paths if they don't exist
-if not os.path.exists(output_path):
-    os.makedirs(output_path)
-if not os.path.exists(project_path):
-    os.makedirs(project_path)
-
-
-
-#### Set a filename template for project files and output files
-## Get the first parts of the filename (the photoset ID and location string)
-path_parts = photo_path.split("/")
-photoset_name = path_parts[-1]
-photoset_parts = photoset_name.split("_")
-set_ID = photoset_parts[0]
-location = photoset_parts[1]
-##?? OK to requre photo folders to be specified as multipart with specific order?
-
-## Project file example to make: "01c_ChipsA_YYYYMMDD-jobid.psx"
-timestamp = stamp_time()
-project_id = "_".join([timestamp,set_ID,location])
-# TODO: If there is a JobID, append to time (separated with "-", not "_"). This will keep jobs initiated in the same minute distinct
-# TODO: Allow to specify a mnemonic for the end of the project name (from YAML?)
-
-project_file = os.path.join(project_path, '.'.join([project_id, 'psx']) )
-log_file = os.path.join(output_path, '.'.join(['log_'+project_id,'txt']) )
+def file_setup(photo_path, project_path, output_path):
+    '''
+    Create output and project paths, if they don't exist
+    Define a project ID based on photoset name and timestamp
+    Define a project filename and a log filename
+    '''
+    
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    if not os.path.exists(project_path):
+        os.makedirs(project_path)
+        
+    ### Set a filename template for project files and output files
+    ## Get the first parts of the filename (the photoset ID and location string)
+    path_parts = photo_path.split("/")
+    photoset_name = path_parts[-1]
+    photoset_parts = photoset_name.split("_")
+    set_ID = photoset_parts[0]
+    location = photoset_parts[1]
+    ##?? OK to requre photo folders to be specified as multipart with specific order?
+    
+    ## Project file example to make: "01c_ChipsA_YYYYMMDD-jobid.psx"
+    timestamp = stamp_time()
+    project_id = "_".join([timestamp,set_ID,location])
+    # TODO: If there is a JobID, append to time (separated with "-", not "_"). ##?? This will keep jobs initiated in the same minute distinct
+    # TODO: Allow to specify a mnemonic for the end of the project name (from YAML?)
+    
+    project_file = os.path.join(project_path, '.'.join([project_id, 'psx']) )
+    log_file = os.path.join(output_path, '.'.join(['log_'+project_id,'txt']) )
+    ##?? OK to save these as globals?
+        
+    return True
 
 
-#### Specify CRS
+def initialize_metashape_project(project_file):
+    '''
+    Create a doc and a chunk
+    '''
 
-# Using a UTM Zone for output, current bug in CA Albers
-# TODO: Select UTM zone based on EXIF data in the photos.
-project_crs = Metashape.CoordinateSystem("EPSG::32610")
-
-
-#### Create doc, chunk
-
-# create a handle to the Metashape object
-doc = Metashape.Document() #When running via Metashape, can use: doc = Metashape.app.document 
-
-# Save doc (necessary for steps after point cloud because there needs to be a project file)
-doc.save(project_file)
-
-# Initialize a chunk, set its CRS as specified
-chunk = doc.addChunk()
-chunk.crs = project_crs
+    # create a handle to the Metashape object
+    doc = Metashape.Document() #When running via Metashape, can use: doc = Metashape.app.document 
+    
+    # Save doc (necessary for steps after point cloud because there needs to be a project file)
+    doc.save(project_file)
+    
+    # Initialize a chunk, set its CRS as specified
+    chunk = doc.addChunk()
+    chunk.crs = project_crs
+    
+    return True
 
 
 
-#### Log PC specs
+def log_pc_specs():
+    '''
+    Log specs except for GPU
+    '''
 
-# log Metashape version, CPU specs, time, and project location to results file
-# open the results file
-# TODO: records the Slurm values for actual cpus and ram allocated
-# https://slurm.schedmd.com/sbatch.html#lbAI
-file = open(log_file,'a')
-# write a line with the Metashape version
-file.write(sep.join(['Project', project_id])+'\n')
-file.write(sep.join(['Agisoft Metashape Professional Version', Metashape.app.version])+'\n')
-# write a line with the date and time
-file.write(sep.join(['Benchmark Started', stamp_time()]) +'\n')
-# write a line with CPU info - if possible, improve the way the CPU info is found / recorded
-file.write(sep.join(['Node', platform.node()])+'\n')
-file.write(sep.join(['CPU', platform.processor()]) +'\n')
-# write two lines with GPU info: count and model names - this takes multiple steps to make it look clean in the end
-gpustringraw = str(Metashape.app.enumGPUDevices())
-gpucount = gpustringraw.count("name': '")
-file.write(sep.join(['Number of GPUs Found', str(gpucount)]) +'\n')
-gpustring = ''
-currentgpu = 1
-while gpucount >= currentgpu:
-    if gpustring != '': gpustring = gpustring+', '
-    gpustring = gpustring+gpustringraw.split("name': '")[currentgpu].split("',")[0]
-    currentgpu = currentgpu+1
-#gpustring = gpustringraw.split("name': '")[1].split("',")[0]
-file.write(sep.join(['GPU Model', gpustring])+'\n')
+    # log Metashape version, CPU specs, time, and project location to results file
+    # open the results file
+    # TODO: records the Slurm values for actual cpus and ram allocated
+    # https://slurm.schedmd.com/sbatch.html#lbAI
+    file = open(log_file,'a')
+    # write a line with the Metashape version
+    file.write(sep.join(['Project', project_id])+'\n')
+    file.write(sep.join(['Agisoft Metashape Professional Version', Metashape.app.version])+'\n')
+    # write a line with the date and time
+    file.write(sep.join(['Benchmark Started', stamp_time()]) +'\n')
+    # write a line with CPU info - if possible, improve the way the CPU info is found / recorded
+    file.write(sep.join(['Node', platform.node()])+'\n')
+    file.write(sep.join(['CPU', platform.processor()]) +'\n')
+    # write two lines with GPU info: count and model names - this takes multiple steps to make it look clean in the end
 
-# Write down if the GPU is enabled or not, Bit Mask values
-gpu_mask = Metashape.app.gpu_mask
-file.write(sep.join(['GPU Mask', str(gpu_mask)])+'\n')
+    return True
 
-# If a GPU exists but is not enabled, enable the 1st one
-if (gpucount > 0) and (gpu_mask == 0):
-    Metashape.app.gpu_mask = 1
+def enable_and_log_gpu():
+    '''
+    Enables GPU and logs GPU specs
+    '''
+    
+    gpustringraw = str(Metashape.app.enumGPUDevices())
+    gpucount = gpustringraw.count("name': '")
+    file.write(sep.join(['Number of GPUs Found', str(gpucount)]) +'\n')
+    gpustring = ''
+    currentgpu = 1
+    while gpucount >= currentgpu:
+        if gpustring != '': gpustring = gpustring+', '
+        gpustring = gpustring+gpustringraw.split("name': '")[currentgpu].split("',")[0]
+        currentgpu = currentgpu+1
+    #gpustring = gpustringraw.split("name': '")[1].split("',")[0]
+    file.write(sep.join(['GPU Model', gpustring])+'\n')
+    
+    # Write down if the GPU is enabled or not, Bit Mask values
     gpu_mask = Metashape.app.gpu_mask
-    file.write(sep.join(['GPU Mask Enabled', str(gpu_mask)])+'\n')
-
-# This writes down all the GPU devices available
-#file.write('GPU(s): '+str(Metashape.app.enumGPUDevices())+'\n')
-
-# set Metashape to *not* use the CPU during GPU steps (appears to be standard wisdom)
-Metashape.app.cpu_enable = False
-
-file.close()
+    file.write(sep.join(['GPU Mask', str(gpu_mask)])+'\n')
+    
+    # If a GPU exists but is not enabled, enable the 1st one
+    if (gpucount > 0) and (gpu_mask == 0):
+        Metashape.app.gpu_mask = 1
+        gpu_mask = Metashape.app.gpu_mask
+        file.write(sep.join(['GPU Mask Enabled', str(gpu_mask)])+'\n')
+    
+    # This writes down all the GPU devices available
+    #file.write('GPU(s): '+str(Metashape.app.enumGPUDevices())+'\n')
+    
+    # set Metashape to *not* use the CPU during GPU steps (appears to be standard wisdom)
+    Metashape.app.cpu_enable = False
+    
+    file.close()
+    
+    return True
 
 
 
@@ -375,8 +376,13 @@ def export_report(path):
 
 
 
-#### Finish benchmark
-
-# finish local results log and close it for the last time
-with open(log_file, 'a') as file:
-    file.write(sep.join(['Run Completed', stamp_time()])+'\n')
+def finish_run():
+    '''
+    Finish run (i.e., write completed time to log)
+    '''
+    
+    # finish local results log and close it for the last time
+    with open(log_file, 'a') as file:
+        file.write(sep.join(['Run Completed', stamp_time()])+'\n')
+        
+    return True
