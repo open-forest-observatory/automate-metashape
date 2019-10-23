@@ -131,25 +131,23 @@ def enable_and_log_gpu():
         gpustring = gpustring+gpustringraw.split("name': '")[currentgpu].split("',")[0]
         currentgpu = currentgpu+1
     #gpustring = gpustringraw.split("name': '")[1].split("',")[0]
-    file.write(sep.join(['GPU Model', gpustring])+'\n')
-    
-    # Write down if the GPU is enabled or not, Bit Mask values
     gpu_mask = Metashape.app.gpu_mask
-    file.write(sep.join(['GPU Mask', str(gpu_mask)])+'\n')
     
-    # If a GPU exists but is not enabled, enable the 1st one
-    if (gpucount > 0) and (gpu_mask == 0):
-        Metashape.app.gpu_mask = 1
-        gpu_mask = Metashape.app.gpu_mask
-        file.write(sep.join(['GPU Mask Enabled', str(gpu_mask)])+'\n')
+    with open(log_file, 'a') as file:
+        file.write(sep.join(['GPU Model', gpustring])+'\n')
+        file.write(sep.join(['GPU Mask', str(gpu_mask)])+'\n')
     
-    # This writes down all the GPU devices available
-    #file.write('GPU(s): '+str(Metashape.app.enumGPUDevices())+'\n')
+        # If a GPU exists but is not enabled, enable the 1st one
+        if (gpucount > 0) and (gpu_mask == 0):
+            Metashape.app.gpu_mask = 1
+            gpu_mask = Metashape.app.gpu_mask
+            file.write(sep.join(['GPU Mask Enabled', str(gpu_mask)])+'\n')
+    
+        # This writes down all the GPU devices available
+        #file.write('GPU(s): '+str(Metashape.app.enumGPUDevices())+'\n')
     
     # set Metashape to *not* use the CPU during GPU steps (appears to be standard wisdom)
     Metashape.app.cpu_enable = False
-    
-    file.close()
     
     return True
 
