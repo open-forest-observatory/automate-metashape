@@ -75,7 +75,7 @@ project_crs = Metashape.CoordinateSystem("EPSG::4326")
 #### Create doc, chunk
 
 # create a handle to the Metashape object
-doc = Metashape.app.document
+doc = Metashape.Document()
 
 # Save doc (necessary for steps after point cloud because there needs to be a project file)
 doc.save(project_file)
