@@ -22,6 +22,9 @@ import Metashape
 
 #### some helper functions and globals
 
+#default_path = '/share/spatial02/latimer/forest_benchmark'
+default_path = '/home/vulpes/GoogleDrive/Biogeo/CenterSpatialSciences/Consulting/Nocco/Test flight for Alex/P31_2019_JUL_08_01/'
+
 def stamp_time():
     ''' 
     Format the timestamps as needed
@@ -47,10 +50,10 @@ sep = "; "
 if (len(sys.argv) >= 2):
     folderpath = os.path.expanduser(sys.argv[1])
 else:
-    folderpath = os.path.expanduser('/share/spatial02/latimer/forest_benchmark')
+    folderpath = os.path.expanduser(default_path)
 
-photos_path = os.path.join(folderpath,'raw_images')
-photo_files = [file.path for file in os.scandir(photos_path) if file.path.endswith('.jpg')]
+photos_path = os.path.join(folderpath,'subset')
+photo_files = [file.path for file in os.scandir(photos_path) if file.path.endswith('.tif')]
 
 # TODO: results should go to a subfolder for a particular benchmark
 unique_id = ''.join(['benchmark_', stamp_time().replace(":","")])
@@ -138,8 +141,12 @@ doc.save()
 
 
 #### Load the calibration
-chunk.
 
+# Find the photos by qrcode
+chunk.locateReflectancePanels()
+# TODO: Might need full path to calibration csv
+chunk.loadReflectancePanelCalibration("calibration/RP04-1923118-OB.csv")
+chunk.calibrateReflectance(use_reflectance_panels=True,use_sun_sensor=True)
 
 #### Align photos
 
