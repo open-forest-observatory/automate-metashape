@@ -154,148 +154,225 @@ file.close()
 
 
 
-#### Add photos
+def add_photos(photo_path):
+    '''
+    Add photos to project
+    
+    '''
 
-## Get paths to all the project photos
-a = glob.iglob(os.path.join(photo_path,"**","*.[jJ][pP][gG]"))
-b = [path for path in a]
-photo_files = b
-
-## Add them
-chunk.addPhotos(photo_files)
-doc.save()
-
-
-
-#### Align photos
-
-# get a beginning time stamp
-timer1a = time.time()
-
-# Align cameras
-chunk.matchPhotos(accuracy=Metashape.HighAccuracy, preselection=Metashape.GenericPreselection)
-chunk.alignCameras(adaptive_fitting=True)
-doc.save()
-
-# get an ending time stamp
-timer1b = time.time()
-
-# calculate difference between end and start time to 1 decimal place
-time1 = diff_time(timer1b, timer1a)
-
-# record results to file
-with open(log_file, 'a') as file:
-    file.write(sep.join(['Align Photos', time1])+'\n')
+    ## Get paths to all the project photos
+    a = glob.iglob(os.path.join(photo_path,"**","*.[jJ][pP][gG]"))
+    b = [path for path in a]
+    photo_files = b
+    
+    ## Add them
+    chunk.addPhotos(photo_files)
+    doc.save()
+    
+    return True
 
 
-
-
-#### Optimize cameras
-# Includes adaptive camera model fitting. I set it to optimize all parameters even though the defaults exclude a few.
-chunk.optimizeCameras(fit_f=True, fit_cx=True, fit_cy=True, fit_b1=True, fit_b2=True, fit_k1=True, fit_k2=True, fit_k3=True, fit_k4=True, fit_p1=True, fit_p2=True, fit_p3=True, fit_p4=True, adaptive_fitting=True)
-
-
-
-#### Build depth maps
-
-# get a beginning time stamp for the next step
-timer2a = time.time()
-
-# build depth maps only instead of also building the dense cloud ##?? what does 
-chunk.buildDepthMaps(quality=Metashape.MediumQuality, filter=Metashape.MildFiltering)
-doc.save()
-
-# get an ending time stamp for the previous step
-timer2b = time.time()
-
-# calculate difference between end and start time to 1 decimal place
-time2 = diff_time(timer2b, timer2a)
-
-# record results to file
-with open(log_file, 'a') as file:
-    file.write(sep.join(['Build Depth Maps', time2])+'\n')
+def align_photos(accuracy, adaptive_fitting):
+    '''
+    Match photos, align cameras, optimize cameras
+    '''
+    
+    #### Align photos
+    
+    # get a beginning time stamp
+    timer1a = time.time()
+    
+    # Align cameras
+    chunk.matchPhotos(accuracy=accuracy)
+    chunk.alignCameras(adaptive_fitting=adaptive_fitting)
+    doc.save()
+    
+    # get an ending time stamp
+    timer1b = time.time()
+    
+    # calculate difference between end and start time to 1 decimal place
+    time1 = diff_time(timer1b, timer1a)
+    
+    # record results to file
+    with open(log_file, 'a') as file:
+        file.write(sep.join(['Align Photos', time1])+'\n')
+        
+    return True
 
 
 
+def optimize_cameras(adaptive_fitting):
+    '''
+    Optimize cameras
+    '''
+    
+    # Includes adaptive camera model fitting. I set it to optimize all parameters even though the defaults exclude a few.
+    chunk.optimizeCameras(adaptive_fitting=adaptive_fitting)
+
+    return True
 
 
 
-#### Build dense cloud
+def build_depth_maps(quality, filter, reuse_depth, max_neighbors):
+    '''
+    Build depth maps
+    '''
 
-# get a beginning time stamp for the next step
-timer3a = time.time()
-
-# build dense cloud
-chunk.buildDenseCloud(max_neighbors=60)
-doc.save()
-
-# get an ending time stamp for the previous step
-timer3b = time.time()
-
-# calculate difference between end and start time to 1 decimal place
-time3 = diff_time(timer3b, timer3a)
-
-# record results to file
-with open(log_file, 'a') as file:
-    file.write(sep.join(['Build Dense Cloud', time3])+'\n')
+    # get a beginning time stamp for the next step
+    timer2a = time.time()
+    
+    # build depth maps only instead of also building the dense cloud ##?? what does 
+    chunk.buildDepthMaps(quality=quality, filter=filter, reuse_depth = reuse_depth, max_neighbors = max_neighbors)
+    doc.save()
+    
+    # get an ending time stamp for the previous step
+    timer2b = time.time()
+    
+    # calculate difference between end and start time to 1 decimal place
+    time2 = diff_time(timer2b, timer2a)
+    
+    # record results to file
+    with open(log_file, 'a') as file:
+        file.write(sep.join(['Build Depth Maps', time2])+'\n')
+        
+    return True
 
 
 
 
-#### Classify ground points
-chunk.dense_cloud.classifyGroundPoints()
-doc.save()
+def build_dense_cloud(max_neighbors):
+    '''
+    Build dense cloud
+    '''
+
+    # get a beginning time stamp for the next step
+    timer3a = time.time()
+    
+    # build dense cloud
+    chunk.buildDenseCloud(max_neighbors=max_neighbors)
+    doc.save()
+    
+    # get an ending time stamp for the previous step
+    timer3b = time.time()
+    
+    # calculate difference between end and start time to 1 decimal place
+    time3 = diff_time(timer3b, timer3a)
+    
+    # record results to file
+    with open(log_file, 'a') as file:
+        file.write(sep.join(['Build Dense Cloud', time3])+'\n')
+        
+    return True
 
 
 
-#### Build DEM (a DTM)
+def classify_ground_points(max_angle, max_distance, cell_size, source):
+    '''
+    Classify ground points
+    '''
+    
+    chunk.dense_cloud.classifyGroundPoints(max_angle=max_angle, max_distance=max_distance, cell_size=cell_size, source=source)
+    doc.save()
+    
+    return True
 
-# get a beginning time stamp for the next step
-timer5a = time.time()
 
-# build DEM
-chunk.buildDem(projection = project_crs, classes=[Metashape.PointClass.Ground])
-
-# get an ending time stamp for the previous step
-timer5b = time.time()
-
-# calculate difference between end and start time to 1 decimal place
-time5 = diff_time(timer5b, timer5a)
-
-# record results to file
-with open(log_file, 'a') as file:
-    file.write(sep.join(['Build DEM', time5])+'\n')
+def build_dem(source, projection, classes):
+    '''
+    Build DEM
+    '''
+    
+    # get a beginning time stamp for the next step
+    timer5a = time.time()
+    
+    # build DEM
+    chunk.buildDem(projection = projection, classes=classes)
+    
+    # get an ending time stamp for the previous step
+    timer5b = time.time()
+    
+    # calculate difference between end and start time to 1 decimal place
+    time5 = diff_time(timer5b, timer5a)
+    
+    # record results to file
+    with open(log_file, 'a') as file:
+        file.write(sep.join(['Build DEM', time5])+'\n')
+        
+    return True
 
     
 
-
-#### Build Orthomosaic
-
-# get a beginning time stamp for the next step
-timer6a = time.time()
-
-# build orthomosaic
-chunk.buildOrthomosaic(projection = project_crs, refine_seamlines = True)
-doc.save()
-
-# get an ending time stamp for the previous step
-timer6b = time.time()
-
-# calculate difference between end and start time to 1 decimal place
-time6 = diff_time(timer6b, timer6a)
-
-# record results to file
-with open(log_file, 'a') as file:
-    file.write(sep.join(['Build Orthomosaic', time6])+'\n')
+def build_orthomosaic(surface, blending, fill_holes, refine_seamlines, projection):
+    '''
+    Build orthomosaic
+    '''
+    
+    # get a beginning time stamp for the next step
+    timer6a = time.time()
+    
+    # build orthomosaic
+    chunk.buildOrthomosaic(surface=surface, blending=blending, fill_holes=fill_holes, refine_seamlines=refine_seamlines, projection=projection)
+    doc.save()
+    
+    # get an ending time stamp for the previous step
+    timer6b = time.time()
+    
+    # calculate difference between end and start time to 1 decimal place
+    time6 = diff_time(timer6b, timer6a)
+    
+    # record results to file
+    with open(log_file, 'a') as file:
+        file.write(sep.join(['Build Orthomosaic', time6])+'\n')
+        
+    return True
 
     
 
+def export_dem(path, tiff_big, tiff_tiled, image_format, projection, nodata, tiff_overviews):
+    '''
+    Export DEM
+    '''
+    
+    output_file = os.path.join(path, project_id+'_dem.tif')
+    
+    chunk.exportDem(path=output_file, tiff_big = tiff_big, tiff_tiled = tiff_tiled, projection = projection, nodata=nodata, tiff_overviews=tiff_overviews)
 
-#### Export dem, ortho, las, report
-chunk.exportDem(os.path.join(output_path, 'dem_'+project_id+'.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
-chunk.exportOrthomosaic(os.path.join(output_path, 'ortho_'+project_id+'.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
-chunk.exportPoints(os.path.join(output_path, 'points_'+project_id+'.las'), format = Metashape.PointsFormatLAS, projection = project_crs)
-chunk.exportReport(os.path.join(output_path, 'report_'+project_id+'.pdf'))
+    return True
+
+def export_orthomosaic(path, tiff_big, tiff_tiled, image_format, projection, nodata, tiff_overviews):
+    '''
+    Export Orthomosaic
+    '''
+    
+    output_file = os.path.join(path, project_id+'_ortho.tif')
+    
+    chunk.exportOrthomosaic(path=output_file, tiff_big = tiff_big, tiff_tiled = tiff_tiled, projection = projection, tiff_overviews=tiff_overviews)
+
+    return True
+
+
+def export_points(path, source, precision, format, projection, classes):
+    '''
+    Export points
+    '''
+    
+    output_file = os.path.join(path, project_id+'_points.las')
+    
+    chunk.exportPoints(path = output_file, source = source, precision = precision, format = format, projection = projection, clases = classes)
+
+    return True
+
+def export_report(path):
+    '''
+    Export report
+    '''
+    
+    output_file = os.path.join(path, project_id+'_report.pdf')
+
+    chunk.exportReport(path = output_file)
+    
+    return True
+
 
 
 #### Finish benchmark
