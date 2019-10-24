@@ -223,7 +223,7 @@ with open(log_file, 'a') as file:
 
 
 #### Classify ground points
-chunk.dense_cloud.classifyGroundPoints()
+#chunk.dense_cloud.classifyGroundPoints()
 doc.save()
 
 
@@ -234,7 +234,8 @@ doc.save()
 timer5a = time.time()
 
 # build DEM
-chunk.buildDem(projection = project_crs, classes=[Metashape.PointClass.Ground])
+#chunk.buildDem(projection = project_crs, classes=[Metashape.PointClass.Ground])
+chunk.buildDem(projection = project_crs)
 
 # get an ending time stamp for the previous step
 timer5b = time.time()
