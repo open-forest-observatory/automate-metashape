@@ -276,7 +276,7 @@ with open(log_file, 'a') as file:
 timer7a = time.time()
 chunk.exportDem(os.path.join(output, 'DTM.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
 timer7b = time.time()
-chunk.exportOrthomosaic(os.path.join(output, 'ortho.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
+chunk.exportOrthomosaic(os.path.join(output, 'ortho.tif'), tiff_big = True, tiff_tiled = True, write_alpha=False, projection = project_crs)
 timer7c = time.time()
 chunk.exportPoints(os.path.join(output, 'points.las'), format = Metashape.PointsFormatLAS, projection = project_crs)
 timer7d = time.time()
