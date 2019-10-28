@@ -7,6 +7,7 @@ Created on Mon Oct 21 13:45:15 2019
 """
 
 import yaml
+import Metashape
 
 
 def convert_objects(a_dict):
