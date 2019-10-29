@@ -5,35 +5,52 @@
 # University of California, Davis
 # 2019
 
-from python import metashape_pipeline_functions
+import sys
+
+from python import metashape_pipeline_functions as meta
 from python import read_yaml
 
 ### import the Metashape functionality
 # If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
-import Metashape
+#import Metashape
 
-cfg = read_yaml.read_yaml("config/example.yml")
+## Read config data from command line argument
+config_file = sys.argv[0]
+
+## Alternatively, if running interacively read from here:
+config_file = "config/example.yml"
 
 
-#### Specify directories
-#specifically, drone photo directory, metashape products directory, metashape project directory. 
-#the processing log will go into the products directory
+cfg = read_yaml.read_yaml(config_file)
 
-## If running interactively, specify directories here:
-photo_path = '/storage/forestuav/imagery/missions/01c_ChipsA_120m_thinned22_subset'
-output_path = '/storage/forestuav/metashape_outputs/analysis1'
-project_path = '/storage/forestuav/metashape_projects/analysis1'
 
-## TODO: Read paths from YAML config file
 
-file_setup(photo_path = photo_path, project_path = project_path, output_path = output_path)
+doc, log, run_id = meta.project_setup(cfg)
 
-initialize_metashape_project(project_file = project_file) ##?? Is it strange to pass this argument which was created as a global by the previous function?
+meta.enable_and_log_gpu(log)
 
-log_pc_specs()
+meta.add_photos(doc, cfg)
 
-enable_and_log_gpu()
+meta.align_photos(doc, log, cfg)
 
-add_photos(photo_path = photo_path)
+meta.optimize_cameras(doc, cfg)
 
-align_photos(accuracy = Metashape.MediumAccuracy, adaptive_fitting = True)
+meta.build_depth_maps(doc, log, cfg)
+
+meta.build_dense_cloud(doc, log, cfg)
+
+meta.classify_ground_points(doc, log, cfg)
+
+meta.build_dem(doc, log, cfg)
+
+meta.build_orthomosaic(doc, log, cfg)
+
+meta.export_dem(doc, log, run_id, cfg)
+
+meta.export_orthomosaic(doc, log, run_id, cfg)
+
+meta.export_points(doc, log, run_id, cfg)
+
+meta.export_report(doc, run_id, cfg)
+
+meta.finish_run(log)

@@ -1,4 +1,11 @@
-# Simplified version of benchmark script
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Oct 21 13:45:15 2019
+
+@author: Alex Mandel
+
+"""# Simplified version of benchmark script
 # Runs only one project; does not need pre-existing Metashape project files; 
 
 # Derek Young and Alex Mandel
@@ -41,42 +48,49 @@ def diff_time(t2, t1):
 sep = "; "
 
 
-def file_setup(photo_path, project_path, output_path):
+def project_setup(cfg):
     '''
     Create output and project paths, if they don't exist
     Define a project ID based on photoset name and timestamp
     Define a project filename and a log filename
+    Create the project
+    Start a log file
     '''
     
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    if not os.path.exists(project_path):
-        os.makedirs(project_path)
+    if not os.path.exists(cfg["output_path"]):
+        os.makedirs(cfg["output_path"])
+    if not os.path.exists(cfg["project_path"]):
+        os.makedirs(cfg["project_path"])
         
     ### Set a filename template for project files and output files
     ## Get the first parts of the filename (the photoset ID and location string)
-    path_parts = photo_path.split("/")
-    photoset_name = path_parts[-1]
-    photoset_parts = photoset_name.split("_")
-    set_ID = photoset_parts[0]
-    location = photoset_parts[1]
-    ##?? OK to requre photo folders to be specified as multipart with specific order?
+    
+    if (cfg["photoset_id"] == "%lookup%") or cfg["location"] == "%lookup%":
+        path_parts = cfg["photo_path"].split("/")
+        photoset_name = path_parts[-1]
+        photoset_parts = photoset_name.split("_")
+    
+    if cfg["photoset_id"] == "%lookup%":
+        set_id = photoset_parts[0]
+    else:
+        set_id = cfg["photoset_id"]
+        
+    if cfg["location"] == "%lookup%":
+        location = photoset_parts[1]
+    else:
+        location = cfg["location"]
     
     ## Project file example to make: "01c_ChipsA_YYYYMMDD-jobid.psx"
     timestamp = stamp_time()
     # TODO: allow a nonexistent location string
-    project_id = "_".join([timestamp,set_ID,location])
+    run_id = "_".join([timestamp,set_id,location])
     # TODO: If there is a JobID, append to time (separated with "-", not "_"). ##?? This will keep jobs initiated in the same minute distinct
     # TODO: Allow to specify a mnemonic for the end of the project name (from YAML?)
     
-    project_file = os.path.join(project_path, '.'.join([project_id, 'psx']) )
-    log_file = os.path.join(output_path, '.'.join(['log_'+project_id,'txt']) )
-    ##?? OK to save these as globals?
+    project_file = os.path.join(cfg["project_path"], '.'.join([run_id, 'psx']) )
+    log_file = os.path.join(cfg["output_path"], '.'.join([run_id+"_log",'txt']) )
         
-    return True
 
-
-def initialize_metashape_project(project_file):
     '''
     Create a doc and a chunk
     '''
@@ -89,13 +103,9 @@ def initialize_metashape_project(project_file):
     
     # Initialize a chunk, set its CRS as specified
     chunk = doc.addChunk()
-    chunk.crs = project_crs
+    chunk.crs = Metashape.CoordinateSystem(cfg["project_crs"])
     
-    return True
-
-
-
-def log_pc_specs(log_file):
+    
     '''
     Log specs except for GPU
     '''
@@ -107,16 +117,18 @@ def log_pc_specs(log_file):
     with open(log_file, 'a') as file:
 
         # write a line with the Metashape version
-        file.write(sep.join(['Project', project_id])+'\n')
+        file.write(sep.join(['Project', run_id])+'\n')
         file.write(sep.join(['Agisoft Metashape Professional Version', Metashape.app.version])+'\n')
         # write a line with the date and time
-        file.write(sep.join(['Benchmark Started', stamp_time()]) +'\n')
+        file.write(sep.join(['Processing started', stamp_time()]) +'\n')
         # write a line with CPU info - if possible, improve the way the CPU info is found / recorded
         file.write(sep.join(['Node', platform.node()])+'\n')
         file.write(sep.join(['CPU', platform.processor()]) +'\n')
         # write two lines with GPU info: count and model names - this takes multiple steps to make it look clean in the end
 
-    return True
+    return doc, log_file, run_id
+
+
 
 def enable_and_log_gpu(log_file):
     '''
@@ -125,7 +137,6 @@ def enable_and_log_gpu(log_file):
     
     gpustringraw = str(Metashape.app.enumGPUDevices())
     gpucount = gpustringraw.count("name': '")
-    file.write(sep.join(['Number of GPUs Found', str(gpucount)]) +'\n')
     gpustring = ''
     currentgpu = 1
     while gpucount >= currentgpu:
@@ -136,6 +147,7 @@ def enable_and_log_gpu(log_file):
     gpu_mask = Metashape.app.gpu_mask
     
     with open(log_file, 'a') as file:
+        file.write(sep.join(['Number of GPUs Found', str(gpucount)]) +'\n')
         file.write(sep.join(['GPU Model', gpustring])+'\n')
         file.write(sep.join(['GPU Mask', str(gpu_mask)])+'\n')
     
@@ -155,25 +167,25 @@ def enable_and_log_gpu(log_file):
 
 
 
-def add_photos(doc, photo_path):
+def add_photos(doc, cfg):
     '''
     Add photos to project
     
     '''
 
     ## Get paths to all the project photos
-    a = glob.iglob(os.path.join(photo_path,"**","*.[jJ][pP][gG]"))
+    a = glob.iglob(os.path.join(cfg["photo_path"],"**","*.[jJ][pP][gG]"))
     b = [path for path in a]
     photo_files = b
     
     ## Add them
-    chunk.addPhotos(photo_files)
+    doc.chunk.addPhotos(photo_files)
     doc.save()
     
     return True
 
 
-def align_photos(doc, log_file, accuracy, adaptive_fitting):
+def align_photos(doc, log_file, cfg):
     '''
     Match photos, align cameras, optimize cameras
     '''
@@ -184,8 +196,8 @@ def align_photos(doc, log_file, accuracy, adaptive_fitting):
     timer1a = time.time()
     
     # Align cameras
-    doc.chunk.matchPhotos(accuracy=accuracy)
-    doc.chunk.alignCameras(adaptive_fitting=adaptive_fitting)
+    doc.chunk.matchPhotos(accuracy=cfg["alignPhotos"]["accuracy"])
+    doc.chunk.alignCameras(adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"])
     doc.save()
     
     # get an ending time stamp
@@ -202,20 +214,20 @@ def align_photos(doc, log_file, accuracy, adaptive_fitting):
 
 
 
-def optimize_cameras(doc, adaptive_fitting):
+def optimize_cameras(doc, cfg):
     '''
     Optimize cameras
     '''
     
     # Includes adaptive camera model fitting. I set it to optimize all parameters even though the defaults exclude a few.
-    doc.chunk.optimizeCameras(adaptive_fitting=adaptive_fitting)
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
     doc.save()
 
     return True
 
 
 
-def build_depth_maps(quality, filter, reuse_depth, max_neighbors):
+def build_depth_maps(doc, log_file, cfg):
     '''
     Build depth maps
     '''
@@ -224,7 +236,7 @@ def build_depth_maps(quality, filter, reuse_depth, max_neighbors):
     timer2a = time.time()
     
     # build depth maps only instead of also building the dense cloud ##?? what does 
-    chunk.buildDepthMaps(quality=quality, filter=filter, reuse_depth = reuse_depth, max_neighbors = max_neighbors)
+    doc.chunk.buildDepthMaps(quality=cfg["buildDepthMaps"]["quality"], filter=cfg["buildDepthMaps"]["filter"], reuse_depth = cfg["buildDepthMaps"]["reuse_depth"], max_neighbors = cfg["buildDepthMaps"]["max_neighbors"])
     doc.save()
     
     # get an ending time stamp for the previous step
@@ -242,7 +254,7 @@ def build_depth_maps(quality, filter, reuse_depth, max_neighbors):
 
 
 
-def build_dense_cloud(max_neighbors):
+def build_dense_cloud(doc, log_file, cfg):
     '''
     Build dense cloud
     '''
@@ -251,7 +263,8 @@ def build_dense_cloud(max_neighbors):
     timer3a = time.time()
     
     # build dense cloud
-    chunk.buildDenseCloud(max_neighbors=max_neighbors)
+    doc.chunk.buildDenseCloud(max_neighbors=cfg["buildDenseCloud"]["max_neighbors"],
+                          keep_depth = cfg["buildDenseCloud"]["keep_depth"])
     doc.save()
     
     # get an ending time stamp for the previous step
@@ -268,18 +281,36 @@ def build_dense_cloud(max_neighbors):
 
 
 
-def classify_ground_points(max_angle, max_distance, cell_size, source):
+def classify_ground_points(doc, log_file, cfg):
     '''
     Classify ground points
     '''
     
-    chunk.dense_cloud.classifyGroundPoints(max_angle=max_angle, max_distance=max_distance, cell_size=cell_size, source=source)
+    # get a beginning time stamp for the next step
+    timer_a = time.time()
+    
+    
+    
+    doc.chunk.dense_cloud.classifyGroundPoints(max_angle=cfg["classifyGroundPoints"]["max_angle"],
+                                           max_distance=cfg["classifyGroundPoints"]["max_distance"],
+                                           cell_size=cfg["classifyGroundPoints"]["cell_size"])
     doc.save()
+    
+    # get an ending time stamp for the previous step
+    timer_b = time.time()
+    
+    # calculate difference between end and start time to 1 decimal place
+    time_tot = diff_time(timer_b, timer_a)
+    
+    # record results to file
+    with open(log_file, 'a') as file:
+        file.write(sep.join(['Classify Ground Points', time_tot])+'\n')
+        
     
     return True
 
 
-def build_dem(source, projection, classes):
+def build_dem(doc, log_file, cfg):
     '''
     Build DEM
     '''
@@ -287,8 +318,15 @@ def build_dem(source, projection, classes):
     # get a beginning time stamp for the next step
     timer5a = time.time()
     
-    # build DEM
-    chunk.buildDem(projection = projection, classes=classes)
+    if cfg["buildDem"]["classes"] == "ALL":
+        # call without classes argument (Metashape then defaults to all classes)
+        doc.chunk.buildDem(source = cfg["buildDem"]["source"],
+                           projection = Metashape.CoordinateSystem(cfg["project_crs"]))
+    else:
+        # call with classes argument
+        doc.chunk.buildDem(source = cfg["buildDem"]["source"],
+                           projection = Metashape.CoordinateSystem(cfg["project_crs"]),
+                           classes = cfg["buildDem"]["classes"])
     
     # get an ending time stamp for the previous step
     timer5b = time.time()
@@ -304,7 +342,7 @@ def build_dem(source, projection, classes):
 
     
 
-def build_orthomosaic(surface, blending, fill_holes, refine_seamlines, projection):
+def build_orthomosaic(doc, log_file, cfg):
     '''
     Build orthomosaic
     '''
@@ -313,7 +351,11 @@ def build_orthomosaic(surface, blending, fill_holes, refine_seamlines, projectio
     timer6a = time.time()
     
     # build orthomosaic
-    chunk.buildOrthomosaic(surface=surface, blending=blending, fill_holes=fill_holes, refine_seamlines=refine_seamlines, projection=projection)
+    doc.chunk.buildOrthomosaic(surface=cfg["buildOrthomosaic"]["surface"],
+                               blending=cfg["buildOrthomosaic"]["blending"],
+                               fill_holes=cfg["buildOrthomosaic"]["fill_holes"],
+                               refine_seamlines=cfg["buildOrthomosaic"]["refine_seamlines"],
+                               projection=Metashape.CoordinateSystem(cfg["project_crs"]))
     doc.save()
     
     # get an ending time stamp for the previous step
@@ -330,54 +372,82 @@ def build_orthomosaic(surface, blending, fill_holes, refine_seamlines, projectio
 
     
 
-def export_dem(path, tiff_big, tiff_tiled, image_format, projection, nodata, tiff_overviews):
+def export_dem(doc, log_file, run_id, cfg):
     '''
     Export DEM
     '''
     
-    output_file = os.path.join(path, project_id+'_dem.tif')
+    output_file = os.path.join(cfg["output_path"], run_id+'_dem.tif')
     
-    chunk.exportDem(path=output_file, tiff_big = tiff_big, tiff_tiled = tiff_tiled, projection = projection, nodata=nodata, tiff_overviews=tiff_overviews)
+    doc.chunk.exportDem(path=output_file, tiff_big = cfg["exportDem"]["tiff_big"],
+                    tiff_tiled = cfg["exportDem"]["tiff_tiled"],
+                    projection = Metashape.CoordinateSystem(cfg["project_crs"]),
+                    nodata=cfg["exportDem"]["nodata"],
+                    tiff_overviews=cfg["exportDem"]["tiff_overviews"])
 
     return True
 
-def export_orthomosaic(path, tiff_big, tiff_tiled, image_format, projection, nodata, tiff_overviews):
+
+
+def export_orthomosaic(doc, log_file, run_id, cfg):
     '''
     Export Orthomosaic
     '''
     
-    output_file = os.path.join(path, project_id+'_ortho.tif')
+    output_file = os.path.join(cfg["output_path"], run_id+'_ortho.tif')
     
-    chunk.exportOrthomosaic(path=output_file, tiff_big = tiff_big, tiff_tiled = tiff_tiled, projection = projection, tiff_overviews=tiff_overviews)
+    doc.chunk.exportOrthomosaic(path=output_file, tiff_big = cfg["exportDem"]["tiff_big"],
+                    tiff_tiled = cfg["exportDem"]["tiff_tiled"],
+                    projection = Metashape.CoordinateSystem(cfg["project_crs"]),
+                    tiff_overviews=cfg["exportDem"]["tiff_overviews"])
 
     return True
 
 
-def export_points(path, source, precision, format, projection, classes):
+
+def export_points(doc, log_file, run_id, cfg):
     '''
     Export points
     '''
+        
+    output_file = os.path.join(cfg["output_path"], run_id+'_points.las')
     
-    output_file = os.path.join(path, project_id+'_points.las')
-    
-    chunk.exportPoints(path = output_file, source = source, precision = precision, format = format, projection = projection, clases = classes)
+    if cfg["exportPoints"]["classes"] == "ALL":
+        # call without classes argument (Metashape then defaults to all classes)
+        doc.chunk.exportPoints(path = output_file,
+                   source = cfg["exportPoints"]["source"],
+                   precision = cfg["exportPoints"]["precision"],
+                   format = Metashape.PointsFormatLAS,
+                   projection = Metashape.CoordinateSystem(cfg["project_crs"]))
+    else: 
+        # call with classes argument
+        doc.chunk.exportPoints(path = output_file,
+                           source = cfg["exportPoints"]["source"],
+                           precision = cfg["exportPoints"]["precision"],
+                           format = Metashape.PointsFormatLAS,
+                           projection = Metashape.CoordinateSystem(cfg["project_crs"]),
+                           clases = cfg["exportPoints"]["classes"])
 
     return True
 
-def export_report(path):
+
+
+
+
+def export_report(doc, run_id, cfg):
     '''
     Export report
     '''
     
-    output_file = os.path.join(path, project_id+'_report.pdf')
+    output_file = os.path.join(cfg["output_path"], run_id+'_report.pdf')
 
-    chunk.exportReport(path = output_file)
+    doc.chunk.exportReport(path = output_file)
     
     return True
 
 
 
-def finish_run():
+def finish_run(log_file):
     '''
     Finish run (i.e., write completed time to log)
     '''
