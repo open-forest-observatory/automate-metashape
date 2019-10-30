@@ -42,6 +42,8 @@ meta.add_photos(doc, cfg)
 
 meta.align_photos(doc, log, cfg)
 
+meta.calibrate_reflectance(doc, cfg)
+
 meta.optimize_cameras(doc, cfg)
 
 meta.build_depth_maps(doc, log, cfg)

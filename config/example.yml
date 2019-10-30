@@ -26,7 +26,12 @@ project_crs: "EPSG::26910"
 alignPhotos:
     accuracy: Metashape.HighAccuracy
     adaptive_fitting: True
-    
+
+calibrateReflectance:
+    panel_path: "calibration/RP04-1923118-OB.csv"
+    use_reflectance_panels: True
+    use_sun_sensor: True
+
 optimizeCameras:
     adaptive_fitting: True
     

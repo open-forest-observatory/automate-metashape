@@ -26,7 +26,12 @@ import glob
 import Metashape
 
 
-#### some helper functions and globals
+#### Helper functions and globals
+
+# Set the log file name-value separator
+# Chose ; as : is in timestamps
+# TODO: Consider moving log to json formatting using a dict
+sep = "; "
 
 def stamp_time():
     ''' 
@@ -41,12 +46,8 @@ def diff_time(t2, t1):
     '''
     total = str(round(t2-t1, 1))
     return total
-    
-# Set the log file name-value separator
-# Chose ; as : is in timestamps
-# TODO: Consider moving log to json formatting using a dict
-sep = "; "
 
+#### Functions for each major step in Metashape
 
 def project_setup(cfg):
     '''
@@ -183,6 +184,22 @@ def add_photos(doc, cfg):
     doc.save()
     
     return True
+
+
+def calibrate_reflectance(doc, cfg):
+    
+    # TODO: Handle failure to find panels, or mulitple panel images by returning error to user.
+    doc.chunk.locateReflectancePanels()
+    # TODO: Might need full path to calibration csv
+    #doc.chunk.loadReflectancePanelCalibration("calibration/RP04-1923118-OB.csv")
+    doc.chunk.loadReflectancePanelCalibration(cfg["calibrateReflectance"]["panel_path"])
+    #doc.chunk.calibrateReflectance(use_reflectance_panels=True,use_sun_sensor=True)
+    doc.chunk.calibrateReflectance(use_reflectance_panels=["calibrateReflectance"]["use_reflectance_panels"],
+                                   use_sun_sensor=["calibrateReflectance"]["use_sun_sensor"])
+    doc.save()
+    
+    return True
+
 
 
 def align_photos(doc, log_file, cfg):
