@@ -22,6 +22,9 @@ import Metashape
 
 #### some helper functions and globals
 
+#default_path = '/share/spatial02/latimer/forest_benchmark'
+default_path = '/home/vulpes/GoogleDrive/Biogeo/CenterSpatialSciences/Consulting/Nocco/Test flight for Alex/P31_2019_JUL_08_01/'
+
 def stamp_time():
     ''' 
     Format the timestamps as needed
@@ -47,10 +50,10 @@ sep = "; "
 if (len(sys.argv) >= 2):
     folderpath = os.path.expanduser(sys.argv[1])
 else:
-    folderpath = os.path.expanduser('/share/spatial02/latimer/forest_benchmark')
+    folderpath = os.path.expanduser(default_path)
 
-photos_path = os.path.join(folderpath,'raw_images')
-photo_files = [file.path for file in os.scandir(photos_path) if file.path.endswith('.jpg')]
+photos_path = os.path.join(folderpath,'subset')
+photo_files = [file.path for file in os.scandir(photos_path) if file.path.endswith('.tif')]
 
 # TODO: results should go to a subfolder for a particular benchmark
 unique_id = ''.join(['benchmark_', stamp_time().replace(":","")])
@@ -72,7 +75,7 @@ project_crs = Metashape.CoordinateSystem("EPSG::4326")
 #### Create doc, chunk
 
 # create a handle to the Metashape object
-doc = Metashape.app.document
+doc = Metashape.Document()
 
 # Save doc (necessary for steps after point cloud because there needs to be a project file)
 doc.save(project_file)
@@ -138,8 +141,12 @@ doc.save()
 
 
 #### Load the calibration
-chunk.
 
+# Find the photos by qrcode
+chunk.locateReflectancePanels()
+# TODO: Might need full path to calibration csv
+chunk.loadReflectancePanelCalibration("calibration/RP04-1923118-OB.csv")
+chunk.calibrateReflectance(use_reflectance_panels=True,use_sun_sensor=True)
 
 #### Align photos
 
@@ -216,7 +223,7 @@ with open(log_file, 'a') as file:
 
 
 #### Classify ground points
-chunk.dense_cloud.classifyGroundPoints()
+#chunk.dense_cloud.classifyGroundPoints()
 doc.save()
 
 
@@ -227,7 +234,8 @@ doc.save()
 timer5a = time.time()
 
 # build DEM
-chunk.buildDem(projection = project_crs, classes=[Metashape.PointClass.Ground])
+#chunk.buildDem(projection = project_crs, classes=[Metashape.PointClass.Ground])
+chunk.buildDem(projection = project_crs)
 
 # get an ending time stamp for the previous step
 timer5b = time.time()
@@ -268,7 +276,7 @@ with open(log_file, 'a') as file:
 timer7a = time.time()
 chunk.exportDem(os.path.join(output, 'DTM.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
 timer7b = time.time()
-chunk.exportOrthomosaic(os.path.join(output, 'ortho.tif'), tiff_big = True, tiff_tiled = False, projection = project_crs)
+chunk.exportOrthomosaic(os.path.join(output, 'ortho.tif'), tiff_big = True, tiff_tiled = True, write_alpha=False, projection = project_crs)
 timer7c = time.time()
 chunk.exportPoints(os.path.join(output, 'points.las'), format = Metashape.PointsFormatLAS, projection = project_crs)
 timer7d = time.time()
