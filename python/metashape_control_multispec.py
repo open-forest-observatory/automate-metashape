@@ -48,6 +48,8 @@ meta.calibrate_reflectance(doc, cfg)
 
 meta.optimize_cameras(doc, cfg)
 
+#These go together.
+meta.build_depth_maps(doc, log, cfg)
 meta.build_dense_cloud(doc, log, cfg)
 
 meta.build_dem(doc, log, cfg)
