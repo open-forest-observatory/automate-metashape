@@ -2,7 +2,7 @@
 
 # Project
 # This will save the project file psx and working files
-project_path: "/storage/forestuav/metashape_projects/analysis1"
+project_path: "/storage/forestuav/metashape_projects/analysis4"
 
 # The path to the directory of flight photos
 # If multiple folders, set path to the top level above the photos?
@@ -10,7 +10,7 @@ project_path: "/storage/forestuav/metashape_projects/analysis1"
 photo_path: "/storage/forestuav/imagery/missions/01c_ChipsA_120m_thinned22_subset"
 
 # Path for exports and processing log/benchmark data
-output_path: "/storage/forestuav/metashape_outputs/analysis1"
+output_path: "/storage/forestuav/metashape_outputs/analysis4"
 
 # The identifier for the set of photos (set to "%lookup%" to take from the photo path string. It would take element A if the photo folder is named A_B_C_D_E)
 photoset_id: "%lookup%"  #"01c"
