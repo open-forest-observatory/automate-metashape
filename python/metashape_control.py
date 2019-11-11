@@ -15,17 +15,17 @@ manual_config_file = "config/example.yml"
 
 
 ## Load custom modules: slightly different depending whether running interactively or via command line
-if hasattr(sys,"ps1"): # running interactively
+try: # running interactively
     from python import metashape_pipeline_functions as meta
     from python import read_yaml  
-else: # running from command line
+except: # running from command line
     import metashape_pipeline_functions as meta
     import read_yaml
     
 ## Load config file: different depending whether running interactively or via command line
-if hasattr(sys,"ps1"): # running interactively
+try: # running interactively
     config_file = manual_config_file
-else: # running from command line
+except: # running from command line
     config_file = sys.argv[1]
     
 
