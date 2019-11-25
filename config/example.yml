@@ -1,16 +1,20 @@
 # This is an example yaml configuration for a metashape process
 
 # Project
+
+# If not a blank string, this will open an existing project at the path specified
+load_project: "" #/storage/forestuav/metashape_projects/analysis5/20191124T2245_14_EmPo.psx
+
 # This will save the project file psx and working files
-project_path: "/storage/forestuav/metashape_projects/analysis1"
+project_path: "/storage/forestuav/metashape_projects/analysis5"
 
 # The path to the directory of flight photos
 # If multiple folders, set path to the top level above the photos?
 # Photo folders should only include 1 set of calibration images if doing calibration
-photo_path: "/storage/forestuav/imagery/missions/01c_ChipsA_120m_thinned22_subset"
+photo_path: "/storage/forestuav/imagery/missions/01c_ChipsA_120m_thinned22_subset"   #"/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"
 
 # Path for exports and processing log/benchmark data
-output_path: "/storage/forestuav/metashape_outputs/analysis1"
+output_path: "/storage/forestuav/metashape_outputs/analysis6"
 
 # The identifier for the set of photos (set to "%lookup%" to take from the photo path string. It would take element A if the photo folder is named A_B_C_D_E)
 photoset_id: "%lookup%"  #"01c"
@@ -21,47 +25,64 @@ location: "%lookup%" #"ChipsA"
 # CRS EPSG code that project outputs should be in
 project_crs: "EPSG::26910"
 
+# CRS EPSG code of GCP coordinates
+gcp_crs: "EPSG::4326"  #"EPSG::26910"
 
+
+addGCPs:
+    enabled: True
+    marker_location_accuracy: 0.05 # accuracy of GCPs real-world coordinates, in meters
+    marker_projection_accuracy: 8 # accuracy of the identified locations of the GCPs within the images, in pixels
+    optimize_w_gcps_only: True
 
 alignPhotos:
+    enabled: True
     accuracy: Metashape.HighAccuracy
     adaptive_fitting: True
 
 calibrateReflectance:
+    enabled: False
     panel_path: "calibration/RP04-1923118-OB.csv"
     use_reflectance_panels: True
     use_sun_sensor: True
 
 optimizeCameras:
+    enabled: True
     adaptive_fitting: True
     
 buildDepthMaps:
+    enabled: True
     quality: Metashape.MediumQuality
     filter: Metashape.MildFiltering
     reuse_depth: False
     max_neighbors: 100
     
 buildDenseCloud:
+    enabled: True
     keep_depth: False
     max_neighbors: 100
     
 classifyGroundPoints:
+    enabled: True
     max_angle: 15.0
     max_distance: 1.0
     cell_size: 50.0
   
 buildDem:
+    enabled: True
     classes:
         - Metashape.PointClass.Ground # Must be a list, or can set to "ALL" to use all points
     source: Metashape.DenseCloudData
     
 buildOrthomosaic:
+    enabled: True
     surface: Metashape.ElevationData
     blending: Metashape.MosaicBlending
     fill_holes: True
     refine_seamlines: True
     
 exportDem:
+    enabled: True
     tiff_big: True
     tiff_tiled: False
     image_format: Metashape.ImageFormatTIFF
@@ -70,13 +91,15 @@ exportDem:
     tiff_overviews: True
     
 exportOrthomosaic:
+    enabled: True
     tiff_big: True
     tiff_tiled: False
     image_format: Metashape.ImageFormatTIFF
     projection: Metashape.CoordinateSystem("EPSG::32610")
     tiff_overviews: True
     
-exportPoints: 
+exportPoints:
+    enabled: True
     source: Metashape.DenseCloudData
     precision: 6
     format: Metashape.PointsFormatLAS
