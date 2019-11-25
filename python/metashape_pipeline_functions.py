@@ -1,11 +1,3 @@
-"""
-Created on Mon Oct 21 13:45:15 2019
-
-@author: Alex Mandel
-
-"""# Simplified version of benchmark script
-# Runs only one project; does not need pre-existing Metashape project files; 
-
 # Derek Young and Alex Mandel
 # University of California, Davis
 # 2019
@@ -20,7 +12,6 @@ import os
 import glob
 
 ### import the Metashape functionality
-# If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
 import Metashape
 
 
@@ -28,7 +19,7 @@ import Metashape
 
 # Set the log file name-value separator
 # Chose ; as : is in timestamps
-# TODO: Consider moving log to json formatting using a dict
+# TODO: Consider moving log to json/yaml formatting using a dict
 sep = "; "
 
 def stamp_time():
@@ -45,6 +36,22 @@ def diff_time(t2, t1):
     total = str(round(t2-t1, 1))
     return total
 
+# Used by add_gcps function
+def get_marker(chunk, label):
+    for marker in chunk.markers:
+        if marker.label == label:
+            return marker
+    return None
+
+# Used by add_gcps function
+def get_camera(chunk, label):
+    for camera in chunk.cameras:
+        if camera.label == label:
+            return camera
+    return None
+
+
+
 #### Functions for each major step in Metashape
 
 def project_setup(cfg):
@@ -55,7 +62,9 @@ def project_setup(cfg):
     Create the project
     Start a log file
     '''
-    
+
+
+    # Make project directories (necessary even if loading an existing project because this workflow saves a new project based on the old one, leaving the old one intact
     if not os.path.exists(cfg["output_path"]):
         os.makedirs(cfg["output_path"])
     if not os.path.exists(cfg["project_path"]):
@@ -79,7 +88,7 @@ def project_setup(cfg):
     else:
         location = cfg["location"]
     
-    ## Project file example to make: "01c_ChipsA_YYYYMMDD-jobid.psx"
+    ## Project file example to make: "01c_ChipsA_YYYYMMDDtHHMM-jobid.psx"
     timestamp = stamp_time()
     # TODO: allow a nonexistent location string
     run_id = "_".join([timestamp,set_id,location])
@@ -96,15 +105,20 @@ def project_setup(cfg):
 
     # create a handle to the Metashape object
     doc = Metashape.Document() #When running via Metashape, can use: doc = Metashape.app.document 
-    
-    # Save doc (necessary for steps after point cloud because there needs to be a project file)
+
+    # If specified, open existing project
+    if cfg["load_project"] != "":
+        doc.open(cfg["load_project"])
+    else:
+        # Initialize a chunk, set its CRS as specified
+        chunk = doc.addChunk()
+        chunk.crs = Metashape.CoordinateSystem(cfg["project_crs"])
+        chunk.marker_crs = Metashape.CoordinateSystem(cfg["gcp_crs"])
+
+    # Save doc doc as new project (even if we opened an existing project, save as a separate one so the existing project remains accessible in its original state)
     doc.save(project_file)
     
-    # Initialize a chunk, set its CRS as specified
-    chunk = doc.addChunk()
-    chunk.crs = Metashape.CoordinateSystem(cfg["project_crs"])
-    
-    
+
     '''
     Log specs except for GPU
     '''
@@ -165,11 +179,9 @@ def enable_and_log_gpu(log_file):
     return True
 
 
-
 def add_photos(doc, cfg):
     '''
-    Add photos to project
-    
+    Add photos to project and change their labels to include their containing folder
     '''
 
     ## Get paths to all the project photos
@@ -186,9 +198,62 @@ def add_photos(doc, cfg):
         path_parts = path.split("/")[-2:]
         newlabel = "/".join(path_parts)
         camera.label = newlabel
-        
+
     doc.save()
     
+    return True
+
+
+def add_gcps(doc, cfg):
+    '''
+    Add GCPs (GCP coordinates and the locations of GCPs in individual photos.
+    See the helper script (and the comments therein) for details on how to prepare the data needed by this function: R/prep_gcps.R
+    '''
+
+    ## Tag specific pixels in specific images where GCPs are located
+    path = os.path.join(cfg["photo_path"], "gcps", "prepared", "gcp_imagecoords_table.csv")
+    file = open(path)
+    content = file.read().splitlines()
+
+    for line in content:
+        marker_label, camera_label, x_proj, y_proj = line.split(",")
+        marker_label = marker_label[1:-1]  # need to get it out of the two pairs of quotes
+        camera_label = camera_label[1:-1]
+
+        marker = get_marker(doc.chunk, marker_label)
+        if not marker:
+            marker = doc.chunk.addMarker()
+            marker.label = marker_label
+
+        camera = get_camera(doc.chunk, camera_label)
+        if not camera:
+            print(camera_label + " camera not found in project")
+            continue
+
+        marker.projections[camera] = Metashape.Marker.Projection((float(x_proj), float(y_proj)), True)
+
+
+    ## Assign real-world coordinates to each GCP
+    path = os.path.join(cfg["photo_path"], "gcps", "prepared", "gcp_table.csv")
+
+    file = open(path)
+    content = file.read().splitlines()
+
+    for line in content:
+        marker_label, world_x, world_y, world_z = line.split(",")
+        marker_label = marker_label[1:-1]  # need to get it out of the two pairs of quotes
+
+        marker = get_marker(doc.chunk, marker_label)
+        if not marker:
+            marker = doc.chunk.addMarker()
+            marker.label = marker_label
+
+        marker.reference.location = (float(world_x), float(world_y), float(world_z))
+        marker.reference.accuracy = (cfg["addGCPs"]["marker_location_accuracy"], cfg["addGCPs"]["marker_location_accuracy"], cfg["addGCPs"]["marker_location_accuracy"])
+
+    doc.chunk.marker_location_accuracy = (cfg["addGCPs"]["marker_location_accuracy"],cfg["addGCPs"]["marker_location_accuracy"],cfg["addGCPs"]["marker_location_accuracy"])
+    doc.chunk.marker_projection_accuracy = cfg["addGCPs"]["marker_projection_accuracy"]
+
     return True
 
 
@@ -241,8 +306,14 @@ def optimize_cameras(doc, cfg):
     '''
     Optimize cameras
     '''
-    
-    # Includes adaptive camera model fitting. I set it to optimize all parameters even though the defaults exclude a few.
+
+    # Disable camera locations as reference if specified in YML
+    if cfg["addGCPs"]["enabled"] and cfg["addGCPs"]["optimize_w_gcps_only"]:
+        n_cameras = len(doc.chunk.cameras)
+        for i in range(1, n_cameras):
+            doc.chunk.cameras[i].reference.enabled = False
+
+    # Currently only optimizes the default parameters, which is not all possible parameters
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
     doc.save()
 
