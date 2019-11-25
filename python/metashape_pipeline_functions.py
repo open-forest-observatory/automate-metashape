@@ -46,7 +46,7 @@ def get_marker(chunk, label):
 # Used by add_gcps function
 def get_camera(chunk, label):
     for camera in chunk.cameras:
-        if camera.label == label:
+        if camera.label.lower() == label.lower():
             return camera
     return None
 
@@ -253,6 +253,8 @@ def add_gcps(doc, cfg):
 
     doc.chunk.marker_location_accuracy = (cfg["addGCPs"]["marker_location_accuracy"],cfg["addGCPs"]["marker_location_accuracy"],cfg["addGCPs"]["marker_location_accuracy"])
     doc.chunk.marker_projection_accuracy = cfg["addGCPs"]["marker_projection_accuracy"]
+
+    doc.save()
 
     return True
 
