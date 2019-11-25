@@ -179,6 +179,14 @@ def add_photos(doc, cfg):
     
     ## Add them
     doc.chunk.addPhotos(photo_files)
+
+    ## Need to change the label on each camera so that it includes the containing folder
+    for camera in doc.chunk.cameras:
+        path = camera.photo.path
+        path_parts = path.split("/")[-2:]
+        newlabel = "/".join(path_parts)
+        camera.label = newlabel
+        
     doc.save()
     
     return True
