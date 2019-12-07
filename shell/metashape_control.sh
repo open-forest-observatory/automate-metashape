@@ -7,7 +7,7 @@ hostname -f
 # Set ENV variable to a specific font so reports work
 export QT_QPA_FONTDIR='/usr/share/fonts/truetype/dejavu/'
 
-source auth.auth
+#source auth.auth
 
 CONFIG_FILE=${1} 
 
