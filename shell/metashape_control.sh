@@ -14,6 +14,6 @@ CONFIG_FILE=${1}
 # Run the Benchmark
 # First arg is the Metashape python pipeline script,
 # Second arg is the config file
-python -r ${1} ${2}
+python ${1} ${2}
 
 
