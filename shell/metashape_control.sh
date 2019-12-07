@@ -1,5 +1,19 @@
-python ~/Documents/projects/metashape/python/metashape_control.py ~/Documents/projects/metashape/config/example.yml
-#python ${1} ${2}
+#!/bin/bash
+# Path to metashape 
+# TODO: fix so this is more universal
+#metashape='../metashape_pro'
+hostname -f
 
-# Slurm variant, no metashape resource yet
-sbatch -p high --time=1:00:00 --job-name=MetaGPUf -c 12 --gres=gpu:1 --mem=32768 metashape_benchmark.sh ~/Documents/projects/metashape/python/metashape_control.py ~/Documents/projects/metashape/config/example.yml
+# Set ENV variable to a specific font so reports work
+export QT_QPA_FONTDIR='/usr/share/fonts/truetype/dejavu/'
+
+source auth.auth
+
+CONFIG_FILE=${1} 
+
+# Run the Benchmark
+# First arg is the Metashape python pipeline script,
+# Second arg is the config file
+python -r ${1} ${2}
+
+
