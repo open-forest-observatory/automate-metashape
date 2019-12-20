@@ -3,18 +3,18 @@
 # Project
 
 # If not a blank string, this will open an existing project at the path specified
-load_project: "" #/storage/forestuav/metashape_projects/analysis5/20191124T2245_14_EmPo.psx
+load_project: "" #/storage/forestuav/metashape_projects/analysis7/20191125T1546_14_EmPo.psx
 
 # This will save the project file psx and working files
-project_path: "/storage/forestuav/metashape_projects/test_1_local"
+project_path: "/storage/forestuav/metashape_projects/analysis7"
 
 # The path to the directory of flight photos
 # If multiple folders, set path to the top level above the photos?
 # Photo folders should only include 1 set of calibration images if doing calibration
-photo_path: "/storage/forestuav/imagery/missions/01b_ChipsA_120m_thinned22"   #"/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"
+photo_path: "/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"   #"/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"
 
 # Path for exports and processing log/benchmark data
-output_path: "/storage/forestuav/metashape_outputs/test_1_local"
+output_path: "/storage/forestuav/metashape_outputs/analysis7"
 
 # The identifier for the set of photos (set to "%lookup%" to take from the photo path string. It would take element A if the photo folder is named A_B_C_D_E)
 photoset_id: "%lookup%"  #"01c"
@@ -26,11 +26,11 @@ location: "%lookup%" #"ChipsA"
 project_crs: "EPSG::26910"
 
 # CRS EPSG code of GCP coordinates
-gcp_crs: "EPSG::4326"  #"EPSG::26910"
+gcp_crs: "EPSG::26910"  #"EPSG::26910"  4326
 
 
 addGCPs:
-    enabled: False
+    enabled: True
     marker_location_accuracy: 0.05 # accuracy of GCPs real-world coordinates, in meters
     marker_projection_accuracy: 8 # accuracy of the identified locations of the GCPs within the images, in pixels
     optimize_w_gcps_only: True
