@@ -286,7 +286,7 @@ def align_photos(doc, log_file, cfg):
     timer1a = time.time()
     
     # Align cameras
-    doc.chunk.matchPhotos(accuracy=cfg["alignPhotos"]["accuracy"])
+    doc.chunk.matchPhotos(downscale=cfg["alignPhotos"]["downscale"])
     doc.chunk.alignCameras(adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"])
     doc.save()
     
@@ -332,7 +332,7 @@ def build_depth_maps(doc, log_file, cfg):
     timer2a = time.time()
     
     # build depth maps only instead of also building the dense cloud ##?? what does 
-    doc.chunk.buildDepthMaps(quality=cfg["buildDepthMaps"]["quality"], filter=cfg["buildDepthMaps"]["filter"], reuse_depth = cfg["buildDepthMaps"]["reuse_depth"], max_neighbors = cfg["buildDepthMaps"]["max_neighbors"])
+    doc.chunk.buildDepthMaps(downscale=cfg["buildDepthMaps"]["downscale"], filter=cfg["buildDepthMaps"]["filter"], reuse_depth = cfg["buildDepthMaps"]["reuse_depth"], max_neighbors = cfg["buildDepthMaps"]["max_neighbors"])
     doc.save()
     
     # get an ending time stamp for the previous step
