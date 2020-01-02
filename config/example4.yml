@@ -3,7 +3,7 @@
 # Project
 
 # If not a blank string, this will open an existing project at the path specified
-load_project: "/storage/forestuav/metashape_projects/full_test_1.6.0_22/20200101T2121_01c_ChipsA.psx" #"/storage/forestuav/metashape_projects/full_test_1.6.0_22/20200101T2107_01c_ChipsA.psx" #"/storage/forestuav/metashape_projects/full_test_1.6.0_2/20200101T2044_01c_ChipsA.psx" #"/storage/forestuav/metashape_projects/analysis5/20191125T1334_01c_ChipsA.psx" #"/storage/forestuav/metashape_projects/analysis7/20191203T1954_14_EmPo.psx" #/storage/forestuav/metashape_projects/analysis7/20191125T1546_14_EmPo.psx
+load_project: "" #"/storage/forestuav/metashape_projects/full_test_1.6.0_22/20200101T2121_01c_ChipsA.psx" #"/storage/forestuav/metashape_projects/full_test_1.6.0_22/20200101T2107_01c_ChipsA.psx" #"/storage/forestuav/metashape_projects/full_test_1.6.0_2/20200101T2044_01c_ChipsA.psx" #"/storage/forestuav/metashape_projects/analysis5/20191125T1334_01c_ChipsA.psx" #"/storage/forestuav/metashape_projects/analysis7/20191203T1954_14_EmPo.psx" #/storage/forestuav/metashape_projects/analysis7/20191125T1546_14_EmPo.psx
 
 # The path to the directory of flight photos
 # If multiple folders, set path to the top level above the photos?
@@ -11,10 +11,10 @@ load_project: "/storage/forestuav/metashape_projects/full_test_1.6.0_22/20200101
 photo_path: "/storage/forestuav/imagery/missions/01c_ChipsA_120m_thinned22_subset"   #"/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"
 
 # This will save the project file psx and working files
-project_path: "/storage/forestuav/metashape_projects/full_test_1.6.0_22"
+project_path: "/storage/forestuav/metashape_projects/full_test_1.6.0_22_subdivide_test"
 
 # Path for exports and processing log/benchmark data
-output_path: "/storage/forestuav/metashape_outputs/full_test_1.6.0_22"
+output_path: "/storage/forestuav/metashape_outputs/full_test_1.6.0_22_subdivide_test"
 
 # The identifier for the set of photos (set to "%lookup%" to take from the photo path string. It would take element A if the photo folder is named A_B_C_D_E)
 photoset_id: "%lookup%"  #"01c"
@@ -28,6 +28,9 @@ project_crs: "EPSG::26910"
 # CRS EPSG code of GCP coordinates
 gcp_crs: "EPSG::26910"  #"EPSG::26910"  4326
 
+# Whether to tell metashape to enable "fine-level task subdivision" which reduces memory by breaking processing into independent chunks that are run in series. Assuming there's enough memory, it seems to run 10-20% faster by disabling subdividing.
+subdivide_task: False
+
 
 addGCPs:
     enabled: False
@@ -36,7 +39,7 @@ addGCPs:
     optimize_w_gcps_only: True
 
 alignPhotos:
-    enabled: False
+    enabled: True
     downscale: 1
     adaptive_fitting: True
 
@@ -47,18 +50,18 @@ calibrateReflectance:
     use_sun_sensor: True
 
 optimizeCameras:
-    enabled: False
+    enabled: True
     adaptive_fitting: True
 
 buildDepthMaps:
-    enabled: False
+    enabled: True
     downscale: 4
     filter_mode: Metashape.MildFiltering
     reuse_depth: False
     max_neighbors: 100
 
 buildDenseCloud:
-    enabled: False
+    enabled: True
     keep_depth: False
     max_neighbors: 100
 

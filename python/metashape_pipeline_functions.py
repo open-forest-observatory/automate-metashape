@@ -286,8 +286,10 @@ def align_photos(doc, log_file, cfg):
     timer1a = time.time()
     
     # Align cameras
-    doc.chunk.matchPhotos(downscale=cfg["alignPhotos"]["downscale"])
-    doc.chunk.alignCameras(adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"])
+    doc.chunk.matchPhotos(downscale=cfg["alignPhotos"]["downscale"],
+                          subdivide_task = cfg["subdivide_task"])
+    doc.chunk.alignCameras(adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"],
+                           subdivide_task = cfg["subdivide_task"])
     doc.save()
     
     # get an ending time stamp
@@ -332,7 +334,11 @@ def build_depth_maps(doc, log_file, cfg):
     timer2a = time.time()
     
     # build depth maps only instead of also building the dense cloud ##?? what does 
-    doc.chunk.buildDepthMaps(downscale=cfg["buildDepthMaps"]["downscale"], filter_mode=cfg["buildDepthMaps"]["filter_mode"], reuse_depth = cfg["buildDepthMaps"]["reuse_depth"], max_neighbors = cfg["buildDepthMaps"]["max_neighbors"])
+    doc.chunk.buildDepthMaps(downscale=cfg["buildDepthMaps"]["downscale"],
+                             filter_mode=cfg["buildDepthMaps"]["filter_mode"],
+                             reuse_depth = cfg["buildDepthMaps"]["reuse_depth"],
+                             max_neighbors = cfg["buildDepthMaps"]["max_neighbors"],
+                             subdivide_task = cfg["subdivide_task"])
     doc.save()
     
     # get an ending time stamp for the previous step
@@ -360,7 +366,8 @@ def build_dense_cloud(doc, log_file, cfg):
     
     # build dense cloud
     doc.chunk.buildDenseCloud(max_neighbors=cfg["buildDenseCloud"]["max_neighbors"],
-                          keep_depth = cfg["buildDenseCloud"]["keep_depth"])
+                          keep_depth = cfg["buildDenseCloud"]["keep_depth"],
+                          subdivide_task = cfg["subdivide_task"])
     doc.save()
     
     # get an ending time stamp for the previous step
@@ -419,12 +426,14 @@ def build_dem(doc, log_file, cfg):
     
     if cfg["buildDem"]["classes"] == "ALL":
         # call without classes argument (Metashape then defaults to all classes)
-        doc.chunk.buildDem(source_data = cfg["buildDem"]["source"]) # removed projection argument
+        doc.chunk.buildDem(source_data = cfg["buildDem"]["source"],
+                           subdivide_task = cfg["subdivide_task"]) # removed projection argument
     else:
         # call with classes argument
         doc.chunk.buildDem(source_data = cfg["buildDem"]["source"],
                            #projection = projection,
-                           classes = cfg["buildDem"]["classes"])
+                           classes = cfg["buildDem"]["classes"],
+                           subdivide_task = cfg["subdivide_task"])
     
     # get an ending time stamp for the previous step
     timer5b = time.time()
@@ -452,7 +461,8 @@ def build_orthomosaic(doc, log_file, cfg):
     doc.chunk.buildOrthomosaic(surface_data=cfg["buildOrthomosaic"]["surface"],
                                blending_mode=cfg["buildOrthomosaic"]["blending"],
                                fill_holes=cfg["buildOrthomosaic"]["fill_holes"],
-                               refine_seamlines=cfg["buildOrthomosaic"]["refine_seamlines"])  ## removed: projection=Metashape.CoordinateSystem(cfg["project_crs"])
+                               refine_seamlines=cfg["buildOrthomosaic"]["refine_seamlines"],
+                               subdivide_task = cfg["subdivide_task"])  ## removed: projection=Metashape.CoordinateSystem(cfg["project_crs"])
     doc.save()
     
     # get an ending time stamp for the previous step
@@ -522,7 +532,8 @@ def export_points(doc, log_file, run_id, cfg):
                    source_data = cfg["exportPoints"]["source"],
                    #precision = cfg["exportPoints"]["precision"], ### removed in 1.6.0
                    format = Metashape.PointsFormatLAS,
-                   crs = Metashape.CoordinateSystem(cfg["project_crs"]))
+                   crs = Metashape.CoordinateSystem(cfg["project_crs"]),
+                   subdivide_task = cfg["subdivide_task"])
     else: 
         # call with classes argument
         doc.chunk.exportPoints(path = output_file,
@@ -530,7 +541,8 @@ def export_points(doc, log_file, run_id, cfg):
                            #precision = cfg["exportPoints"]["precision"],  ### removed in 1.6.0
                            format = Metashape.PointsFormatLAS,
                            crs = Metashape.CoordinateSystem(cfg["project_crs"]),
-                           clases = cfg["exportPoints"]["classes"])
+                           clases = cfg["exportPoints"]["classes"],
+                           subdivide_task = cfg["subdivide_task"])
 
     return True
 
