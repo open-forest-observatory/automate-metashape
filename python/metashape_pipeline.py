@@ -60,6 +60,9 @@ if cfg["classifyGroundPoints"]["enabled"]:
 if cfg["buildDem"]["enabled"]:
     meta.build_dem(doc, log, cfg)
 
+if cfg["importDem"]["enabled"]:
+    meta.import_dem(doc, log, cfg)
+
 if cfg["buildOrthomosaic"]["enabled"]:
     meta.build_orthomosaic(doc, log, cfg)
 

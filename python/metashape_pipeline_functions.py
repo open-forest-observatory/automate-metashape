@@ -421,19 +421,21 @@ def build_dem(doc, log_file, cfg):
     # get a beginning time stamp for the next step
     timer5a = time.time()
 
-    projection = Metashape.OrthoProjection
+    projection = Metashape.OrthoProjection()
     projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
     
     if cfg["buildDem"]["classes"] == "ALL":
         # call without classes argument (Metashape then defaults to all classes)
         doc.chunk.buildDem(source_data = cfg["buildDem"]["source"],
-                           subdivide_task = cfg["subdivide_task"]) # removed projection argument
+                           subdivide_task = cfg["subdivide_task"],
+                           projection = projection)
     else:
         # call with classes argument
         doc.chunk.buildDem(source_data = cfg["buildDem"]["source"],
                            #projection = projection,
                            classes = cfg["buildDem"]["classes"],
-                           subdivide_task = cfg["subdivide_task"])
+                           subdivide_task = cfg["subdivide_task"],
+                           projection = projection)
     
     # get an ending time stamp for the previous step
     timer5b = time.time()
@@ -447,7 +449,23 @@ def build_dem(doc, log_file, cfg):
         
     return True
 
-    
+
+def import_dem(doc, log_file, cfg):
+    '''
+    Import DEM
+    '''
+
+    path = os.path.join(cfg["photo_path"],cfg["importDem"]["path"])
+
+    crs = Metashape.CoordinateSystem(cfg["importDem"]["crs"])
+
+    doc.chunk.importRaster(path=path,
+                           crs=crs,
+                           raster_type=Metashape.ElevationData)
+
+    return True
+
+
 
 def build_orthomosaic(doc, log_file, cfg):
     '''
@@ -456,13 +474,17 @@ def build_orthomosaic(doc, log_file, cfg):
     
     # get a beginning time stamp for the next step
     timer6a = time.time()
+
+    projection = Metashape.OrthoProjection()
+    projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
     
     # build orthomosaic
     doc.chunk.buildOrthomosaic(surface_data=cfg["buildOrthomosaic"]["surface"],
                                blending_mode=cfg["buildOrthomosaic"]["blending"],
                                fill_holes=cfg["buildOrthomosaic"]["fill_holes"],
                                refine_seamlines=cfg["buildOrthomosaic"]["refine_seamlines"],
-                               subdivide_task = cfg["subdivide_task"])  ## removed: projection=Metashape.CoordinateSystem(cfg["project_crs"])
+                               subdivide_task = cfg["subdivide_task"],
+                               projection = projection)
     doc.save()
     
     # get an ending time stamp for the previous step
@@ -489,9 +511,12 @@ def export_dem(doc, log_file, run_id, cfg):
     Metashape.ImageCompression.tiff_big = cfg["exportDem"]["tiff_big"]
     Metashape.ImageCompression.tiff_tiled = cfg["exportDem"]["tiff_tiled"]
     Metashape.ImageCompression.tiff_overviews = cfg["exportDem"]["tiff_overviews"]
+
+    projection = Metashape.OrthoProjection()
+    projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
     
     doc.chunk.exportRaster(path=output_file,
-                    #projection = Metashape.CoordinateSystem(cfg["project_crs"]),
+                    projection = projection,
                     nodata_value=cfg["exportDem"]["nodata"],
                     source_data = Metashape.ElevationData)
 
@@ -510,8 +535,11 @@ def export_orthomosaic(doc, log_file, run_id, cfg):
     Metashape.ImageCompression.tiff_tiled = cfg["exportOrthomosaic"]["tiff_tiled"]
     Metashape.ImageCompression.tiff_overviews = cfg["exportOrthomosaic"]["tiff_overviews"]
 
+    projection = Metashape.OrthoProjection()
+    projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
+
     doc.chunk.exportRaster(path=output_file,
-                           # projection = Metashape.CoordinateSystem(cfg["project_crs"]),
+                           projection = projection,
                            nodata_value=cfg["exportOrthomosaic"]["nodata"],
                            source_data=Metashape.OrthomosaicData)
 
@@ -530,7 +558,6 @@ def export_points(doc, log_file, run_id, cfg):
         # call without classes argument (Metashape then defaults to all classes)
         doc.chunk.exportPoints(path = output_file,
                    source_data = cfg["exportPoints"]["source"],
-                   #precision = cfg["exportPoints"]["precision"], ### removed in 1.6.0
                    format = Metashape.PointsFormatLAS,
                    crs = Metashape.CoordinateSystem(cfg["project_crs"]),
                    subdivide_task = cfg["subdivide_task"])
@@ -538,7 +565,6 @@ def export_points(doc, log_file, run_id, cfg):
         # call with classes argument
         doc.chunk.exportPoints(path = output_file,
                            source_data = cfg["exportPoints"]["source"],
-                           #precision = cfg["exportPoints"]["precision"],  ### removed in 1.6.0
                            format = Metashape.PointsFormatLAS,
                            crs = Metashape.CoordinateSystem(cfg["project_crs"]),
                            clases = cfg["exportPoints"]["classes"],
