@@ -3,24 +3,24 @@
 # Project
 
 # If not a blank string, this will open an existing project at the path specified
-load_project: "" #"/storage/forestuav/metashape_projects/through_classify/20200102T2034_01c_ChipsA.psx" #"/storage/forestuav/metashape_projects/analysis7/20191204T1906_14_EmPo.psx" #"/storage/forestuav/metashape_projects/full_test_1.6.0_22_subdivide_test/20200102T1221_01c_ChipsA.psx"
+load_project: "" #"/storage/collabs/nocco/metashape_projects/20200103T1816_09_20_2019_cherry.psx" # "/storage/forestuav/metashape_projects/through_classify/20200102T2034_01c_ChipsA.psx" "/storage/forestuav/metashape_projects/analysis7/20191204T1906_14_EmPo.psx" "/storage/forestuav/metashape_projects/full_test_1.6.0_22_subdivide_test/20200102T1221_01c_ChipsA.psx"
 
 # The path to the directory of flight photos
 # If multiple folders, set path to the top level above the photos?
 # Photo folders should only include 1 set of calibration images if doing calibration
-photo_path: "/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"   #"/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"
+photo_path: "/storage/collabs/nocco/cherry/09_20_2019"   #"/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"
 
 # This will save the project file psx and working files
-project_path: "/storage/forestuav/metashape_projects/dem_testing"
+project_path: "/storage/collabs/nocco/metashape_projects"
 
 # Path for exports and processing log/benchmark data
-output_path: "/storage/forestuav/metashape_outputs/dem_testing"
+output_path: "/storage/collabs/nocco/cherry/metashape_outputs"
 
 # The identifier for the set of photos (set to "%lookup%" to take from the photo path string. It would take element A if the photo folder is named A_B_C_D_E)
-photoset_id: "%lookup%"  #"01c"
+photoset_id: "09_20_2019_nocalibrate"  #"01c"
 
 # The identifier for the location (set to "%lookup%" to take from the photo path string. It would take element B if the photo folder is named A_B_C_D_E)
-location: "%lookup%" #"ChipsA"
+location: "cherry" #"ChipsA"
 
 # CRS EPSG code that project outputs should be in
 project_crs: "EPSG::26910"
@@ -33,21 +33,21 @@ subdivide_task: False
 
 
 addGCPs:
-    enabled: True
+    enabled: False
     marker_location_accuracy: 0.05 # accuracy of GCPs real-world coordinates, in meters
     marker_projection_accuracy: 8 # accuracy of the identified locations of the GCPs within the images, in pixels
     optimize_w_gcps_only: True
+
+calibrateReflectance:
+    enabled: False
+    panel_path: "/storage/collabs/nocco/cherry/09_20_2019/RP04-1923118-OB.csv"     # example in: "/storage/calibration/RP04-1923118-OB.csv"
+    use_reflectance_panels: True
+    use_sun_sensor: True
 
 alignPhotos:
     enabled: True
     downscale: 1
     adaptive_fitting: True
-
-calibrateReflectance:
-    enabled: False
-    panel_path: "calibration/RP04-1923118-OB.csv"
-    use_reflectance_panels: True
-    use_sun_sensor: True
 
 optimizeCameras:
     enabled: True
@@ -66,19 +66,24 @@ buildDenseCloud:
     max_neighbors: 100
 
 classifyGroundPoints:
-    enabled: False
+    enabled: True
     max_angle: 15.0
     max_distance: 1.0
     cell_size: 50.0
 
 buildDem:
-    enabled: False
+    enabled: True
     classes:
         - Metashape.PointClass.Ground # Must be a list, or can set to "ALL" to use all points
     source: Metashape.DenseCloudData
 
+#buildDem:
+#    enabled: True
+#    classes: "ALL"
+#    source: Metashape.DenseCloudData
+
 importDem:
-    enabled: True
+    enabled: False
     path: "dem_usgs/dem_usgs.tif"
     crs: "EPSG::4269"
 
