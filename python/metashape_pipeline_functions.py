@@ -508,9 +508,10 @@ def export_dem(doc, log_file, run_id, cfg):
     
     output_file = os.path.join(cfg["output_path"], run_id+'_dem.tif')
 
-    Metashape.ImageCompression.tiff_big = cfg["exportDem"]["tiff_big"]
-    Metashape.ImageCompression.tiff_tiled = cfg["exportDem"]["tiff_tiled"]
-    Metashape.ImageCompression.tiff_overviews = cfg["exportDem"]["tiff_overviews"]
+    compression = Metashape.ImageCompression()
+    compression.tiff_big = cfg["exportDem"]["tiff_big"]
+    compression.tiff_tiled = cfg["exportDem"]["tiff_tiled"]
+    compression.tiff_overviews = cfg["exportDem"]["tiff_overviews"]
 
     projection = Metashape.OrthoProjection()
     projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
@@ -518,7 +519,8 @@ def export_dem(doc, log_file, run_id, cfg):
     doc.chunk.exportRaster(path=output_file,
                     projection = projection,
                     nodata_value=cfg["exportDem"]["nodata"],
-                    source_data = Metashape.ElevationData)
+                    source_data = Metashape.ElevationData,
+                    image_compression = compression)
 
     return True
 
@@ -531,9 +533,10 @@ def export_orthomosaic(doc, log_file, run_id, cfg):
     
     output_file = os.path.join(cfg["output_path"], run_id+'_ortho.tif')
 
-    Metashape.ImageCompression.tiff_big = cfg["exportOrthomosaic"]["tiff_big"]
-    Metashape.ImageCompression.tiff_tiled = cfg["exportOrthomosaic"]["tiff_tiled"]
-    Metashape.ImageCompression.tiff_overviews = cfg["exportOrthomosaic"]["tiff_overviews"]
+    compression = Metashape.ImageCompression()
+    compression.tiff_big = cfg["exportOrthomosaic"]["tiff_big"]
+    compression.tiff_tiled = cfg["exportOrthomosaic"]["tiff_tiled"]
+    compression.tiff_overviews = cfg["exportOrthomosaic"]["tiff_overviews"]
 
     projection = Metashape.OrthoProjection()
     projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
@@ -541,7 +544,8 @@ def export_orthomosaic(doc, log_file, run_id, cfg):
     doc.chunk.exportRaster(path=output_file,
                            projection = projection,
                            nodata_value=cfg["exportOrthomosaic"]["nodata"],
-                           source_data=Metashape.OrthomosaicData)
+                           source_data=Metashape.OrthomosaicData,
+                           image_compression=compression)
 
     return True
 
