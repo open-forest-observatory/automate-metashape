@@ -10,6 +10,7 @@ import datetime
 import platform
 import os
 import glob
+import re
 
 ### import the Metashape functionality
 import Metashape
@@ -185,10 +186,11 @@ def add_photos(doc, cfg):
     '''
 
     ## Get paths to all the project photos
-    a = glob.iglob(os.path.join(cfg["photo_path"],"**","*.[jJ][pP][gG]"))
+    a = glob.iglob(os.path.join(cfg["photo_path"],"**","*.*"))   #(([jJ][pP][gG])|([tT][iI][fF]))
     b = [path for path in a]
-    photo_files = b
-    
+    photo_files = [x for x in b if re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)",x)]
+
+
     ## Add them
     doc.chunk.addPhotos(photo_files)
 
@@ -201,6 +203,19 @@ def add_photos(doc, cfg):
 
     doc.save()
     
+    return True
+
+
+def calibrate_reflectance(doc, cfg):
+    # TODO: Handle failure to find panels, or mulitple panel images by returning error to user.
+    doc.chunk.locateReflectancePanels()
+    # TODO: Might need full path to calibration csv
+    doc.chunk.loadReflectancePanelCalibration(cfg["calibrateReflectance"]["panel_path"])
+    # doc.chunk.calibrateReflectance(use_reflectance_panels=True,use_sun_sensor=True)
+    doc.chunk.calibrateReflectance(use_reflectance_panels=cfg["calibrateReflectance"]["use_reflectance_panels"],
+                                   use_sun_sensor=cfg["calibrateReflectance"]["use_sun_sensor"])
+    doc.save()
+
     return True
 
 
@@ -257,22 +272,6 @@ def add_gcps(doc, cfg):
     doc.save()
 
     return True
-
-
-def calibrate_reflectance(doc, cfg):
-    
-    # TODO: Handle failure to find panels, or mulitple panel images by returning error to user.
-    doc.chunk.locateReflectancePanels()
-    # TODO: Might need full path to calibration csv
-    #doc.chunk.loadReflectancePanelCalibration("calibration/RP04-1923118-OB.csv")
-    doc.chunk.loadReflectancePanelCalibration(cfg["calibrateReflectance"]["panel_path"])
-    #doc.chunk.calibrateReflectance(use_reflectance_panels=True,use_sun_sensor=True)
-    doc.chunk.calibrateReflectance(use_reflectance_panels=["calibrateReflectance"]["use_reflectance_panels"],
-                                   use_sun_sensor=["calibrateReflectance"]["use_sun_sensor"])
-    doc.save()
-    
-    return True
-
 
 
 def align_photos(doc, log_file, cfg):
@@ -366,8 +365,9 @@ def build_dense_cloud(doc, log_file, cfg):
     
     # build dense cloud
     doc.chunk.buildDenseCloud(max_neighbors=cfg["buildDenseCloud"]["max_neighbors"],
-                          keep_depth = cfg["buildDenseCloud"]["keep_depth"],
-                          subdivide_task = cfg["subdivide_task"])
+                              keep_depth = cfg["buildDenseCloud"]["keep_depth"],
+                              subdivide_task = cfg["subdivide_task"],
+                              point_colors = True)
     doc.save()
     
     # get an ending time stamp for the previous step
