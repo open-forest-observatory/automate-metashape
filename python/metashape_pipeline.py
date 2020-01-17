@@ -10,7 +10,7 @@ import sys
 # ---- If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
 
 ## Define where to get the config file (only used if running interactively)
-manual_config_file = "config/example.yml"
+manual_config_file = "config/example_altum2.yml"
 # ---- If not running interactively, the config file should be supplied as the command-line argument after the python script, e.g.: python metashape_control.py config.yml
 
 
@@ -36,14 +36,14 @@ meta.enable_and_log_gpu(log)
 if cfg["load_project"] == "":  # only add photos if this is a brand new project, not based off an existing project
     meta.add_photos(doc, cfg)
 
+if cfg["calibrateReflectance"]["enabled"]:
+    meta.calibrate_reflectance(doc, cfg)
+
 if cfg["addGCPs"]["enabled"]:
     meta.add_gcps(doc, cfg)
 
 if cfg["alignPhotos"]["enabled"]:
     meta.align_photos(doc, log, cfg)
-
-if cfg["calibrateReflectance"]["enabled"]:
-    meta.calibrate_reflectance(doc, cfg)
 
 if cfg["optimizeCameras"]["enabled"]:
     meta.optimize_cameras(doc, cfg)
@@ -59,6 +59,9 @@ if cfg["classifyGroundPoints"]["enabled"]:
 
 if cfg["buildDem"]["enabled"]:
     meta.build_dem(doc, log, cfg)
+
+if cfg["importDem"]["enabled"]:
+    meta.import_dem(doc, log, cfg)
 
 if cfg["buildOrthomosaic"]["enabled"]:
     meta.build_orthomosaic(doc, log, cfg)

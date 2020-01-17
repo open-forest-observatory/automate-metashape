@@ -10,6 +10,7 @@ import datetime
 import platform
 import os
 import glob
+import re
 
 ### import the Metashape functionality
 import Metashape
@@ -185,10 +186,11 @@ def add_photos(doc, cfg):
     '''
 
     ## Get paths to all the project photos
-    a = glob.iglob(os.path.join(cfg["photo_path"],"**","*.[jJ][pP][gG]"))
+    a = glob.iglob(os.path.join(cfg["photo_path"],"**","*.*"))   #(([jJ][pP][gG])|([tT][iI][fF]))
     b = [path for path in a]
-    photo_files = b
-    
+    photo_files = [x for x in b if re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)",x)]
+
+
     ## Add them
     doc.chunk.addPhotos(photo_files)
 
@@ -201,6 +203,19 @@ def add_photos(doc, cfg):
 
     doc.save()
     
+    return True
+
+
+def calibrate_reflectance(doc, cfg):
+    # TODO: Handle failure to find panels, or mulitple panel images by returning error to user.
+    doc.chunk.locateReflectancePanels()
+    # TODO: Might need full path to calibration csv
+    doc.chunk.loadReflectancePanelCalibration(cfg["calibrateReflectance"]["panel_path"])
+    # doc.chunk.calibrateReflectance(use_reflectance_panels=True,use_sun_sensor=True)
+    doc.chunk.calibrateReflectance(use_reflectance_panels=cfg["calibrateReflectance"]["use_reflectance_panels"],
+                                   use_sun_sensor=cfg["calibrateReflectance"]["use_sun_sensor"])
+    doc.save()
+
     return True
 
 
@@ -259,22 +274,6 @@ def add_gcps(doc, cfg):
     return True
 
 
-def calibrate_reflectance(doc, cfg):
-    
-    # TODO: Handle failure to find panels, or mulitple panel images by returning error to user.
-    doc.chunk.locateReflectancePanels()
-    # TODO: Might need full path to calibration csv
-    #doc.chunk.loadReflectancePanelCalibration("calibration/RP04-1923118-OB.csv")
-    doc.chunk.loadReflectancePanelCalibration(cfg["calibrateReflectance"]["panel_path"])
-    #doc.chunk.calibrateReflectance(use_reflectance_panels=True,use_sun_sensor=True)
-    doc.chunk.calibrateReflectance(use_reflectance_panels=["calibrateReflectance"]["use_reflectance_panels"],
-                                   use_sun_sensor=["calibrateReflectance"]["use_sun_sensor"])
-    doc.save()
-    
-    return True
-
-
-
 def align_photos(doc, log_file, cfg):
     '''
     Match photos, align cameras, optimize cameras
@@ -286,8 +285,10 @@ def align_photos(doc, log_file, cfg):
     timer1a = time.time()
     
     # Align cameras
-    doc.chunk.matchPhotos(accuracy=cfg["alignPhotos"]["accuracy"])
-    doc.chunk.alignCameras(adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"])
+    doc.chunk.matchPhotos(downscale=cfg["alignPhotos"]["downscale"],
+                          subdivide_task = cfg["subdivide_task"])
+    doc.chunk.alignCameras(adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"],
+                           subdivide_task = cfg["subdivide_task"])
     doc.save()
     
     # get an ending time stamp
@@ -332,7 +333,11 @@ def build_depth_maps(doc, log_file, cfg):
     timer2a = time.time()
     
     # build depth maps only instead of also building the dense cloud ##?? what does 
-    doc.chunk.buildDepthMaps(quality=cfg["buildDepthMaps"]["quality"], filter=cfg["buildDepthMaps"]["filter"], reuse_depth = cfg["buildDepthMaps"]["reuse_depth"], max_neighbors = cfg["buildDepthMaps"]["max_neighbors"])
+    doc.chunk.buildDepthMaps(downscale=cfg["buildDepthMaps"]["downscale"],
+                             filter_mode=cfg["buildDepthMaps"]["filter_mode"],
+                             reuse_depth = cfg["buildDepthMaps"]["reuse_depth"],
+                             max_neighbors = cfg["buildDepthMaps"]["max_neighbors"],
+                             subdivide_task = cfg["subdivide_task"])
     doc.save()
     
     # get an ending time stamp for the previous step
@@ -360,7 +365,9 @@ def build_dense_cloud(doc, log_file, cfg):
     
     # build dense cloud
     doc.chunk.buildDenseCloud(max_neighbors=cfg["buildDenseCloud"]["max_neighbors"],
-                          keep_depth = cfg["buildDenseCloud"]["keep_depth"])
+                              keep_depth = cfg["buildDenseCloud"]["keep_depth"],
+                              subdivide_task = cfg["subdivide_task"],
+                              point_colors = True)
     doc.save()
     
     # get an ending time stamp for the previous step
@@ -413,16 +420,22 @@ def build_dem(doc, log_file, cfg):
     
     # get a beginning time stamp for the next step
     timer5a = time.time()
+
+    projection = Metashape.OrthoProjection()
+    projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
     
     if cfg["buildDem"]["classes"] == "ALL":
         # call without classes argument (Metashape then defaults to all classes)
-        doc.chunk.buildDem(source = cfg["buildDem"]["source"],
-                           projection = Metashape.CoordinateSystem(cfg["project_crs"]))
+        doc.chunk.buildDem(source_data = cfg["buildDem"]["source"],
+                           subdivide_task = cfg["subdivide_task"],
+                           projection = projection)
     else:
         # call with classes argument
-        doc.chunk.buildDem(source = cfg["buildDem"]["source"],
-                           projection = Metashape.CoordinateSystem(cfg["project_crs"]),
-                           classes = cfg["buildDem"]["classes"])
+        doc.chunk.buildDem(source_data = cfg["buildDem"]["source"],
+                           #projection = projection,
+                           classes = cfg["buildDem"]["classes"],
+                           subdivide_task = cfg["subdivide_task"],
+                           projection = projection)
     
     # get an ending time stamp for the previous step
     timer5b = time.time()
@@ -436,7 +449,23 @@ def build_dem(doc, log_file, cfg):
         
     return True
 
-    
+
+def import_dem(doc, log_file, cfg):
+    '''
+    Import DEM
+    '''
+
+    path = os.path.join(cfg["photo_path"],cfg["importDem"]["path"])
+
+    crs = Metashape.CoordinateSystem(cfg["importDem"]["crs"])
+
+    doc.chunk.importRaster(path=path,
+                           crs=crs,
+                           raster_type=Metashape.ElevationData)
+
+    return True
+
+
 
 def build_orthomosaic(doc, log_file, cfg):
     '''
@@ -445,13 +474,17 @@ def build_orthomosaic(doc, log_file, cfg):
     
     # get a beginning time stamp for the next step
     timer6a = time.time()
+
+    projection = Metashape.OrthoProjection()
+    projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
     
     # build orthomosaic
-    doc.chunk.buildOrthomosaic(surface=cfg["buildOrthomosaic"]["surface"],
-                               blending=cfg["buildOrthomosaic"]["blending"],
+    doc.chunk.buildOrthomosaic(surface_data=cfg["buildOrthomosaic"]["surface"],
+                               blending_mode=cfg["buildOrthomosaic"]["blending"],
                                fill_holes=cfg["buildOrthomosaic"]["fill_holes"],
                                refine_seamlines=cfg["buildOrthomosaic"]["refine_seamlines"],
-                               projection=Metashape.CoordinateSystem(cfg["project_crs"]))
+                               subdivide_task = cfg["subdivide_task"],
+                               projection = projection)
     doc.save()
     
     # get an ending time stamp for the previous step
@@ -474,12 +507,20 @@ def export_dem(doc, log_file, run_id, cfg):
     '''
     
     output_file = os.path.join(cfg["output_path"], run_id+'_dem.tif')
+
+    compression = Metashape.ImageCompression()
+    compression.tiff_big = cfg["exportDem"]["tiff_big"]
+    compression.tiff_tiled = cfg["exportDem"]["tiff_tiled"]
+    compression.tiff_overviews = cfg["exportDem"]["tiff_overviews"]
+
+    projection = Metashape.OrthoProjection()
+    projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
     
-    doc.chunk.exportDem(path=output_file, tiff_big = cfg["exportDem"]["tiff_big"],
-                    tiff_tiled = cfg["exportDem"]["tiff_tiled"],
-                    projection = Metashape.CoordinateSystem(cfg["project_crs"]),
-                    nodata=cfg["exportDem"]["nodata"],
-                    tiff_overviews=cfg["exportDem"]["tiff_overviews"])
+    doc.chunk.exportRaster(path=output_file,
+                    projection = projection,
+                    nodata_value=cfg["exportDem"]["nodata"],
+                    source_data = Metashape.ElevationData,
+                    image_compression = compression)
 
     return True
 
@@ -491,11 +532,20 @@ def export_orthomosaic(doc, log_file, run_id, cfg):
     '''
     
     output_file = os.path.join(cfg["output_path"], run_id+'_ortho.tif')
-    
-    doc.chunk.exportOrthomosaic(path=output_file, tiff_big = cfg["exportDem"]["tiff_big"],
-                    tiff_tiled = cfg["exportDem"]["tiff_tiled"],
-                    projection = Metashape.CoordinateSystem(cfg["project_crs"]),
-                    tiff_overviews=cfg["exportDem"]["tiff_overviews"])
+
+    compression = Metashape.ImageCompression()
+    compression.tiff_big = cfg["exportOrthomosaic"]["tiff_big"]
+    compression.tiff_tiled = cfg["exportOrthomosaic"]["tiff_tiled"]
+    compression.tiff_overviews = cfg["exportOrthomosaic"]["tiff_overviews"]
+
+    projection = Metashape.OrthoProjection()
+    projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
+
+    doc.chunk.exportRaster(path=output_file,
+                           projection = projection,
+                           nodata_value=cfg["exportOrthomosaic"]["nodata"],
+                           source_data=Metashape.OrthomosaicData,
+                           image_compression=compression)
 
     return True
 
@@ -511,18 +561,18 @@ def export_points(doc, log_file, run_id, cfg):
     if cfg["exportPoints"]["classes"] == "ALL":
         # call without classes argument (Metashape then defaults to all classes)
         doc.chunk.exportPoints(path = output_file,
-                   source = cfg["exportPoints"]["source"],
-                   precision = cfg["exportPoints"]["precision"],
+                   source_data = cfg["exportPoints"]["source"],
                    format = Metashape.PointsFormatLAS,
-                   projection = Metashape.CoordinateSystem(cfg["project_crs"]))
+                   crs = Metashape.CoordinateSystem(cfg["project_crs"]),
+                   subdivide_task = cfg["subdivide_task"])
     else: 
         # call with classes argument
         doc.chunk.exportPoints(path = output_file,
-                           source = cfg["exportPoints"]["source"],
-                           precision = cfg["exportPoints"]["precision"],
+                           source_data = cfg["exportPoints"]["source"],
                            format = Metashape.PointsFormatLAS,
-                           projection = Metashape.CoordinateSystem(cfg["project_crs"]),
-                           clases = cfg["exportPoints"]["classes"])
+                           crs = Metashape.CoordinateSystem(cfg["project_crs"]),
+                           clases = cfg["exportPoints"]["classes"],
+                           subdivide_task = cfg["subdivide_task"])
 
     return True
 

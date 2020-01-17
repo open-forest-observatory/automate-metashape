@@ -3,84 +3,97 @@
 # Project
 
 # If not a blank string, this will open an existing project at the path specified
-load_project: "" #/storage/forestuav/metashape_projects/analysis5/20191124T2245_14_EmPo.psx
-
-# This will save the project file psx and working files
-project_path: "/storage/forestuav/metashape_projects/analysis5"
+load_project: "" #"/storage/forestuav/metashape_projects/set14_thin11/20200105T2215_set14_thin11_EmPo_USGSfirst.psx" #"/storage/collabs/nocco/metashape_projects/20200103T1816_09_20_2019_cherry.psx" # "/storage/forestuav/metashape_projects/through_classify/20200102T2034_01c_ChipsA.psx" "/storage/forestuav/metashape_projects/analysis7/20191204T1906_14_EmPo.psx" "/storage/forestuav/metashape_projects/full_test_1.6.0_22_subdivide_test/20200102T1221_01c_ChipsA.psx"
 
 # The path to the directory of flight photos
 # If multiple folders, set path to the top level above the photos?
 # Photo folders should only include 1 set of calibration images if doing calibration
-photo_path: "/storage/forestuav/imagery/missions/01c_ChipsA_120m_thinned22_subset"   #"/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"
+photo_path: "/storage/forestuav/imagery/missions_thinned/set14_120m_95_95_nadir_0ev_thin11" #"/storage/forestuav/imagery/missions_thinned/set14_120m_95_95_nadir_0ev_thin11"   #"/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"
+
+# This will save the project file psx and working files
+project_path: "/storage/forestuav/metashape_projects/set14_thin11"
 
 # Path for exports and processing log/benchmark data
-output_path: "/storage/forestuav/metashape_outputs/analysis6"
+output_path: "/storage/forestuav/metashape_outputs/set14_thin11"
 
 # The identifier for the set of photos (set to "%lookup%" to take from the photo path string. It would take element A if the photo folder is named A_B_C_D_E)
-photoset_id: "%lookup%"  #"01c"
+photoset_id: "set14_thin11"  #"01c"
 
 # The identifier for the location (set to "%lookup%" to take from the photo path string. It would take element B if the photo folder is named A_B_C_D_E)
-location: "%lookup%" #"ChipsA"
+location: "EmPo_highqual" #"ChipsA"
 
 # CRS EPSG code that project outputs should be in
 project_crs: "EPSG::26910"
 
 # CRS EPSG code of GCP coordinates
-gcp_crs: "EPSG::4326"  #"EPSG::26910"
+gcp_crs: "EPSG::26910"  #"EPSG::26910"  4326
+
+# Whether to tell metashape to enable "fine-level task subdivision" which reduces memory use by breaking processing into independent chunks that are run in series. Assuming there's enough memory, it seems to run 10-20% faster by disabling subdividing.
+subdivide_task: True
 
 
 addGCPs:
     enabled: True
-    marker_location_accuracy: 0.05 # accuracy of GCPs real-world coordinates, in meters
+    marker_location_accuracy: 0.1 # accuracy of GCPs real-world coordinates, in meters
     marker_projection_accuracy: 8 # accuracy of the identified locations of the GCPs within the images, in pixels
-    optimize_w_gcps_only: True
-
-alignPhotos:
-    enabled: True
-    accuracy: Metashape.HighAccuracy
-    adaptive_fitting: True
+    optimize_w_gcps_only: True # Optimize alignment using GCPs only: required for GCP locations to take precedence over photo GPS data
 
 calibrateReflectance:
     enabled: False
-    panel_path: "calibration/RP04-1923118-OB.csv"
+    panel_path: "/storage/collabs/nocco/cherry/09_20_2019/RP04-1923118-OB.csv"     # example in: "/storage/calibration/RP04-1923118-OB.csv"
     use_reflectance_panels: True
     use_sun_sensor: True
+
+alignPhotos:
+    enabled: True
+    downscale: 1
+    adaptive_fitting: True
 
 optimizeCameras:
     enabled: True
     adaptive_fitting: True
-    
+
 buildDepthMaps:
     enabled: True
-    quality: Metashape.MediumQuality
-    filter: Metashape.MildFiltering
+    downscale: 1 #default: 4
+    filter_mode: Metashape.MildFiltering
     reuse_depth: False
     max_neighbors: 100
-    
+
 buildDenseCloud:
     enabled: True
     keep_depth: False
     max_neighbors: 100
-    
+
 classifyGroundPoints:
-    enabled: True
+    enabled: False
     max_angle: 15.0
     max_distance: 1.0
     cell_size: 50.0
-  
+
 buildDem:
-    enabled: True
+    enabled: False
     classes:
         - Metashape.PointClass.Ground # Must be a list, or can set to "ALL" to use all points
     source: Metashape.DenseCloudData
-    
+
+#buildDem:
+#    enabled: True
+#    classes: "ALL"
+#    source: Metashape.DenseCloudData
+
+importDem:
+    enabled: True
+    path: "dem_usgs/dem_usgs.tif"
+    crs: "EPSG::4269"
+
 buildOrthomosaic:
     enabled: True
     surface: Metashape.ElevationData
     blending: Metashape.MosaicBlending
     fill_holes: True
     refine_seamlines: True
-    
+
 exportDem:
     enabled: True
     tiff_big: True
@@ -89,15 +102,16 @@ exportDem:
     projection: Metashape.CoordinateSystem("EPSG::32610")
     nodata: -32767
     tiff_overviews: True
-    
+
 exportOrthomosaic:
     enabled: True
     tiff_big: True
     tiff_tiled: False
     image_format: Metashape.ImageFormatTIFF
     projection: Metashape.CoordinateSystem("EPSG::32610")
+    nodata: -32767
     tiff_overviews: True
-    
+
 exportPoints:
     enabled: True
     source: Metashape.DenseCloudData
