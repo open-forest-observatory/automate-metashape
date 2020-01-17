@@ -48,9 +48,6 @@ if cfg["alignPhotos"]["enabled"]:
 if cfg["optimizeCameras"]["enabled"]:
     meta.optimize_cameras(doc, cfg)
 
-if cfg["buildDepthMaps"]["enabled"]:
-    meta.build_depth_maps(doc, log, cfg)
-
 if cfg["buildDenseCloud"]["enabled"]:
     meta.build_dense_cloud(doc, log, cfg)
 

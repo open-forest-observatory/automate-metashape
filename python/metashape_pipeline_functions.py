@@ -310,30 +310,7 @@ def optimize_cameras(doc, cfg):
 
 
 def build_depth_maps(doc, log_file, cfg):
-    '''
-    Build depth maps
-    '''
 
-    # get a beginning time stamp for the next step
-    timer2a = time.time()
-    
-    # build depth maps only instead of also building the dense cloud ##?? what does 
-    doc.chunk.buildDepthMaps(downscale=cfg["buildDepthMaps"]["downscale"],
-                             filter_mode=cfg["buildDepthMaps"]["filter_mode"],
-                             reuse_depth = cfg["buildDepthMaps"]["reuse_depth"],
-                             max_neighbors = cfg["buildDepthMaps"]["max_neighbors"],
-                             subdivide_task = cfg["subdivide_task"])
-    doc.save()
-    
-    # get an ending time stamp for the previous step
-    timer2b = time.time()
-    
-    # calculate difference between end and start time to 1 decimal place
-    time2 = diff_time(timer2b, timer2a)
-    
-    # record results to file
-    with open(log_file, 'a') as file:
-        file.write(sep.join(['Build Depth Maps', time2])+'\n')
         
     return True
 
@@ -342,8 +319,33 @@ def build_depth_maps(doc, log_file, cfg):
 
 def build_dense_cloud(doc, log_file, cfg):
     '''
-    Build dense cloud
+    Build depth maps and dense cloud
     '''
+
+    ### Build depth maps
+
+    # get a beginning time stamp for the next step
+    timer2a = time.time()
+
+    # build depth maps only instead of also building the dense cloud ##?? what does
+    doc.chunk.buildDepthMaps(downscale=cfg["buildDenseCloud"]["downscale"],
+                             filter_mode=cfg["buildDenseCloud"]["filter_mode"],
+                             reuse_depth=cfg["buildDenseCloud"]["reuse_depth"],
+                             max_neighbors=cfg["buildDenseCloud"]["max_neighbors"],
+                             subdivide_task=cfg["subdivide_task"])
+    doc.save()
+
+    # get an ending time stamp for the previous step
+    timer2b = time.time()
+
+    # calculate difference between end and start time to 1 decimal place
+    time2 = diff_time(timer2b, timer2a)
+
+    # record results to file
+    with open(log_file, 'a') as file:
+        file.write(sep.join(['Build Depth Maps', time2]) + '\n')
+
+    ### Build dense cloud
 
     # get a beginning time stamp for the next step
     timer3a = time.time()
