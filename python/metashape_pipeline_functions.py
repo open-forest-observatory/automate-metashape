@@ -74,28 +74,13 @@ def project_setup(cfg):
     ### Set a filename template for project files and output files
     ## Get the first parts of the filename (the photoset ID and location string)
     
-    if (cfg["photoset_id"] == "%lookup%") or cfg["location"] == "%lookup%":
-        path_parts = cfg["photo_path"].split("/")
-        photoset_name = path_parts[-1]
-        photoset_parts = photoset_name.split("_")
+    run_name = cfg["run_name"]
     
-    if cfg["photoset_id"] == "%lookup%":
-        set_id = photoset_parts[0]
-    else:
-        set_id = cfg["photoset_id"]
-        
-    if cfg["location"] == "%lookup%":
-        location = photoset_parts[1]
-    else:
-        location = cfg["location"]
-    
-    ## Project file example to make: "01c_ChipsA_YYYYMMDDtHHMM-jobid.psx"
+    ## Project file example to make: "YYYYMMDDtHHMM-jobID_projectID.psx"
     timestamp = stamp_time()
-    # TODO: allow a nonexistent location string
-    run_id = "_".join([timestamp,set_id,location])
-    # TODO: If there is a JobID, append to time (separated with "-", not "_"). ##?? This will keep jobs initiated in the same minute distinct
-    # TODO: Allow to specify a mnemonic for the end of the project name (from YAML?)
-    
+    run_id = "_".join([timestamp,run_name])
+    # TODO: If there is a slurm JobID, append to time (separated with "-", not "_"). This will keep jobs initiated in the same minute distinct
+
     project_file = os.path.join(cfg["project_path"], '.'.join([run_id, 'psx']) )
     log_file = os.path.join(cfg["output_path"], '.'.join([run_id+"_log",'txt']) )
         

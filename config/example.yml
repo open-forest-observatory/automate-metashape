@@ -8,19 +8,16 @@ load_project: "" #"/storage/forestuav/metashape_projects/set14_thin11/20200105T2
 # The path to the directory of flight photos
 # If multiple folders, set path to the top level above the photos?
 # Photo folders should only include 1 set of calibration images if doing calibration
-photo_path: "/storage/forestuav/imagery/missions_thinned/set14_120m_95_95_nadir_0ev_thin11" #"/storage/forestuav/imagery/missions_thinned/set14_120m_95_95_nadir_0ev_thin11"   #"/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"
+photo_path: "/storage/forestuav/imagery/missions/01c_ChipsA_120m_thinned22_subset" #"/storage/forestuav/imagery/missions_thinned/set14_120m_95_95_nadir_0ev_thin11"   #"/storage/forestuav/imagery/missions/14_EmPo_120m_95_95"
 
 # This will save the project file psx and working files
-project_path: "/storage/forestuav/metashape_projects/set14_thin11"
+project_path: "/storage/forestuav/metashape_projects/set01c_thinned22subset"
 
 # Path for exports and processing log/benchmark data
-output_path: "/storage/forestuav/metashape_outputs/set14_thin11"
+output_path: "/storage/forestuav/metashape_outputs/set01c_thinned22subset"
 
-# The identifier for the set of photos (set to "%lookup%" to take from the photo path string. It would take element A if the photo folder is named A_B_C_D_E)
-photoset_id: "set14_thin11"  #"01c"
-
-# The identifier for the location (set to "%lookup%" to take from the photo path string. It would take element B if the photo folder is named A_B_C_D_E)
-location: "EmPo_highqual" #"ChipsA"
+# The identifier for the run. Will be used in naming output files. Recommended to include a photoset name and processing parameter set name
+run_name: "set01c_thinned22subset_paramset999"
 
 # CRS EPSG code that project outputs should be in
 project_crs: "EPSG::26910"
@@ -55,7 +52,7 @@ optimizeCameras:
 
 buildDepthMaps:
     enabled: True
-    downscale: 1 #default: 4
+    downscale: 4 #default: 4
     filter_mode: Metashape.MildFiltering
     reuse_depth: False
     max_neighbors: 100
@@ -76,11 +73,6 @@ buildDem:
     classes:
         - Metashape.PointClass.Ground # Must be a list, or can set to "ALL" to use all points
     source: Metashape.DenseCloudData
-
-#buildDem:
-#    enabled: True
-#    classes: "ALL"
-#    source: Metashape.DenseCloudData
 
 importDem:
     enabled: True
