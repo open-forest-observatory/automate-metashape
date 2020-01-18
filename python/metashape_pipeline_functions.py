@@ -99,7 +99,7 @@ def project_setup(cfg):
         # Initialize a chunk, set its CRS as specified
         chunk = doc.addChunk()
         chunk.crs = Metashape.CoordinateSystem(cfg["project_crs"])
-        chunk.marker_crs = Metashape.CoordinateSystem(cfg["gcp_crs"])
+        chunk.marker_crs = Metashape.CoordinateSystem(cfg["addGCPs"]["gcp_crs"])
 
     # Save doc doc as new project (even if we opened an existing project, save as a separate one so the existing project remains accessible in its original state)
     doc.save(project_file)
