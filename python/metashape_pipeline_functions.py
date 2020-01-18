@@ -418,34 +418,6 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
 
 
 
-def classify_ground_points(doc, log_file, cfg):
-    '''
-    Classify ground points
-    '''
-    
-    # get a beginning time stamp for the next step
-    timer_a = time.time()
-    
-    
-    
-    doc.chunk.dense_cloud.classifyGroundPoints(max_angle=cfg["classifyGroundPoints"]["max_angle"],
-                                           max_distance=cfg["classifyGroundPoints"]["max_distance"],
-                                           cell_size=cfg["classifyGroundPoints"]["cell_size"])
-    doc.save()
-    
-    # get an ending time stamp for the previous step
-    timer_b = time.time()
-    
-    # calculate difference between end and start time to 1 decimal place
-    time_tot = diff_time(timer_b, timer_a)
-    
-    # record results to file
-    with open(log_file, 'a') as file:
-        file.write(sep.join(['Classify Ground Points', time_tot])+'\n')
-        
-    
-    return True
-
 
 def build_dem(doc, log_file, cfg):
     '''
@@ -582,35 +554,6 @@ def export_orthomosaic(doc, log_file, run_id, cfg):
                            image_compression=compression)
 
     return True
-
-
-
-def export_points(doc, log_file, run_id, cfg):
-    '''
-    Export points
-    '''
-        
-    output_file = os.path.join(cfg["output_path"], run_id+'_points.las')
-    
-    if cfg["exportPoints"]["classes"] == "ALL":
-        # call without classes argument (Metashape then defaults to all classes)
-        doc.chunk.exportPoints(path = output_file,
-                   source_data = cfg["exportPoints"]["source"],
-                   format = Metashape.PointsFormatLAS,
-                   crs = Metashape.CoordinateSystem(cfg["project_crs"]),
-                   subdivide_task = cfg["subdivide_task"])
-    else: 
-        # call with classes argument
-        doc.chunk.exportPoints(path = output_file,
-                           source_data = cfg["exportPoints"]["source"],
-                           format = Metashape.PointsFormatLAS,
-                           crs = Metashape.CoordinateSystem(cfg["project_crs"]),
-                           clases = cfg["exportPoints"]["classes"],
-                           subdivide_task = cfg["subdivide_task"])
-
-    return True
-
-
 
 
 

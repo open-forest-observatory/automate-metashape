@@ -51,9 +51,6 @@ if cfg["optimizeCameras"]["enabled"]:
 if cfg["buildDenseCloud"]["enabled"]:
     meta.build_dense_cloud(doc, log, run_id, cfg)
 
-if cfg["classifyGroundPoints"]["enabled"]:
-    meta.classify_ground_points(doc, log, cfg)
-
 if cfg["buildDem"]["enabled"]:
     meta.build_dem(doc, log, cfg)
 
@@ -68,9 +65,6 @@ if cfg["exportDem"]["enabled"]:
 
 if cfg["exportOrthomosaic"]["enabled"]:
     meta.export_orthomosaic(doc, log, run_id, cfg)
-
-if cfg["exportPoints"]["enabled"]:
-    meta.export_points(doc, log, run_id, cfg)
 
 meta.export_report(doc, run_id, cfg)
 

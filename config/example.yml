@@ -55,7 +55,7 @@ buildDepthMaps:
 
 buildDenseCloud:
     enabled: True
-    ## for depth maps:
+    ## for depth maps
     downscale: 4 #default: 4
     filter_mode: Metashape.MildFiltering
     reuse_depth: False
@@ -78,13 +78,6 @@ buildDenseCloud:
     projection: Metashape.CoordinateSystem("EPSG::32610")
     classes: "ALL" # Must be a list. Or can set to "ALL" to use all points. An example of a specific class is: Metashape.PointClass.Ground
 
-
-
-classifyGroundPoints:
-    enabled: False     # Must be enabled if a digital terrain model (DTM) is needed either for orthomosaic or DTM export
-    max_angle: 15.0
-    max_distance: 1.0
-    cell_size: 50.0
 
 buildDem:
     enabled: False
@@ -121,11 +114,3 @@ exportOrthomosaic:
     projection: Metashape.CoordinateSystem("EPSG::32610")
     nodata: -32767
     tiff_overviews: True
-
-exportPoints:
-    enabled: True
-    source: Metashape.DenseCloudData
-    precision: 6
-    format: Metashape.PointsFormatLAS
-    projection: Metashape.CoordinateSystem("EPSG::32610")
-    classes: "ALL" # Must be a list. Or can set to "ALL" to use all points. An example of a specific class is: Metashape.PointClass.Ground
