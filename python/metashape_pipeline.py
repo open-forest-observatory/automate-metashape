@@ -52,19 +52,10 @@ if cfg["buildDenseCloud"]["enabled"]:
     meta.build_dense_cloud(doc, log, run_id, cfg)
 
 if cfg["buildDem"]["enabled"]:
-    meta.build_dem(doc, log, cfg)
-
-if cfg["importDem"]["enabled"]:
-    meta.import_dem(doc, log, cfg)
+    meta.build_dem(doc, log, run_id, cfg)
 
 if cfg["buildOrthomosaic"]["enabled"]:
-    meta.build_orthomosaic(doc, log, cfg)
-
-if cfg["exportDem"]["enabled"]:
-    meta.export_dem(doc, log, run_id, cfg)
-
-if cfg["exportOrthomosaic"]["enabled"]:
-    meta.export_orthomosaic(doc, log, run_id, cfg)
+    meta.build_orthomosaic(doc, log, run_id, cfg)
 
 meta.export_report(doc, run_id, cfg)
 
