@@ -309,14 +309,6 @@ def optimize_cameras(doc, cfg):
 
 
 
-def build_depth_maps(doc, log_file, cfg):
-
-        
-    return True
-
-
-
-
 def build_dense_cloud(doc, log_file, run_id, cfg):
     '''
     Build depth maps and dense cloud
