@@ -49,7 +49,7 @@ if cfg["optimizeCameras"]["enabled"]:
     meta.optimize_cameras(doc, cfg)
 
 if cfg["buildDenseCloud"]["enabled"]:
-    meta.build_dense_cloud(doc, log, cfg)
+    meta.build_dense_cloud(doc, log, run_id, cfg)
 
 if cfg["classifyGroundPoints"]["enabled"]:
     meta.classify_ground_points(doc, log, cfg)

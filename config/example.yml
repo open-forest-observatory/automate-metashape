@@ -64,8 +64,24 @@ buildDenseCloud:
     ## for both
     max_neighbors: 100
 
+    ## Dense cloud ground classification parameters
+    classify: True     # Must be enabled if a digital terrain model (DTM) is needed either for orthomosaic or DTM export
+    max_angle: 15.0
+    max_distance: 1.0
+    cell_size: 50.0
+
+    ## Dense cloud export parameters
+    export: True
+    source: Metashape.DenseCloudData
+    precision: 6
+    format: Metashape.PointsFormatLAS
+    projection: Metashape.CoordinateSystem("EPSG::32610")
+    classes: "ALL" # Must be a list. Or can set to "ALL" to use all points. An example of a specific class is: Metashape.PointClass.Ground
+
+
+
 classifyGroundPoints:
-    enabled: True     # Must be enabled if a digital terrain model (DTM) is needed either for orthomosaic or DTM export
+    enabled: False     # Must be enabled if a digital terrain model (DTM) is needed either for orthomosaic or DTM export
     max_angle: 15.0
     max_distance: 1.0
     cell_size: 50.0
