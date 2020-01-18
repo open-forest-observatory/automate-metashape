@@ -17,7 +17,7 @@ project_path: "/storage/forestuav/metashape_projects/dev"
 output_path: "/storage/forestuav/metashape_outputs/dev"
 
 # The identifier for the run. Will be used in naming output files. Recommended to include a photoset name and processing parameter set name
-run_name: "set14_thin44_afterDense"
+run_name: "set14_thin44_test_config_dum"
 
 # CRS EPSG code that project outputs should be in
 project_crs: "EPSG::26910"
@@ -44,7 +44,7 @@ alignPhotos:
     adaptive_fitting: True
 
 optimizeCameras:
-    enabled: True
+    enabled: False
     adaptive_fitting: True
 
 buildDenseCloud:

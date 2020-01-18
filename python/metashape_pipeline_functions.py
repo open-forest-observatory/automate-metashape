@@ -11,6 +11,7 @@ import platform
 import os
 import glob
 import re
+import yaml
 
 ### import the Metashape functionality
 import Metashape
@@ -582,7 +583,7 @@ def export_report(doc, run_id, cfg):
 
 
 
-def finish_run(log_file):
+def finish_run(log_file,config_file):
     '''
     Finish run (i.e., write completed time to log)
     '''
@@ -590,5 +591,16 @@ def finish_run(log_file):
     # finish local results log and close it for the last time
     with open(log_file, 'a') as file:
         file.write(sep.join(['Run Completed', stamp_time()])+'\n')
-        
+
+    # open run configuration again. We can't just use the existing cfg file because its objects had already been converted to Metashape objects (they don't write well)
+    with open(config_file) as file:
+        config_full = yaml.load(file)
+
+    # write the run configuration to the log file
+    with open(log_file, 'a') as file:
+        file.write("\n\n### CONFIGURATION ###\n")
+        documents = yaml.dump(config_full,file, default_flow_style=False)
+        file.write("### END CONFIGURATION ###\n")
+
+
     return True
