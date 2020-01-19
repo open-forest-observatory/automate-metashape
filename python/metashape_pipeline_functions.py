@@ -401,7 +401,7 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
         else:
             # call with classes argument
             doc.chunk.exportPoints(path=output_file,
-                                   source_data=cfg["buildDenseCloud"]["source"],
+                                   source_data=Metashape.DenseCloudData,
                                    format=Metashape.PointsFormatLAS,
                                    crs=Metashape.CoordinateSystem(cfg["project_crs"]),
                                    clases=cfg["buildDenseCloud"]["classes"],
