@@ -11,16 +11,16 @@ import sys
 
 ## Define where to get the config file (only used if running interactively)
 manual_config_file = "config/example.yml"
-# ---- If not running interactively, the config file should be supplied as the command-line argument after the python script, e.g.: python metashape_control.py config.yml
+# ---- If not running interactively, the config file should be supplied as the command-line argument after the python script, e.g.: python metashape_workflow.py config.yml
 
 
 ## Load custom modules and config file: slightly different depending whether running interactively or via command line
 try:  # running interactively
-    from python import metashape_pipeline_functions as meta
+    from python import metashape_workflow_functions as meta
     from python import read_yaml
     config_file = manual_config_file
 except:  # running from command line
-    import metashape_pipeline_functions as meta
+    import metashape_workflow_functions as meta
     import read_yaml
     config_file = sys.argv[1]
 

@@ -25,7 +25,7 @@ import Metashape
 sep = "; "
 
 def stamp_time():
-    ''' 
+    '''
     Format the timestamps as needed
     '''
     stamp = datetime.datetime.now().strftime('%Y%m%dT%H%M')
@@ -71,12 +71,12 @@ def project_setup(cfg):
         os.makedirs(cfg["output_path"])
     if not os.path.exists(cfg["project_path"]):
         os.makedirs(cfg["project_path"])
-        
+
     ### Set a filename template for project files and output files
     ## Get the first parts of the filename (the photoset ID and location string)
-    
+
     run_name = cfg["run_name"]
-    
+
     ## Project file example to make: "YYYYMMDDtHHMM-jobID_projectID.psx"
     timestamp = stamp_time()
     run_id = "_".join([timestamp,run_name])
@@ -84,14 +84,14 @@ def project_setup(cfg):
 
     project_file = os.path.join(cfg["project_path"], '.'.join([run_id, 'psx']) )
     log_file = os.path.join(cfg["output_path"], '.'.join([run_id+"_log",'txt']) )
-        
+
 
     '''
     Create a doc and a chunk
     '''
 
     # create a handle to the Metashape object
-    doc = Metashape.Document() #When running via Metashape, can use: doc = Metashape.app.document 
+    doc = Metashape.Document() #When running via Metashape, can use: doc = Metashape.app.document
 
     # If specified, open existing project
     if cfg["load_project"] != "":
@@ -104,7 +104,7 @@ def project_setup(cfg):
 
     # Save doc doc as new project (even if we opened an existing project, save as a separate one so the existing project remains accessible in its original state)
     doc.save(project_file)
-    
+
 
     '''
     Log specs except for GPU
@@ -134,7 +134,7 @@ def enable_and_log_gpu(log_file):
     '''
     Enables GPU and logs GPU specs
     '''
-    
+
     gpustringraw = str(Metashape.app.enumGPUDevices())
     gpucount = gpustringraw.count("name': '")
     gpustring = ''
@@ -145,24 +145,24 @@ def enable_and_log_gpu(log_file):
         currentgpu = currentgpu+1
     #gpustring = gpustringraw.split("name': '")[1].split("',")[0]
     gpu_mask = Metashape.app.gpu_mask
-    
+
     with open(log_file, 'a') as file:
         file.write(sep.join(['Number of GPUs Found', str(gpucount)]) +'\n')
         file.write(sep.join(['GPU Model', gpustring])+'\n')
         file.write(sep.join(['GPU Mask', str(gpu_mask)])+'\n')
-    
+
         # If a GPU exists but is not enabled, enable the 1st one
         if (gpucount > 0) and (gpu_mask == 0):
             Metashape.app.gpu_mask = 1
             gpu_mask = Metashape.app.gpu_mask
             file.write(sep.join(['GPU Mask Enabled', str(gpu_mask)])+'\n')
-    
+
         # This writes down all the GPU devices available
         #file.write('GPU(s): '+str(Metashape.app.enumGPUDevices())+'\n')
-    
+
     # set Metashape to *not* use the CPU during GPU steps (appears to be standard wisdom)
     Metashape.app.cpu_enable = False
-    
+
     return True
 
 
@@ -188,7 +188,7 @@ def add_photos(doc, cfg):
         camera.label = newlabel
 
     doc.save()
-    
+
     return True
 
 
@@ -264,29 +264,29 @@ def align_photos(doc, log_file, cfg):
     '''
     Match photos, align cameras, optimize cameras
     '''
-    
+
     #### Align photos
-    
+
     # get a beginning time stamp
     timer1a = time.time()
-    
+
     # Align cameras
     doc.chunk.matchPhotos(downscale=cfg["alignPhotos"]["downscale"],
                           subdivide_task = cfg["subdivide_task"])
     doc.chunk.alignCameras(adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"],
                            subdivide_task = cfg["subdivide_task"])
     doc.save()
-    
+
     # get an ending time stamp
     timer1b = time.time()
-    
+
     # calculate difference between end and start time to 1 decimal place
     time1 = diff_time(timer1b, timer1a)
-    
+
     # record results to file
     with open(log_file, 'a') as file:
         file.write(sep.join(['Align Photos', time1])+'\n')
-        
+
     return True
 
 
@@ -342,20 +342,20 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
 
     # get a beginning time stamp for the next step
     timer3a = time.time()
-    
+
     # build dense cloud
     doc.chunk.buildDenseCloud(max_neighbors=cfg["buildDenseCloud"]["max_neighbors"],
                               keep_depth = cfg["buildDenseCloud"]["keep_depth"],
                               subdivide_task = cfg["subdivide_task"],
                               point_colors = True)
     doc.save()
-    
+
     # get an ending time stamp for the previous step
     timer3b = time.time()
-    
+
     # calculate difference between end and start time to 1 decimal place
     time3 = diff_time(timer3b, timer3a)
-    
+
     # record results to file
     with open(log_file, 'a') as file:
         file.write(sep.join(['Build Dense Cloud', time3])+'\n')
@@ -416,7 +416,7 @@ def build_dem(doc, log_file, run_id, cfg):
     '''
     Build end export DEM
     '''
-    
+
     # get a beginning time stamp for the next step
     timer5a = time.time()
 
@@ -431,7 +431,7 @@ def build_dem(doc, log_file, run_id, cfg):
     compression.tiff_overviews = cfg["buildDem"]["tiff_overviews"]
     projection = Metashape.OrthoProjection()
     projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
-    
+
     if (cfg["buildDem"]["type"] == "DSM") | (cfg["buildDem"]["type"] == "both"):
         # call without classes argument (Metashape then defaults to all classes)
         doc.chunk.buildDem(source_data = Metashape.DenseCloudData,
@@ -459,13 +459,13 @@ def build_dem(doc, log_file, run_id, cfg):
                                    image_compression=compression)
     if (cfg["buildDem"]["type"] != "DTM") & (cfg["buildDem"]["type"] == "both") & (cfg["buildDem"]["type"] == "DSM"):
         raise ValueError("DEM type must be either 'DSM' or 'DTM' or 'both'")
-    
+
     # get an ending time stamp for the previous step
     timer5b = time.time()
-    
+
     # calculate difference between end and start time to 1 decimal place
     time5 = diff_time(timer5b, timer5a)
-    
+
     # record results to file
     with open(log_file, 'a') as file:
         file.write(sep.join(['Build DEM', time5])+'\n')
@@ -535,13 +535,13 @@ def build_orthomosaic(doc, log_file, run_id, cfg):
                                projection = projection)
 
     doc.save()
-    
+
     # get an ending time stamp for the previous step
     timer6b = time.time()
-    
+
     # calculate difference between end and start time to 1 decimal place
     time6 = diff_time(timer6b, timer6a)
-    
+
     # record results to file
     with open(log_file, 'a') as file:
         file.write(sep.join(['Build Orthomosaic', time6])+'\n')
@@ -566,7 +566,7 @@ def build_orthomosaic(doc, log_file, run_id, cfg):
 
     return True
 
-    
+
 
 
 
@@ -574,11 +574,11 @@ def export_report(doc, run_id, cfg):
     '''
     Export report
     '''
-    
+
     output_file = os.path.join(cfg["output_path"], run_id+'_report.pdf')
 
     doc.chunk.exportReport(path = output_file)
-    
+
     return True
 
 
@@ -587,7 +587,7 @@ def finish_run(log_file,config_file):
     '''
     Finish run (i.e., write completed time to log)
     '''
-    
+
     # finish local results log and close it for the last time
     with open(log_file, 'a') as file:
         file.write(sep.join(['Run Completed', stamp_time()])+'\n')
