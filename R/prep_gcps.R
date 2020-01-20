@@ -28,7 +28,7 @@ library(ggplot2)
 
 #### User-defined vars (only used when running interactivesly) ####
 
-dir_manual = "C:/Users/DYoung/Box/projects/forestuav/imagery/missions/14_EmPo_120m_95_95"
+dir_manual = "C:/Users/DYoung/Box/projects/uav_data/imagery/missions_thinned/set14_120m_95_95_nadir_0ev_thin44"
 
 
 
@@ -58,7 +58,7 @@ dir.create(paste0(dir,"/gcps/prepared"),showWarnings=FALSE)
 
 # Extract elev
 gcp_table = gcps
-gcp_table$elev = extract(dem_usgs,gcp_table,method="bilinear")
+gcp_table$elev = suppressWarnings(extract(dem_usgs,gcp_table,method="bilinear"))
 
 # Extract coords
 coords = st_coordinates(gcp_table)
@@ -82,7 +82,7 @@ imagecoords_table = imagecoords %>%
   mutate(image_text = paste0("DJI_",str_pad(image,4,pad="0"),".JPG")) %>%
   mutate(folder_text = paste0(folder,"MEDIA")) %>%
   mutate(image_path = paste0(folder_text,"/",image_text)) %>%
-  select(gcp_id,image_path,x,y) %>%
+  dplyr::select(gcp_id,image_path,x,y) %>%
   arrange(gcp_id,image_path)
 
 write.table(imagecoords_table,paste0(dir,"/gcps/prepared/gcp_imagecoords_table.csv"),row.names=FALSE,col.names=FALSE,sep=",")
@@ -112,9 +112,11 @@ for(i in 1:nrow(imagecoords_table)) {
 
   print(map)
   
+  cat("Completed GCP ", i, " of ",nrow(imagecoords_table),"\r")
+  
 }
 
-dev.off()
+garbage = dev.off()
 
 
 
