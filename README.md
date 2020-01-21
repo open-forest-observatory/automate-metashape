@@ -74,7 +74,7 @@ The outputs of the workflow are the following:
 - **A Metashape project file** (for additional future processing or for inspecting the data via the Metashape GUI)
 - **A processing log** (which records the processing time for each step and the full set of configuration parameters, for reproducibility)
 
-The outputs for a given workflow run are named using the following convention: `{date_and_time}_{run_name}_abc.xyz`. For example: `20200118T1022_set14-highQuality_ortho.tif`. The run name and output directories are specified in the configuration file.
+The outputs for a given workflow run are named using the following convention: `{run_name}_{date_and_time}_abc.xyz`. For example: `set14-highQuality_20200118T1022_ortho.tif`. The run name and output directories are specified in the configuration file.
 
 ### Running workflow batches in serial on a single computer
 
