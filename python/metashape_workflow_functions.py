@@ -195,8 +195,7 @@ def add_photos(doc, cfg):
 def calibrate_reflectance(doc, cfg):
     # TODO: Handle failure to find panels, or mulitple panel images by returning error to user.
     doc.chunk.locateReflectancePanels()
-    # TODO: Might need full path to calibration csv
-    doc.chunk.loadReflectancePanelCalibration(cfg["calibrateReflectance"]["panel_path"])
+    doc.chunk.loadReflectancePanelCalibration(os.path.join(cfg["photo_path"],"configuration",cfg["calibrateReflectance"]["panel_filename"]))
     # doc.chunk.calibrateReflectance(use_reflectance_panels=True,use_sun_sensor=True)
     doc.chunk.calibrateReflectance(use_reflectance_panels=cfg["calibrateReflectance"]["use_reflectance_panels"],
                                    use_sun_sensor=cfg["calibrateReflectance"]["use_sun_sensor"])

@@ -41,22 +41,22 @@ addGCPs:
     marker_projection_accuracy: 8 # Recommended: 8. Accuracy of the identified locations of the GCPs within the images, in pixels.
     optimize_w_gcps_only: True # Optimize alignment using GCPs only: required for GCP locations to take precedence over photo GPS data. Disabling it makes GCPs essentially irrelevant.
 
-calibrateReflectance: #(Metahsape: calibrateReflectance)
+calibrateReflectance: # (Metahsape: calibrateReflectance)
     enabled: False
-    panel_path: "/storage/calibration/RP04-1923118-OB.csv" # See example panel calibration file in this directory of project repo. Recommended to put the calibration file in the top-level project photos directory.
+    panel_filename: "RP04-1923118-OB.csv" # The calibration file must be in the "calibration" folder in the top-level project photos directory. See example panel calibration file in the calibration directory of project repo.
     use_reflectance_panels: True
     use_sun_sensor: True
 
-alignPhotos: #(Metashape: alignPhotos)
+alignPhotos: # (Metashape: alignPhotos)
     enabled: True
     downscale: 1 # Recommended: 1. How much to coarsen the photos when searching for tie points. Higher number for blurrier photos. Probably only accepts numbers 4^x.
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as aligning photos?
 
-optimizeCameras: #(Metashape: optimizeCameras)
+optimizeCameras: # (Metashape: optimizeCameras)
     enabled: True
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as optinizing photos?
 
-buildDenseCloud: #(Metashape: buildDepthMaps, buildDenseCloud, classifyGroundPoints, and exportPoints)
+buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, classifyGroundPoints, and exportPoints)
     enabled: True
     ## For depth maps (buldDepthMaps)
     downscale: 4 # Recommended: 4. How much to coarsen the photos when searching for matches to build the dense cloud. For large photosets, values < 4 likely take prohibitively long. Probably only accepts numbers 4^x.
@@ -87,7 +87,7 @@ buildDem: # (Metashape: buildDem, exportRaster)
     nodata: -32767 # Recommended: -32767. Value used to represent nodata.
     tiff_overviews: True # Recommended: True. Include coarse-scale raster data in file for quick display in GIS.
 
-buildOrthomosaic:
+buildOrthomosaic: # (Metashape: buildOrthomosaic, exportRaster)
     enabled: False
     ## For building orthomosaic (buildOrthomosaic)
     surface: "DSM" # Recommended: "USGS" (assuming a USGS DEM is available and GCPs with accurate elvevation data are being used). The surface to build the orthomosaic onto. "DTM", "DSM", or "USGS". DTM and DSM refer to elevation models built by Metashape (buildDem step above) and stored in the project. If USGS, you must use GCPs with accurate elevations (ideally extracted from the USGS DEM).
