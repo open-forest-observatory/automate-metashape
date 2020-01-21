@@ -397,7 +397,7 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
         if cfg["buildDenseCloud"]["classes"] == "ALL":
             # call without classes argument (Metashape then defaults to all classes)
             doc.chunk.exportPoints(path=output_file,
-                                   source_data=cfg["buildDenseCloud"]["source"],
+                                   source_data=Metashape.DenseCloudData,
                                    format=Metashape.PointsFormatLAS,
                                    crs=Metashape.CoordinateSystem(cfg["project_crs"]),
                                    subdivide_task=cfg["subdivide_task"])
