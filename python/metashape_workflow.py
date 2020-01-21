@@ -10,17 +10,17 @@ import sys
 # ---- If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
 
 ## Define where to get the config file (only used if running interactively)
-manual_config_file = "config/example_altum2.yml"
-# ---- If not running interactively, the config file should be supplied as the command-line argument after the python script, e.g.: python metashape_control.py config.yml
+manual_config_file = "config/example.yml"
+# ---- If not running interactively, the config file should be supplied as the command-line argument after the python script, e.g.: python metashape_workflow.py config.yml
 
 
 ## Load custom modules and config file: slightly different depending whether running interactively or via command line
 try:  # running interactively
-    from python import metashape_pipeline_functions as meta
+    from python import metashape_workflow_functions as meta
     from python import read_yaml
     config_file = manual_config_file
 except:  # running from command line
-    import metashape_pipeline_functions as meta
+    import metashape_workflow_functions as meta
     import read_yaml
     config_file = sys.argv[1]
 
@@ -48,33 +48,15 @@ if cfg["alignPhotos"]["enabled"]:
 if cfg["optimizeCameras"]["enabled"]:
     meta.optimize_cameras(doc, cfg)
 
-if cfg["buildDepthMaps"]["enabled"]:
-    meta.build_depth_maps(doc, log, cfg)
-
 if cfg["buildDenseCloud"]["enabled"]:
-    meta.build_dense_cloud(doc, log, cfg)
-
-if cfg["classifyGroundPoints"]["enabled"]:
-    meta.classify_ground_points(doc, log, cfg)
+    meta.build_dense_cloud(doc, log, run_id, cfg)
 
 if cfg["buildDem"]["enabled"]:
-    meta.build_dem(doc, log, cfg)
-
-if cfg["importDem"]["enabled"]:
-    meta.import_dem(doc, log, cfg)
+    meta.build_dem(doc, log, run_id, cfg)
 
 if cfg["buildOrthomosaic"]["enabled"]:
-    meta.build_orthomosaic(doc, log, cfg)
-
-if cfg["exportDem"]["enabled"]:
-    meta.export_dem(doc, log, run_id, cfg)
-
-if cfg["exportOrthomosaic"]["enabled"]:
-    meta.export_orthomosaic(doc, log, run_id, cfg)
-
-if cfg["exportPoints"]["enabled"]:
-    meta.export_points(doc, log, run_id, cfg)
+    meta.build_orthomosaic(doc, log, run_id, cfg)
 
 meta.export_report(doc, run_id, cfg)
 
-meta.finish_run(log)
+meta.finish_run(log, config_file)

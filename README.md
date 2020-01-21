@@ -1,50 +1,119 @@
-# metashape-scripts
+# Easy, reproducible Metashape workflows
 
-A library of scripts to make it easier to run metashape in batch on individual computers, or as jobs on a compute cluster.
+A tool to make it easy to run reproducible, automated, well-documented Metashape photogrammetry workflows in batch on individual computers or as parallel jobs on a compute cluster. No coding knowledge required.
 
-## Software
+## Setup
 
-You need a license for Metashape. UC Davis users see []()
+**Python:** You need Python (3.5, 3.6, or 3.7). We recommend the [Anaconda distribution](https://www.anaconda.com/distribution/) because it includes all the required libraries. When installing, if asked whether the installer should initialize Anaconda3 say "yes". Anaconda must be initialized upon install such that `python` can be called from the command line. A way to check is to simply enter `python` at your command prompt and see if the resulting header info includes Anaconda and Python 3. If it doesn't, you may still need to initialize your Conda install. **Alternative option:** If you want a minimal python installation (such as if you're installing on a computing cluster), you can install [miniconda](https://docs.conda.io/en/latest/miniconda.html) instead. After intalling miniconda, you will need to install additional packages required by our scripts (currently only `PyYAML`) using `pip install {package_name}`.
 
-If you have a node locked license copy the auth.template file and call it auth.auth, replace the #### with your key code.
-Should look like this.
+**Metashape:** You must install the Metashape Python 3 module (Metashape version 1.6). Download the [current .whl file](https://www.agisoft.com/downloads/installer/) and install it following [these instructions](https://agisoft.freshdesk.com/support/solutions/articles/31000148930-how-to-install-metashape-stand-alone-python-module) (using the name of the .whl file that you downloaded).
 
-```
-#!/bin/sh
-KEY="#####-#####-#####-#####-#####"
-```
+**Metashape license:** You need a license (and associated license file) for Metashape. The easiest way to get the license file (assuming you own a license) is by installing the [Metshape Professional Edition GUI software](https://www.agisoft.com/downloads/installer/met) (distinct from the Python module) and registering it following the prompts in the software (note you need to purchase a license first). UC Davis users, inquire over the geospatial listserv or the #geosptial Slack channel for information on joining a floating license pool. Once you have a license file (whether a node-locked or floating license), you need to set the `agisoft_LICENSE` environment variable (search onilne for instructions for your OS; look for how to *permanently* set it) to the path to the lincense file (`metashape.lic`).
+
+**Reproducible workflow scripts:** Simply clone this repository to your machine!
 
 ## Usage
 
-Command line:
-1. Path to metashape program
-2. Path to python script
-3. Path to project folder which contains photos
+The general command line call to run the worflow has three components:
+1. Call to Python
+2. Path to metashape workflow Python script (`metashape_workflow.py`)
+3. Path to workflow configuration file (`*.yml`)
 
-### Linux
+For example:
 
-```
-```
+`python {repo_path}/python/metashape_workflow.py {config_path}/{config_file}.yml`
 
-### Windows
+All processing parameters are specified in the .yml config file. There is an example config file in the repo at `config/example.yml`. Details on the config file are below.
 
-```
-& 'C:\Program Files\Agisoft\Metashape Pro\metashape.exe' -r C:\Users\vulpes\Documents\metashapebenchmark\benchmark_simple.py D:\Public\Pictures\Latimer_lab\thinned_set_subset >> nightfury-20190827.out
-```
+### Oragnizing raw imagery (and associated files) for processing
 
-## Analysis
-
-A log recording the times of each major step is written in the following format.
-See the R scripts in the reports folder for ways to work with the results data.
-
-## Writing Python Code
-
-You can install the Metashape python module to make writing code easier. While it will normally be executed in a Metashape env it does not need to be.
-Things like autocompletion and testing of scripts will work from your code editor.
-
-1. Download the python module from [agisoft]()
-1. Install into the python environment you want to use it in [(details)](https://agisoft.freshdesk.com/support/solutions/articles/31000148930-how-to-install-metashape-stand-alone-python-module).
+Images should be organized such that there is one root level that contains all the photos from the flight mission to be processed (these photos may optionally be organized within sub-folders), and no other missions. If the workflow is to include spectral calibration, ground control points (GCPs), and/or a USGS DEM, this root-level folder *must* also contain a corresponding folder for each. For example:
 
 ```
-python3 -m pip install Metashape-1.5.2-cp35.cp36.cp37-abi3-linux_x86_64.whl
+mission001_photos
+├───100MEDIA
+|       DJI_0001.JPG
+|       DJI_0002.JPG
+|       ...
+├───101MEDIA
+|       DJI_0001.JPG
+|       DJI_0002.JPG
+|       ...
+├───102MEDIA
+|       DJI_0001.JPG
+|       DJI_0002.JPG
+|       ...
+├───gcps
+|       ...
+├───dem_usgs
+|       dem_usgs.tif
+└───calibration
+        RP04-1923118-OB.csv
 ```
+
+The namings for the ancillary data folders (`gcps`, `dem_usgs`, and `calibration`) must exactly match these if they are to be a part of the workflow.
+
+A **sample RGB photo dataset** (which includes GCPs and a USGS DEM) may be [downloaded here](https://ucdavis.box.com/s/hv8m8fibe164pjj0mssdx1mj8qb996k8) (1.5 GB). Note this dataset has sparse photos (low overlap), so photogrammetry results are unimpressive.
+
+<mark>TO DO: Add sample multispectral dataset. Could potentially use cherry dataset if we figure out why it's not working well.</mark>
+
+The location of the raw imagery folder is specified in the configuration file passed to the metashape workflow script (see next section).
+
+### Workflow configuration ###
+
+All of the parameters defining the Metashape workflow are specified in the configuration file (a [YAML-format](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html) file). This includes directories of input and output files, workflow steps to include, quality settings, and many other parameters.
+
+An example configuration file is provided in this repo at `config/example.yml`. The file contains comments explaining the purpose of each customizable parameter. To prepare a customized workflow, copy the `config/example.yml` file to a new location, edit the parameter values to meet your specifications, save it, and then run the metashape workflow from the command line as described above, passing it the location of the customized configuration file. Do not remove or add parameters to the configuration file; adding will have no effect unless the Python code is changed along with the addition, and removing will produce errors.
+
+The workflow configuration is saved in a procesing log at the end of a workflow run (see below).
+
+### Workflow outputs
+
+The outputs of the workflow are the following:
+- **Photogrammetry outputs** (e.g., dense point cloud, orthomosaic, digital surface model, and Metashape processing report)
+- **A Metashape project file** (for additional future processing or for inspecting the data via the Metashape GUI)
+- **A processing log** (which records the processing time for each step and the full set of configuration parameters, for reproducibility)
+
+The outputs for a given workflow run are named using the following convention: `{date_and_time}_{run_name}_abc.xyz`. For example: `20200118T1022_set14-highQuality_ortho.tif`. The run name and output directories are specified in the configuration file.
+
+### Running workflow batches in serial on a single computer
+
+Running workflows in batch (i.e., multiple workflows in series) on a single computer is as simple as creating configuration file for each workflow run and calling the Python workflow script once for each. The calls can be combined into a shell script. The shell script might look like the following (note the only thing that changes is the name of the config file):
+
+```
+python ~/repos/metashape/python/metashape_workflow.py ~/projects/forest_structure/metashape_configs/config001.yml
+python ~/repos/metashape/python/metashape_workflow.py ~/projects/forest_structure/metashape_configs/config002.yml
+python ~/repos/metashape/python/metashape_workflow.py ~/projects/forest_structure/metashape_configs/config003.yml
+```
+
+Then it's just a matter of running the shell script.
+
+
+### Running workflow batches in parallel on a compute cluster
+
+<mark>TO DO: Documentation to be completed.</mark>
+
+
+## Preparing ground-control points (GCPs)
+
+Because the workflow implemented here is completely GUI-free, it is necessary to prepare GCPs in advance. The process of preparing GCPs involves recording (a) the geospatial location of the GCPs on the earth and (b) the location of the GCPs within the photos in which they appear.
+
+Metashape requires this information in a very specific format, so this repository includes an R script to assist in producing the necessary files based on more human-readable input. The helper script is `R/prep_gcps.R`.
+
+**GCP processing input files.** Example GCP input files are included in the [example RGB photo dataset](https://ucdavis.box.com/s/hv8m8fibe164pjj0mssdx1mj8qb996k8) under `gcps/raw/`. The files are the following:
+- **gcps.gpkg**: A geopackage (shapefile-like GIS format) containing the locations of each GCP on the earth. Must include an integer column called `gcp_id` that gives each GCP a unique integer ID number.
+- **gcp_imagecoords.csv**: A CSV table identifying the locations of the GCPs within raw drone images. Each GCP should be located in at least 5 images (ideally more). The tabls must contain the following columns:
+  - `gcp`: the integer ID number of the GCP (to match the ID number in `gcps.gpkg`)
+  - `folder`: the *integer* number of the subfolder in which the raw drone image is located. For example, if the image is in `100MEDIA`, the value that should be recorded is `100`.
+  - `image`: the *ingeter* number of the image in which the GCP is to be identified. For example, if the image is named `DJI_0077.JPG`, the value that should be recorded is `77`.
+  - `x` and `y`: the coordinates of the pixel in the image where the GCP is located. `x` and `y` are in units of pixels right and down (respectively) from the upper-left corner.
+
+These two files must be in `gcps/raw/` at the top level of the flight mission directory (where the subfolders of images also reside). Identification of the image pixel coordinates where the GCPs are located is easy using the info tool in QGIS.
+
+**Running the script.** You must have R and the following packages installed: sf, raster, dplyr, stringr, magick, ggplot2. The R `bin` directory must be in your system path, or you'll need to use the full path to R. You run the script from the command line by calling `Rscript --vanilla` with the helper script and passing the location of the top-level mission imagery folder (which contains the `gcp` folder) as an argument. For example, on Windows:
+
+```
+Rscript --vanilla {path_to_repo}/R/prep_gcps.R {path_to_imagery_storage}/sample_rgb_photoset
+```
+
+**Outputs.** The script will create a `prepared` directory within the `gcps` folder containing the two files used by Metashape: `gcp_table.csv`, which contains the geospatial coordinates of the GCPs on the earth, and `gcp_imagecoords_table.csv`, which contains the pixel coordinates of the GCPs within each image. It also outputs a PDF called `gcp_qaqc.pdf`, which shows the specified location of each GCP in each image in order to quality-control the location data. If left in this folder structure (`gcps/prepared`), the Metashape workflow script will be able to find and incorporate the GCP data if GCPs are enabled in the configuration file.
