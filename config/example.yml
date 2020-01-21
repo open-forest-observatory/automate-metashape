@@ -9,19 +9,20 @@ load_project: ""
 
 # The path to the directory of flight photos
 # If there are multiple photo folders, set path to the folder that contains all the photo folders
-photo_path: "/storage/forestuav/imagery/missions_thinned/set14_120m_95_95_nadir_0ev_thin44"
+photo_path: "/storage/uav/photosets/sample_rgb_photoset"
+multispectral: False # Is this a multispectral photo set? If RGB, set to False.
 
 # Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
-output_path: "/storage/forestuav/metashape_outputs/dev"
+output_path: "/storage/uav/metashape_outputs/sample"
 
 # Path to save Metashape project file (.psx). Will be created if does not exist
-project_path: "/storage/forestuav/metashape_projects/dev"
+project_path: "/storage/uav/metashape_projects/sample
 
 # The identifier for the run. Will be used in naming output files. Recommended to include a photoset name and processing parameter set name.
-run_name: "set14_thin44_test_config"
+run_name: "sample_rgb_photoset_run001"
 
 # CRS EPSG code that project outputs should be in (projection should be in meter units and intended for the project area)
-project_crs: "EPSG::26910" # UTM 10N
+project_crs: "EPSG::26910" # 26910 is UTM 10N
 
 # Enable metashape "fine-level task subdivision" which reduces memory use by breaking processing into independent chunks that are run in series.
 # Assuming there's enough memory, it seems to run 10-20% faster by disabling subdividing. But large projects can run out memory and fail if subdivide is not enabled.
@@ -36,13 +37,13 @@ subdivide_task: True
 # To use GCPs, a 'gcps' folder must exist in the top level photos folder. The contents of the 'gcps' folder are created by the prep_gcps.R script. See readme: https://github.com/ucdavis/metashape
 addGCPs:
     enabled: True
-    gcp_crs: "EPSG::26910" # CRS EPSG code of GCP coordinates
+    gcp_crs: "EPSG::26910" # CRS EPSG code of GCP coordinates. 26910 (UTM 10 N) is the CRS of the sample RGB photoset.
     marker_location_accuracy: 0.1 # Recommended: 0.1. Accuracy of GCPs real-world coordinates, in meters.
     marker_projection_accuracy: 8 # Recommended: 8. Accuracy of the identified locations of the GCPs within the images, in pixels.
     optimize_w_gcps_only: True # Optimize alignment using GCPs only: required for GCP locations to take precedence over photo GPS data. Disabling it makes GCPs essentially irrelevant.
 
 calibrateReflectance: # (Metahsape: calibrateReflectance)
-    enabled: False
+    enabled: True
     panel_filename: "RP04-1923118-OB.csv" # The calibration file must be in the "calibration" folder in the top-level project photos directory. See example panel calibration file in the calibration directory of project repo.
     use_reflectance_panels: True
     use_sun_sensor: True
@@ -77,7 +78,7 @@ buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, classifyGroundPo
     classes: "ALL" # Recommended: "ALL". Point classes to export. Must be a list. Or can set to "ALL" to use all points. An example of a specific class is: Metashape.PointClass.Ground
 
 buildDem: # (Metashape: buildDem, exportRaster)
-    enabled: False
+    enabled: True
     ## For building DEM (buildDem)
     type: "both" # Recommended: "both". Options: "DSM" or "DTM" or "both". Type of DEM to exporot (digital surface model, digital terrain model, or both).
     ## For exporting DEM (exportRaster)
@@ -88,11 +89,11 @@ buildDem: # (Metashape: buildDem, exportRaster)
     tiff_overviews: True # Recommended: True. Include coarse-scale raster data in file for quick display in GIS.
 
 buildOrthomosaic: # (Metashape: buildOrthomosaic, exportRaster)
-    enabled: False
+    enabled: True
     ## For building orthomosaic (buildOrthomosaic)
-    surface: "DSM" # Recommended: "USGS" (assuming a USGS DEM is available and GCPs with accurate elvevation data are being used). The surface to build the orthomosaic onto. "DTM", "DSM", or "USGS". DTM and DSM refer to elevation models built by Metashape (buildDem step above) and stored in the project. If USGS, you must use GCPs with accurate elevations (ideally extracted from the USGS DEM).
+    surface: "USGS" # Recommended: "USGS" (assuming a USGS DEM is available and GCPs with accurate elvevation data are being used). The surface to build the orthomosaic onto. "DTM", "DSM", or "USGS". DTM and DSM refer to elevation models built by Metashape (buildDem step above) and stored in the project. If USGS, you must use GCPs with accurate elevations (ideally extracted from the USGS DEM).
     usgs_dem_path: "dem_usgs/dem_usgs.tif" # Path to USGS DEM for the project area. Needed if surface (parameter above) is "USGS".
-    usgs_dem_crs: "EPSG::4269" # CRS of the USGS DEM. Needed if surface (parameter above) is "USGS".
+    usgs_dem_crs: "EPSG::4269" # CRS of the USGS DEM. Needed if surface (parameter above) is "USGS". For sample RGB photoset, crs is 4269 (Geographic NAD83)
     blending: Metashape.MosaicBlending # Recommended: Metashape.MosaicBlending. Photo blending mode. Options include AverageBlending, MosaicBlending, MinBlending, MaxBlending, DisabledBlending
     fill_holes: True # Recommended: True. Fill holes in orthomosaic where no photo data exist by interpolating?
     refine_seamlines: True # Recommended: True. Use smart algorithm to identify photo seamlines where they will least distort.
