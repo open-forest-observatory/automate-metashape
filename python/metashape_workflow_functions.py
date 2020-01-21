@@ -178,7 +178,11 @@ def add_photos(doc, cfg):
 
 
     ## Add them
-    doc.chunk.addPhotos(photo_files)
+    if cfg["multispectral"]:
+        doc.chunk.addPhotos(photo_files, layout = Metashape.MultiplaneLayout)
+    else:
+        doc.chunk.addPhotos(photo_files)
+
 
     ## Need to change the label on each camera so that it includes the containing folder
     for camera in doc.chunk.cameras:
@@ -195,7 +199,7 @@ def add_photos(doc, cfg):
 def calibrate_reflectance(doc, cfg):
     # TODO: Handle failure to find panels, or mulitple panel images by returning error to user.
     doc.chunk.locateReflectancePanels()
-    doc.chunk.loadReflectancePanelCalibration(os.path.join(cfg["photo_path"],"configuration",cfg["calibrateReflectance"]["panel_filename"]))
+    doc.chunk.loadReflectancePanelCalibration(os.path.join(cfg["photo_path"],"calibration",cfg["calibrateReflectance"]["panel_filename"]))
     # doc.chunk.calibrateReflectance(use_reflectance_panels=True,use_sun_sensor=True)
     doc.chunk.calibrateReflectance(use_reflectance_panels=cfg["calibrateReflectance"]["use_reflectance_panels"],
                                    use_sun_sensor=cfg["calibrateReflectance"]["use_sun_sensor"])
