@@ -129,7 +129,7 @@ The meanings of the sbatch parameters are explained in the linked resources abov
 
 Efficient execution of Metashape requires a good GPU. Having *many* CPUs can help, but still does not come near to the efficiency of a GPU. For photogrammetry to make sense on farm, PIs would need to invest in GPU nodes. Here are rough estimates of a hypothetical Metashape project's execution time based on extensive benchmarking:
 
-| Machine | Required computing time | Cost |
+| Machine | Required computing time | Cost ballpark |
 |---|---|---|
 | Dell Alienware gaming PC with Nvidia RTX 2080 Ti and 16 CPUs | 1 day | $3000 |
 | Free original farm nodes (24 CPUs) | 30 days | Free |
