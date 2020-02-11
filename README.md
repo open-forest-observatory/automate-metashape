@@ -99,7 +99,7 @@ Running Metashape workflow batches in parallel on a cluster is as simple as subm
 - [Basic instructions for running jobs on farm](https://bitbucket.org/hijmans-lab/computing/wiki/getting-started-farm)
 - [Additional resources for getting set up and running jobs on farm](https://github.com/RILAB/lab-docs/wiki/Using-Farm)
 
-You will need to install the Metashape python module into your user account on farm following the Setup instructions above (including the isntructions related to the Metashape license). This is easiest if you first install Miniconda and install Metashape (along with PyYAML) there.
+You will need to install the Metashape python module into your user account on farm following the [Setup](https://github.com/ucdavis/metashape/blob/master/README.md#setup) instructions above (including the isntructions related to the Metashape license). This is easiest if you first install Miniconda and install Metashape (along with PyYAML) there.
 
 Next you need to create a shell script that will set up the appropriate environment variables and then call python to execute the metashape_workflow.py file with a provided config file (save as `farm_python.sh`):
 ```
