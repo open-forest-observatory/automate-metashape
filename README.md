@@ -95,9 +95,9 @@ Running Metashape workflow batches in parallel on a cluster is as simple as subm
 
 #### Example for the `farm` cluster (UC Davis College of Agricultural and Environmental Sciences)
 
-[Basic farm overview and account creation information](https://wiki.cse.ucdavis.edu/support/systems/farm)
-[Basic instructions for running jobs on farm](https://bitbucket.org/hijmans-lab/computing/wiki/getting-started-farm)
-[Additional resources for getting set up and running jobs on farm](https://github.com/RILAB/lab-docs/wiki/Using-Farm)
+- [Basic farm overview and account creation information](https://wiki.cse.ucdavis.edu/support/systems/farm)
+- [Basic instructions for running jobs on farm](https://bitbucket.org/hijmans-lab/computing/wiki/getting-started-farm)
+- [Additional resources for getting set up and running jobs on farm](https://github.com/RILAB/lab-docs/wiki/Using-Farm)
 
 You will need to install the Metashape python module into your user account on farm following the Setup instructions above (including the isntructions related to the Metashape license). This is easiest if you first install Miniconda and install Metashape (along with PyYAML) there.
 
@@ -134,9 +134,9 @@ Efficient execution of Metashape requires a good GPU. Having *many* CPUs can hel
 | Dell Alienware gaming PC with Nvidia RTX 2080 Ti and 16 CPUs | 1 day | $3000 |
 | Free original farm nodes (24 CPUs) | 30 days | Free |
 | New farm bigmem nodes (96 CPUs) | 5 days | $22,700 |
-| Potential farm GPU node (8 x RTX 2080 Ti) | 2 days (using only 1 of the 8 GPUs) | $25,000 (if split 8 ways, $3,125 per user) |
+| Potential future farm GPU node (8 x RTX 2080 Ti) | 2 days (using only 1 of the 8 GPUs) | $25,000 (if split 8 ways, $3,125 per user) |
 
-A new farm GPU node could provide computing power that is competitive with the Alienware gaming PC for *individual projects,* but it would provide the opportunity to run multiple projects in parallel. Assuming that not all PIs were using the node at the same time (a reasonable assumption), those who needed extra processing power temporarily would be allowed to use other PI's GPU allocations. This is the beauty of a shared computing cluster. In this circumstance, running 8 projects that would each take 1 day on the Alienware gaming PC (for a total of 8 days) would take only 2 days on the computing cluster.
+A new farm GPU node would provide computing power that is competitive with the Alienware gaming PC for *individual projects,* but it would provide the opportunity to run multiple projects in parallel. Assuming that not all PIs were using the node at the same time (a reasonable assumption), those who needed extra processing power temporarily would be allowed to use other PIs' GPU allocations. This is the beauty of a shared computing cluster. In this circumstance, running 8 projects that would each take 1 day on the Alienware gaming PC (for a total of 8 days) would take only 2 days on the computing cluster.
 
 
 ## Preparing ground-control points (GCPs)
