@@ -1,6 +1,6 @@
 # Easy, reproducible Metashape workflows
 
-A tool to make it easy to run reproducible, automated, well-documented Metashape photogrammetry workflows in batch on individual computers or as parallel jobs on a compute cluster. No coding knowledge required.
+A tool to make it easy to run reproducible, automated, documented Metashape photogrammetry workflows in batch on individual computers or as parallel jobs on a compute cluster. No coding knowledge required.
 
 ## Setup
 
