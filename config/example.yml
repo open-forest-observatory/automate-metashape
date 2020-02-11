@@ -16,7 +16,7 @@ multispectral: False # Is this a multispectral photo set? If RGB, set to False.
 output_path: "/storage/uav/metashape_outputs/sample"
 
 # Path to save Metashape project file (.psx). Will be created if does not exist
-project_path: "/storage/uav/metashape_projects/sample
+project_path: "/storage/uav/metashape_projects/sample"
 
 # The identifier for the run. Will be used in naming output files. Recommended to include a photoset name and processing parameter set name.
 run_name: "sample_rgb_photoset_run001"
