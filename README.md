@@ -120,7 +120,7 @@ python ${1} ${2}
 
 Finally, to submit a Metashape job, you would run something like the following line:
 ```
-sbatch -p bigmemh --time=24:00:00 --job-name=MetaInt -c 64 --mem=128G --mail-type=ALL --mail-user=djyoung@ucdavis.edu shell/farm_python.sh python/metashape_workflow.py config/example.yml
+sbatch -p bigmemh --time=24:00:00 --job-name=MetaDemo -c 64 --mem=128G shell/farm_python.sh python/metashape_workflow.py config/example.yml
 ```
 
 The meanings of the sbatch parameters are explained in the linked resources above. Once you have submitted one job using the sbatch command, you can submit another so that they run in parallel (assuming your user group has sufficient resource allocation on farm). You can also put multiple sbatch commands into a shell script so that you only have to run the shell script.
