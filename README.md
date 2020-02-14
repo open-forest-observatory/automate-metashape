@@ -136,7 +136,7 @@ Efficient execution of Metashape requires a good GPU. Having *many* CPUs can hel
 | New farm bigmem nodes (96 CPUs) | 5 days | $22,700 |
 | Potential future farm GPU node (8 x RTX 2080 Ti) | 2 days (using only 1 of the 8 GPUs) | $25,000 (if split 8 ways, $3,125 per user) |
 
-A new farm GPU node would provide computing power that is competitive with the Alienware gaming PC for *individual projects,* but it would provide the opportunity to run multiple projects in parallel. Assuming that not all PIs were using the node at the same time (a reasonable assumption), those who needed extra processing power temporarily would be allowed to use other PIs' GPU allocations. This is the beauty of a shared computing cluster. In this circumstance, running 8 projects that would each take 1 day on the Alienware gaming PC (for a total of 8 days) would take only 2 days on the computing cluster.
+A new farm GPU node would provide computing power that is competitive with the Alienware gaming PC for *individual projects,* but it would provide the opportunity to run multiple projects in parallel. Assuming that not all PIs/users were using the node at the same time (a reasonable assumption), those who needed extra processing power temporarily would be allowed to use other users' GPU allocations. This is the beauty of a shared computing cluster. In this circumstance, running 8 projects that would each take 1 day on the Alienware gaming PC (for a total of 8 days) would take only 2 days on the computing cluster.
 
 
 ## Preparing ground-control points (GCPs)
