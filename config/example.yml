@@ -1,6 +1,6 @@
 # This is an example yaml configuration for a metashape run
 
-## Project-level parameters:
+#### Project-level parameters:
 
 # Project to load. If not a blank string, this will open an existing project at the path specified. If a blank string, creates a new empty project.
 # Even if opening an existing project, all processing on it is saved as a new project (path and name specified below). The original project file is not modified.
@@ -28,7 +28,7 @@ project_crs: "EPSG::26910" # 26910 is UTM 10N
 # Assuming there's enough memory, it seems to run 10-20% faster by disabling subdividing. But large projects can run out memory and fail if subdivide is not enabled.
 subdivide_task: True
 
-#### Processing parameters
+#### Processing parameters:
 ## Steps can be run or skipped using the 'enabled' parameter. If enabled == False, everything else in the step is irrelevant.
 ## The metashape functions powering each of these steps are listed in the comments in parentheses.
 ## Refer to Metashape documentation for full parameter definitions: https://www.agisoft.com/pdf/metashape_python_api_1_5_0.pdf
