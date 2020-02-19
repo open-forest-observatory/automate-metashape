@@ -112,7 +112,7 @@ hostname -f
 # Set ENV variable to a specific font so reports work
 export QT_QPA_FONTDIR='/usr/share/fonts/truetype/dejavu/'
 
-# Run the Benchmark
+# Run the workflow
 # First arg is the Metashape python workflow script,
 # Second arg is the config file
 python ${1} ${2}
@@ -125,13 +125,13 @@ sbatch -p bigmemh --time=24:00:00 --job-name=MetaDemo -c 64 --mem=128G shell/far
 
 The meanings of the sbatch parameters are explained in the linked resources above. Once you have submitted one job using the sbatch command, you can submit another so that they run in parallel (assuming your user group has sufficient resource allocation on farm). You can also put multiple sbatch commands into a shell script so that you only have to run the shell script.
 
-#### Opportunities for investing in farm
+#### Options for accessing farm computing resources
 
 Efficient execution of Metashape requires a good GPU. Having *many* CPUs can help, but still does not come near to the efficiency of a GPU. For photogrammetry to make sense on farm, PIs would need to invest in GPU nodes. Here are rough estimates of a hypothetical Metashape project's execution time based on extensive benchmarking:
 
 | Machine/node type | Required computing time | Cost ballpark |
 |---|---|---|
-| Dell Alienware gaming PC with Nvidia RTX 2080 Ti and 16 CPUs | 1 day | $3000 |
+| Dell Alienware gaming PC with Nvidia RTX 2080 Ti and 16 CPUs | 1 day | $3,000 |
 | Free original farm nodes (24 CPUs) | 30 days | Free |
 | New farm bigmem nodes (96 CPUs) | 5 days | $22,700 |
 | Potential future farm GPU node (8 x RTX 2080 Ti) | 2 days (using only 1 of the 8 GPUs) | $25,000 (if split 8 ways, $3,125 per user) |
