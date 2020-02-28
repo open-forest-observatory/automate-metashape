@@ -91,7 +91,7 @@ Then it's just a matter of running the shell script.
 
 ### Running workflow batches in parallel on a compute cluster
 
-Running Metashape workflow batches in parallel on a cluster is as simple as submitting multiple jobs to the cluter. Submitting a job simply involves instructing the cluster to run the `metashape_workflow.py` script with the specified configuration file.
+Running Metashape workflow batches in parallel on a cluster is as simple as submitting multiple jobs to the cluster. Submitting a job simply involves instructing the cluster to run the `metashape_workflow.py` script with the specified configuration file.
 
 #### Example for the `farm` cluster (UC Davis College of Agricultural and Environmental Sciences)
 
