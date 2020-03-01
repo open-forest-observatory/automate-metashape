@@ -432,8 +432,6 @@ def build_dem(doc, log_file, run_id, cfg):
     compression.tiff_big = cfg["buildDem"]["tiff_big"]
     compression.tiff_tiled = cfg["buildDem"]["tiff_tiled"]
     compression.tiff_overviews = cfg["buildDem"]["tiff_overviews"]
-    projection = Metashape.OrthoProjection()
-    projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
 
     if (cfg["buildDem"]["type"] == "DSM") | (cfg["buildDem"]["type"] == "both"):
         # call without classes argument (Metashape then defaults to all classes)
