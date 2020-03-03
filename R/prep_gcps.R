@@ -28,7 +28,7 @@ library(ggplot2)
 
 #### User-defined vars (only used when running interactivesly) ####
 
-dir_manual = "C:/Users/DYoung/Box/projects/uav_data/imagery/missions_thinned/set14_120m_95_95_nadir_0ev_thin44"
+dir_manual = "C:/Users/DYoung/Box/projects/gcp_identification/image_sets/set15a_thin44"
 
 
 
@@ -44,9 +44,13 @@ if(length(dir) == 0) {
   dir = dir_manual
 }
 
-gcps = read_sf(paste0(dir,"/gcps/raw/gcps.gpkg"))
+gcps = read_sf(paste0(dir,"/gcps/raw/gcps.geojson"))
 imagecoords = read.csv(paste0(dir,"/gcps/raw/gcp_imagecoords.csv"),header=TRUE,stringsAsFactors=FALSE)
 dem_usgs = raster(paste0(dir,"/dem_usgs/dem_usgs.tif"))
+
+# remove blank lines from image coords file
+imagecoords = imagecoords %>%
+  filter(!is.na(gcp))
 
 
 #### Make prepared data directory if it doesn't ecist ####
