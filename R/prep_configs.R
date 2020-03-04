@@ -9,13 +9,26 @@ library(yaml)
 #### Determine paths and read YAML files ####
 
 # If running manually, specify path to base and derived YAML templates
-manual_path = "C:/Users/DYoung/Documents/projects/metashape/temp_dev"
+manual_yaml_path = "C:/Users/DYoung/Documents/projects/metashape/temp_dev"
+# also the path to metashape repo
+manual_metashape_path = "~/projects/metashape/python/metashape_workflow.py"
 
-path = manual_path
-## TODO: read path from command line argument
+## read paths from command line argument (otherwise use the hard-coded defaults above)
+args = commandArgs(trailingOnly=TRUE)
 
-base_yaml_path = paste0(manual_path,"/","base.yml")
-derived_yaml_path = paste0(manual_path,"/","derived.yml")
+if(length(args) == 0) {
+  yaml_path = manual_yaml_path
+  metashape_path = manual_metashape_path
+} else if (length(args) == 1) {
+  yaml_path = args[1]
+} else {
+  metashape_path = args[2]
+  yaml_path = args[1]
+}
+
+## Read YAML files
+base_yaml_path = paste0(yaml_path,"/","base.yml")
+derived_yaml_path = paste0(yaml_path,"/","derived.yml")
 
 base = read_yaml(base_yaml_path)
 
@@ -30,8 +43,12 @@ derived_data = read_lines(derived_yaml_path, skip_empty_rows = TRUE)
 derived_data = str_replace(derived_data,"^\n","")
 
 # search for vector elements (lines) that indicate the start of a derived parameter set
-start_rows = grep("^####CONFIG_", derived_data)
+start_rows = grep("^####CONFIG", derived_data)
 
+# Vector to store config file locations to create a shell script
+config_files = NULL
+
+# For each derived parameter set, replace the base parameters with the provided derived parameters, and write a config file
 for(i in 1:length(start_rows)) {
   
   # get first line of the current derived parameter set
@@ -50,63 +67,28 @@ for(i in 1:length(start_rows)) {
   derived_focal = yaml.load(yaml_string)
   
   ## take the template and replace each element specified in the derived with the value specified in the derived
-  for(i in 1:length(derived_focal))
+  base_derived = modifyList(base,derived_focal)
+  
+  
+  ## get the number (ID) of the derived set (just use the run name from the YAML)
+  id = base_derived$run_name
+  
+  ## write the derived set with its ID number
+  filename = paste0(yaml_path,"/cfg_",id,".yml")
+
+  write_yaml(base_derived,filename)
+  
+  config_files = c(filename,config_files)
   
   
 }
 
 
+## make a shell script to run all the config files (assume WD is the metashape repo)
+shell_lines = paste0("python ", metashape_path, " ", config_files)
 
-## R need to look up how to overwrite only parts of an object. Could do with function below but only if the list object were mutable.
-
-
-
-
-
-
-
-
-replace = function(base,derived) {
-  
-  for(i in 1:length(derived)) {
-    
-    param = names(derived[i])
-    
-    if(names(derived[i] == names(derived[[i]]))) { ## if we're at the bottom layer
-      
-      
-      
-      
-      
-    }
-    value = derived[i]
-    
-    
-    
-    
-  }
-  
-  
-  
-  
-  
-  
-}
-
-
-
-
-
-
-
-
-
-derived = read_yaml(derived_yaml_path)
-
-
-
-
-
+writeLines(shell_lines,
+            con = paste0(yaml_path,"/config_batch.sh"), sep="\n")
 
 
 
