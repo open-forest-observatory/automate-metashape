@@ -78,7 +78,7 @@ for(i in 1:length(start_rows)) {
 
   write_yaml(base_derived,filename)
   
-  config_files = c(filename,config_files)
+  config_files = c(config_files,filename)
   
   
 }
