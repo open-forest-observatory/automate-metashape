@@ -28,7 +28,7 @@ library(ggplot2)
 
 #### User-defined vars (only used when running interactivesly) ####
 
-dir_manual = "C:/Users/DYoung/Box/projects/gcp_identification/image_sets/set15a_thin44"
+dir_manual = "C:/Users/DYoung/Box/projects/gcp_identification/image_sets/set26_thin44"
 
 
 
@@ -50,7 +50,7 @@ dem_usgs = raster(paste0(dir,"/dem_usgs/dem_usgs.tif"))
 
 # remove blank lines from image coords file
 imagecoords = imagecoords %>%
-  filter(!is.na(gcp))
+  filter(!is.na(x))
 
 
 #### Make prepared data directory if it doesn't ecist ####
@@ -88,6 +88,11 @@ imagecoords_table = imagecoords %>%
   mutate(image_path = paste0(folder_text,"/",image_text)) %>%
   dplyr::select(gcp_id,image_path,x,y) %>%
   arrange(gcp_id,image_path)
+
+# remove blank lines from image coords file
+imagecoords = imagecoords %>%
+  filter(!is.na(gcp))
+
 
 write.table(imagecoords_table,paste0(dir,"/gcps/prepared/gcp_imagecoords_table.csv"),row.names=FALSE,col.names=FALSE,sep=",")
 
