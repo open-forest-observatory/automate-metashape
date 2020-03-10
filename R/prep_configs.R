@@ -3,27 +3,28 @@
 ### This script does the following:
 ### - Takes a base config YAML template and a set of alternate (derived) parameter values (partial YAMLs that only specify the parameters to change) and composes a set of config files to run in the metashape workflow)
 
-library(tidyverse)
 library(yaml)
+library(readr)
+library(stringr)
 
 #### Determine paths and read YAML files ####
 
 # If running manually, specify path to base and derived YAML templates
-manual_yaml_path = "C:/Users/DYoung/Documents/projects/metashape/temp_dev"
-# also the path to metashape repo
+manual_yaml_path = "/storage/uav_data/configs/set26"
+# also the path to metashape repo (this is used only in building the batch job script -- for the call to metashape)
 manual_metashape_path = "~/projects/metashape/python/metashape_workflow.py"
 
 ## read paths from command line argument (otherwise use the hard-coded defaults above)
-args = commandArgs(trailingOnly=TRUE)
+command_args = commandArgs(trailingOnly=TRUE)
 
-if(length(args) == 0) {
+if(length(command_args) == 0) {
   yaml_path = manual_yaml_path
   metashape_path = manual_metashape_path
-} else if (length(args) == 1) {
-  yaml_path = args[1]
+} else if (length(command_args) == 1) {
+  yaml_path = command_args[1]
 } else {
-  metashape_path = args[2]
-  yaml_path = args[1]
+  metashape_path = command_args[2]
+  yaml_path = command_args[1]
 }
 
 ## Read YAML files
