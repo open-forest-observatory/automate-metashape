@@ -10,9 +10,9 @@ library(stringr)
 #### Determine paths and read YAML files ####
 
 # If running manually, specify path to base and derived YAML templates
-manual_yaml_path = "/storage/uav_data/configs/set26"
+manual_yaml_path = "/storage/forestuav/configs/set26"
 # also the path to metashape repo (this is used only in building the batch job script -- for the call to metashape)
-manual_metashape_path = "~/projects/metashape/python/metashape_workflow.py"
+manual_metashape_path = "~/Documents/projects/metashape/python/metashape_workflow.py"
 
 ## read paths from command line argument (otherwise use the hard-coded defaults above)
 command_args = commandArgs(trailingOnly=TRUE)
