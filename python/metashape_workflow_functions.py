@@ -196,6 +196,8 @@ def add_photos(doc, cfg):
     return True
 
 
+
+
 def calibrate_reflectance(doc, cfg):
     # TODO: Handle failure to find panels, or mulitple panel images by returning error to user.
     doc.chunk.locateReflectancePanels()
@@ -310,6 +312,40 @@ def optimize_cameras(doc, cfg):
     doc.save()
 
     return True
+
+
+
+def filter_points_usgs(doc, cfg):
+
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+
+    rec_thresh_percent = cfg["filterPoints"]["rec_thresh_percent"]
+    rec_thresh_absolute = cfg["filterPoints"]["rec_thresh_absolute"]
+    proj_thresh_percent = cfg["filterPoints"]["proj_thresh_percent"]
+    proj_thresh_absolute = cfg["filterPoints"]["proj_thresh_absolute"]
+
+    fltr = Metashape.PointCloud.Filter()
+    fltr.init(doc.chunk, Metashape.PointCloud.Filter.ReconstructionUncertainty)
+    values = fltr.values.copy()
+    values.sort()
+    thresh = values[int(len(values) * (1 - rec_thresh_percent / 100))]
+    if thresh < rec_thresh_absolute:
+        thresh = rec_thresh_absolute  # don't throw away too many points if they're all good
+    fltr.removePoints(thresh)
+
+    fltr = Metashape.PointCloud.Filter()
+    fltr.init(doc.chunk, Metashape.PointCloud.Filter.ProjectionAccuracy)
+    values = fltr.values.copy()
+    values.sort()
+    thresh = values[int(len(values) * (1 - proj_thresh_percent / 100))]
+    if thresh < proj_thresh_absolute:
+        thresh = proj_thresh_absolute  # don't throw away too many points if they're all good
+    fltr.removePoints(thresh)
+
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+
+    doc.save()
+
 
 
 

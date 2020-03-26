@@ -118,3 +118,6 @@ dmypy.json
 
 ## apparently added by pycharm
 .idea/
+
+## dev folder for temp configs etc
+dev/
