@@ -28,7 +28,7 @@ library(ggplot2)
 
 #### User-defined vars (only used when running interactivesly) ####
 
-dir_manual = "C:/Users/DYoung/Box/projects/gcp_identification/image_sets/set26_thin44"
+dir_manual = "/home/derek/Desktop/temp/set27b_thin44"
 
 
 
@@ -108,6 +108,7 @@ for(i in 1:nrow(imagecoords_table)) {
   
   img = image_read(paste0(dir,"/",imagecoords_row$image_path))
   img = image_scale(img,"10%")
+  img = image_flip(img)
   
   img_x = imagecoords_row$x/10
   img_y = -imagecoords_row$y/10
