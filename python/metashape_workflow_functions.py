@@ -174,7 +174,7 @@ def add_photos(doc, cfg):
     ## Get paths to all the project photos
     a = glob.iglob(os.path.join(cfg["photo_path"],"**","*.*"))   #(([jJ][pP][gG])|([tT][iI][fF]))
     b = [path for path in a]
-    photo_files = [x for x in b if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)",x) & (not re.search("dem_usgs.tif",x)))]
+    photo_files = [x for x in b if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)",x) and (not re.search("dem_usgs.tif",x)))]
 
 
     ## Add them
