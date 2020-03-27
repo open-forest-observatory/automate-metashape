@@ -304,7 +304,7 @@ def optimize_cameras(doc, cfg):
     # Disable camera locations as reference if specified in YML
     if cfg["addGCPs"]["enabled"] and cfg["addGCPs"]["optimize_w_gcps_only"]:
         n_cameras = len(doc.chunk.cameras)
-        for i in range(1, n_cameras):
+        for i in range(0, n_cameras):
             doc.chunk.cameras[i].reference.enabled = False
 
     # Currently only optimizes the default parameters, which is not all possible parameters
