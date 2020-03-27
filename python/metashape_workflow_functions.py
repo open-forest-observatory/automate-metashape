@@ -313,16 +313,16 @@ def optimize_cameras(doc, cfg):
 
     return True
 
-
-
-def filter_points_usgs(doc, cfg):
+def filter_points_usgs_part1(doc, cfg):
 
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
-    rec_thresh_percent = cfg["filterPoints"]["rec_thresh_percent"]
-    rec_thresh_absolute = cfg["filterPoints"]["rec_thresh_absolute"]
-    proj_thresh_percent = cfg["filterPoints"]["proj_thresh_percent"]
-    proj_thresh_absolute = cfg["filterPoints"]["proj_thresh_absolute"]
+    rec_thresh_percent = cfg["filterPointsUSGS"]["rec_thresh_percent"]
+    rec_thresh_absolute = cfg["filterPointsUSGS"]["rec_thresh_absolute"]
+    proj_thresh_percent = cfg["filterPointsUSGS"]["proj_thresh_percent"]
+    proj_thresh_absolute = cfg["filterPointsUSGS"]["proj_thresh_absolute"]
+    reproj_thresh_percent = cfg["filterPointsUSGS"]["reproj_thresh_percent"]
+    reproj_thresh_absolute = cfg["filterPointsUSGS"]["reproj_thresh_absolute"]
 
     fltr = Metashape.PointCloud.Filter()
     fltr.init(doc.chunk, Metashape.PointCloud.Filter.ReconstructionUncertainty)
@@ -333,19 +333,52 @@ def filter_points_usgs(doc, cfg):
         thresh = rec_thresh_absolute  # don't throw away too many points if they're all good
     fltr.removePoints(thresh)
 
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+
     fltr = Metashape.PointCloud.Filter()
     fltr.init(doc.chunk, Metashape.PointCloud.Filter.ProjectionAccuracy)
     values = fltr.values.copy()
     values.sort()
-    thresh = values[int(len(values) * (1 - proj_thresh_percent / 100))]
+    thresh = values[int(len(values) * (1- proj_thresh_percent / 100))]
     if thresh < proj_thresh_absolute:
         thresh = proj_thresh_absolute  # don't throw away too many points if they're all good
     fltr.removePoints(thresh)
 
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
+    fltr = Metashape.PointCloud.Filter()
+    fltr.init(doc.chunk, Metashape.PointCloud.Filter.ReprojectionError)
+    values = fltr.values.copy()
+    values.sort()
+    thresh = values[int(len(values) * (1 - reproj_thresh_percent / 100))]
+    if thresh < reproj_thresh_absolute:
+        thresh = reproj_thresh_absolute  # don't throw away too many points if they're all good
+    fltr.removePoints(thresh)
+
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+
     doc.save()
 
+
+def filter_points_usgs_part2(doc, cfg):
+
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+
+    reproj_thresh_percent = cfg["filterPointsUSGS"]["reproj_thresh_percent"]
+    reproj_thresh_absolute = cfg["filterPointsUSGS"]["reproj_thresh_absolute"]
+
+    fltr = Metashape.PointCloud.Filter()
+    fltr.init(doc.chunk, Metashape.PointCloud.Filter.ReprojectionError)
+    values = fltr.values.copy()
+    values.sort()
+    thresh = values[int(len(values) * (1 - reproj_thresh_percent / 100))]
+    if thresh < reproj_thresh_absolute:
+        thresh = reproj_thresh_absolute  # don't throw away too many points if they're all good
+    fltr.removePoints(thresh)
+
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+
+    doc.save()
 
 
 

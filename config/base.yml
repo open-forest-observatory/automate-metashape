@@ -53,6 +53,15 @@ alignPhotos: # (Metashape: alignPhotos)
     downscale: 1 # Recommended: 1. How much to coarsen the photos when searching for tie points. Higher number for blurrier photos. Probably only accepts numbers 4^x.
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as aligning photos?
 
+filterPointsUSGS:
+    enabled: False
+    rec_thresh_percent: 20
+    rec_thresh_absolute: 15
+    proj_thresh_percent: 30
+    proj_thresh_absolute: 2
+    reproj_thresh_percent: 5
+    reproj_thresh_absolute: 0.3
+
 optimizeCameras: # (Metashape: optimizeCameras)
     enabled: True
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as optinizing photos?

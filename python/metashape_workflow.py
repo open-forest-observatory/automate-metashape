@@ -10,7 +10,7 @@ import sys
 # ---- If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
 
 ## Define where to get the config file (only used if running interactively)
-manual_config_file = "example_dev.yml"
+manual_config_file = "config/example_dev.yml"
 # ---- If not running interactively, the config file should be supplied as the command-line argument after the python script, e.g.: python metashape_workflow.py config.yml
 
 
@@ -43,13 +43,16 @@ if cfg["alignPhotos"]["enabled"]:
     meta.align_photos(doc, log, cfg)
 
 if cfg["filterPointsUSGS"]["enabled"]:
-    meta.fliter_points_usgs(doc, cfg)
+    meta.filter_points_usgs_part1(doc, cfg)
 
 if cfg["addGCPs"]["enabled"]:
     meta.add_gcps(doc, cfg)
 
 if cfg["optimizeCameras"]["enabled"]:
     meta.optimize_cameras(doc, cfg)
+
+if cfg["filterPointsUSGS"]["enabled"]:
+    meta.filter_points_usgs_part2(doc, cfg)
 
 if cfg["buildDenseCloud"]["enabled"]:
     meta.build_dense_cloud(doc, log, run_id, cfg)
