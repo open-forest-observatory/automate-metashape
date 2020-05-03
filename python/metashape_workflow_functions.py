@@ -223,8 +223,10 @@ def add_gcps(doc, cfg):
 
     for line in content:
         marker_label, camera_label, x_proj, y_proj = line.split(",")
-        marker_label = marker_label[1:-1]  # need to get it out of the two pairs of quotes
-        camera_label = camera_label[1:-1]
+        if marker_label[0] == '"': # if it's in quotes (from saving CSV in Excel), remove quotes
+            marker_label = marker_label[1:-1]  # need to get it out of the two pairs of quotes
+        if camera_label[0] == '"':  # if it's in quotes (from saving CSV in Excel), remove quotes
+            camera_label = camera_label[1:-1]
 
         marker = get_marker(doc.chunk, marker_label)
         if not marker:
@@ -247,7 +249,8 @@ def add_gcps(doc, cfg):
 
     for line in content:
         marker_label, world_x, world_y, world_z = line.split(",")
-        marker_label = marker_label[1:-1]  # need to get it out of the two pairs of quotes
+        if marker_label[0] == '"':  # if it's in quotes (from saving CSV in Excel), remove quotes
+            marker_label = marker_label[1:-1]  # need to get it out of the two pairs of quotes
 
         marker = get_marker(doc.chunk, marker_label)
         if not marker:
