@@ -100,7 +100,7 @@ buildDem: # (Metashape: buildDem, exportRaster)
 buildOrthomosaic: # (Metashape: buildOrthomosaic, exportRaster)
     enabled: True
     ## For building orthomosaic (buildOrthomosaic)
-    surface: "USGS" # Recommended: "USGS" (assuming a USGS DEM is available and GCPs with accurate elvevation data are being used). The surface to build the orthomosaic onto. "DTM", "DSM", or "USGS". DTM and DSM refer to elevation models built by Metashape (buildDem step above) and stored in the project. If USGS, you must use GCPs with accurate elevations (ideally extracted from the USGS DEM).
+    surface: "USGS" # Recommended: "USGS" (assuming a USGS DEM is available and GCPs with accurate elvevation data are being used). The surface to build the orthomosaic onto. "DTM", "DSM", "USGS", or "DTMandDSM. DTM and DSM refer to elevation models built by Metashape (buildDem step above) and stored in the project. If USGS, you must use GCPs with accurate elevations (ideally extracted from the USGS DEM).
     usgs_dem_path: "dem_usgs/dem_usgs.tif" # Path to USGS DEM for the project area. Needed if surface (parameter above) is "USGS".
     usgs_dem_crs: "EPSG::4269" # CRS of the USGS DEM. Needed if surface (parameter above) is "USGS". For sample RGB photoset, crs is 4269 (Geographic NAD83)
     blending: Metashape.MosaicBlending # Recommended: Metashape.MosaicBlending. Photo blending mode. Options include AverageBlending, MosaicBlending, MinBlending, MaxBlending, DisabledBlending

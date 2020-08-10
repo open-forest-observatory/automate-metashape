@@ -10,7 +10,7 @@ import sys
 # ---- If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
 
 ## Define where to get the config file (only used if running interactively)
-manual_config_file = "config/example_dev.yml"
+manual_config_file = "/storage/forestuav/configs/set31/cfg_paramset31_55.yml" #"config/example_dev.yml"
 # ---- If not running interactively, the config file should be supplied as the command-line argument after the python script, e.g.: python metashape_workflow.py config.yml
 
 
@@ -61,7 +61,7 @@ if cfg["buildDem"]["enabled"]:
     meta.build_dem(doc, log, run_id, cfg)
 
 if cfg["buildOrthomosaic"]["enabled"]:
-    meta.build_orthomosaic(doc, log, run_id, cfg)
+    meta.build_orthomosaics(doc, log, run_id, cfg)
 
 meta.export_report(doc, run_id, cfg)
 
