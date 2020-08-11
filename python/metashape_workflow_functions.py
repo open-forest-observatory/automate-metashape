@@ -562,12 +562,12 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending):
     build_orthomosaics sets the current elevation data and calls build_export_orthomosaic (one or more times depending on how many orthomosaics requested)
     '''
 
-    # record results to file
-    with open(log_file, 'a') as file:
-        file.write(sep.join(['Build Orthomosaic: Import or build DEM: ', time6]) + '\n')
-
     # get a beginning time stamp for the next step
     timer6a = time.time()
+
+    #prepping params for buildDem
+    projection = Metashape.OrthoProjection()
+    projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
 
     doc.chunk.buildOrthomosaic(surface_data=Metashape.ElevationData,
                                blending_mode=cfg["buildOrthomosaic"]["blending"],
@@ -639,13 +639,13 @@ def build_orthomosaics(doc, log_file, run_id, cfg):
                            classes=Metashape.PointClass.Ground,
                            subdivide_task=cfg["subdivide_task"],
                            projection=projection)
-        build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending = "DTM")
+        build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending = "dtm")
     # DSM: use all point classes
     if (cfg["buildOrthomosaic"]["surface"] == "DSM") | (cfg["buildOrthomosaic"]["surface"] == "DTMandDSM"):
         doc.chunk.buildDem(source_data = Metashape.DenseCloudData,
                            subdivide_task=cfg["subdivide_task"],
                            projection=projection)
-        build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending = "DSM")
+        build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending = "dsm")
 
     return True
 

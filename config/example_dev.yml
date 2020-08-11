@@ -5,11 +5,11 @@
 # Project to load. If not a blank string, this will open an existing project at the path specified. If a blank string, creates a new empty project.
 # Even if opening an existing project, all processing on it is saved as a new project (path and name specified below). The original project file is not modified.
 # When no project is specified, photos are automatically added to the new project as the first step. When a project is specified, photos are not added because they are assumed to be in the project.
-load_project: "/storage/temp/test_usgs_gradual_pre_162_20200326T1612.psx" #"/storage/temp/test_usgs_gradual_pre_20200326T1506.psx"
+load_project: "" #"/storage/temp/test_usgs_gradual_pre_20200326T1506.psx"
 
 # The path to the directory of flight photos
 # If there are multiple photo folders, set path to the folder that contains all the photo folders
-photo_path: "/storage/forestuav/imagery/missions_thinned/set26b_thin22"
+photo_path: "/storage/forestuav/imagery/missions_thinned/set31_thin4242"
 multispectral: False # Is this a multispectral photo set? If RGB, set to False.
 
 # Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
@@ -19,7 +19,7 @@ output_path: "/storage/temp"
 project_path: "/storage/temp"
 
 # The identifier for the run. Will be used in naming output files. Recommended to include a photoset name and processing parameter set name.
-run_name: "test_usgs_gradual_pre_162"
+run_name: "replicate_swapped"
 
 # CRS EPSG code that project outputs should be in (projection should be in meter units and intended for the project area)
 project_crs: "EPSG::26910" # 26910 is UTM 10N
@@ -46,7 +46,7 @@ alignPhotos: # (Metashape: alignPhotos)
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as aligning photos?
 
 filterPointsUSGS:
-    enabled: False
+    enabled: True
     rec_thresh_percent: 20
     rec_thresh_absolute: 15
     proj_thresh_percent: 30
@@ -63,7 +63,7 @@ addGCPs:
     optimize_w_gcps_only: True # Optimize alignment using GCPs only: required for GCP locations to take precedence over photo GPS data. Disabling it makes GCPs essentially irrelevant.
 
 optimizeCameras: # (Metashape: optimizeCameras)
-    enabled: False
+    enabled: True
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as optinizing photos?
 
 buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, classifyGroundPoints, and exportPoints)
