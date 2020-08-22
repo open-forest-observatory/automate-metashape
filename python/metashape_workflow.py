@@ -18,11 +18,11 @@ manual_config_file = "/storage/forestuav/configs/set31/cfg_paramset31_55.yml" #"
 try:  # running interactively
     from python import metashape_workflow_functions as meta
     from python import read_yaml
-    config_file = manual_config_file
+    config_file = sys.argv[1]
 except:  # running from command line
     import metashape_workflow_functions as meta
     import read_yaml
-    config_file = sys.argv[1]
+    config_file = manual_config_file
 
 ## Parse the config file
 cfg = read_yaml.read_yaml(config_file)
