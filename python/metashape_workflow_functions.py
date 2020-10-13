@@ -172,7 +172,7 @@ def add_photos(doc, cfg):
     '''
 
     ## Get paths to all the project photos
-    a = glob.iglob(os.path.join(cfg["photo_path"],"**","*.*"))   #(([jJ][pP][gG])|([tT][iI][fF]))
+    a = glob.iglob(os.path.join(cfg["photo_path"],"**","*.*"), recursive=True)   #(([jJ][pP][gG])|([tT][iI][fF]))
     b = [path for path in a]
     photo_files = [x for x in b if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)",x) and (not re.search("dem_usgs.tif",x)))]
 
@@ -184,11 +184,13 @@ def add_photos(doc, cfg):
         doc.chunk.addPhotos(photo_files)
 
 
-    ## Need to change the label on each camera so that it includes the containing folder
+    ## Need to change the label on each camera so that it includes the containing folder(S)
     for camera in doc.chunk.cameras:
         path = camera.photo.path
-        path_parts = path.split("/")[-2:]
-        newlabel = "/".join(path_parts)
+        # remove the base imagery dir from this string
+        rel_path = path.replace(cfg["photo_path"],"")
+        # if it starts with a '/', remove it
+        newlabel = re.sub("^/","",rel_path)
         camera.label = newlabel
 
     doc.save()
