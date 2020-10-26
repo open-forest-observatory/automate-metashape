@@ -5,21 +5,21 @@
 # Project to load. If not a blank string, this will open an existing project at the path specified. If a blank string, creates a new empty project.
 # Even if opening an existing project, all processing on it is saved as a new project (path and name specified below). The original project file is not modified.
 # When no project is specified, photos are automatically added to the new project as the first step. When a project is specified, photos are not added because they are assumed to be in the project.
-load_project: "" #"/storage/temp/test_usgs_gradual_pre_20200326T1506.psx"
+load_project: "/storage/forestuav/metashape_projects/comparison_project/paramset15a_026_20201026T0445.psx" #"/storage/temp/test_usgs_gradual_pre_20200326T1506.psx"
 
 # The path to the directory of flight photos
 # If there are multiple photo folders, set path to the folder that contains all the photo folders
-photo_path: "/storage/forestuav/imagery/missions_thinned/set31_thin4242"
+photo_path: "/storage/forestuav/imagery/missions_thinned/set15a_thin22"
 multispectral: False # Is this a multispectral photo set? If RGB, set to False.
 
 # Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
-output_path: "/storage/temp"
+output_path: "/storage/temp_test_region"
 
 # Path to save Metashape project file (.psx). Will be created if does not exist
-project_path: "/storage/temp"
+project_path: "/storage/temp_test_region"
 
 # The identifier for the run. Will be used in naming output files. Recommended to include a photoset name and processing parameter set name.
-run_name: "replicate_swapped"
+run_name: "expand_region"
 
 # CRS EPSG code that project outputs should be in (projection should be in meter units and intended for the project area)
 project_crs: "EPSG::26910" # 26910 is UTM 10N
@@ -42,7 +42,7 @@ calibrateReflectance: # (Metahsape: calibrateReflectance)
 
 alignPhotos: # (Metashape: alignPhotos)
     enabled: True
-    downscale: 1 # Recommended: 1. How much to coarsen the photos when searching for tie points. Higher number for blurrier photos. Probably only accepts numbers 4^x.
+    downscale: 4 # Recommended: 1. How much to coarsen the photos when searching for tie points. Higher number for blurrier photos. Probably only accepts numbers 4^x.
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as aligning photos?
 
 filterPointsUSGS:
@@ -57,7 +57,7 @@ filterPointsUSGS:
 # To use GCPs, a 'gcps' folder must exist in the top level photos folder. The contents of the 'gcps' folder are created by the prep_gcps.R script. See readme: https://github.com/ucdavis/metashape
 addGCPs:
     enabled: True
-    gcp_crs: "EPSG::4326" # CRS EPSG code of GCP coordinates. 26910 (UTM 10 N) is the CRS of the sample RGB photoset.
+    gcp_crs: "EPSG::26910" # CRS EPSG code of GCP coordinates. 26910 (UTM 10 N) is the CRS of the sample RGB photoset.
     marker_location_accuracy: 0.1 # Recommended: 0.1. Accuracy of GCPs real-world coordinates, in meters.
     marker_projection_accuracy: 8 # Recommended: 8. Accuracy of the identified locations of the GCPs within the images, in pixels.
     optimize_w_gcps_only: True # Optimize alignment using GCPs only: required for GCP locations to take precedence over photo GPS data. Disabling it makes GCPs essentially irrelevant.
