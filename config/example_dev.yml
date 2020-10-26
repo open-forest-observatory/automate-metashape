@@ -5,7 +5,7 @@
 # Project to load. If not a blank string, this will open an existing project at the path specified. If a blank string, creates a new empty project.
 # Even if opening an existing project, all processing on it is saved as a new project (path and name specified below). The original project file is not modified.
 # When no project is specified, photos are automatically added to the new project as the first step. When a project is specified, photos are not added because they are assumed to be in the project.
-load_project: "/storage/forestuav/metashape_projects/comparison_project/paramset15a_026_20201026T0445.psx" #"/storage/temp/test_usgs_gradual_pre_20200326T1506.psx"
+load_project: "/storage/forestuav/metashape_projects/comparison_project/paramset15a_001_20201026T1003.psx" #"/storage/temp/test_usgs_gradual_pre_20200326T1506.psx"
 
 # The path to the directory of flight photos
 # If there are multiple photo folders, set path to the folder that contains all the photo folders
