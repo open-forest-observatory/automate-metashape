@@ -45,17 +45,42 @@ if cfg["calibrateReflectance"]["enabled"]:
 if cfg["alignPhotos"]["enabled"]:
     meta.align_photos(doc, log, cfg)
 
+doc.chunk.resetRegion()
+region_dims = doc.chunk.region.size
+region_dims[2] *= 3
+doc.chunk.region.size = region_dims
+
 if cfg["filterPointsUSGS"]["enabled"]:
     meta.filter_points_usgs_part1(doc, cfg)
+
+doc.chunk.resetRegion()
+region_dims = doc.chunk.region.size
+region_dims[2] *= 3
+doc.chunk.region.size = region_dims
 
 if cfg["addGCPs"]["enabled"]:
     meta.add_gcps(doc, cfg)
 
+doc.chunk.resetRegion()
+region_dims = doc.chunk.region.size
+region_dims[2] *= 3
+doc.chunk.region.size = region_dims
+
 if cfg["optimizeCameras"]["enabled"]:
     meta.optimize_cameras(doc, cfg)
 
+doc.chunk.resetRegion()
+region_dims = doc.chunk.region.size
+region_dims[2] *= 3
+doc.chunk.region.size = region_dims
+
 if cfg["filterPointsUSGS"]["enabled"]:
     meta.filter_points_usgs_part2(doc, cfg)
+
+doc.chunk.resetRegion()
+region_dims = doc.chunk.region.size
+region_dims[2] *= 3
+doc.chunk.region.size = region_dims
 
 if cfg["buildDenseCloud"]["enabled"]:
     meta.build_dense_cloud(doc, log, run_id, cfg)
