@@ -90,9 +90,9 @@ buildDem: # (Metashape: buildDem, exportRaster)
     enabled: True
     ## For building DEM (buildDem)
     type: "both" # Recommended: "both". Options: "DSM" or "DTM" or "both". Type of DEM to exporot (digital surface model, digital terrain model, or both).
-    resolution: 0 # Resolution of the DEM in m. 0 means use Metashape default (which is determined by the resolution of the photos and the dense cloud downscale factor
     ## For exporting DEM (exportRaster)
     export: True # Whether to export DEM(s)
+    export_resolution: 0 # Resolution of the DEM in m. 0 means use Metashape default (which is determined by the resolution of the photos and the dense cloud downscale factor)
     tiff_big: True # Recommended: True. Use BigTIFF format? Required for larger projects with large DEMs
     tiff_tiled: False # Recommended: False. Use tiled TIFF? This is related to internal file architecture.
     nodata: -32767 # Recommended: -32767. Value used to represent nodata.

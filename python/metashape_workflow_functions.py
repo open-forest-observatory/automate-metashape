@@ -511,12 +511,12 @@ def build_dem(doc, log_file, run_id, cfg):
         # call without classes argument (Metashape then defaults to all classes)
         doc.chunk.buildDem(source_data = Metashape.DenseCloudData,
                            subdivide_task = cfg["subdivide_task"],
-                           projection = projection,
-                           resolution = cfg["buildDem"]["resolution"])
+                           projection = projection)
         output_file = os.path.join(cfg["output_path"], run_id + '_dsm.tif')
         if cfg["buildDem"]["export"]:
             doc.chunk.exportRaster(path=output_file,
                                    projection=projection,
+                                   resolution = cfg["buildDem"]["export_resolution"],
                                    nodata_value=cfg["buildDem"]["nodata"],
                                    source_data=Metashape.ElevationData,
                                    image_compression=compression)
@@ -525,12 +525,12 @@ def build_dem(doc, log_file, run_id, cfg):
         doc.chunk.buildDem(source_data = Metashape.DenseCloudData,
                            classes = Metashape.PointClass.Ground,
                            subdivide_task = cfg["subdivide_task"],
-                           projection = projection,
-                           resolution = cfg["buildDem"]["resolution"])
+                           projection = projection)
         output_file = os.path.join(cfg["output_path"], run_id + '_dtm.tif')
         if cfg["buildDem"]["export"]:
             doc.chunk.exportRaster(path=output_file,
                                    projection=projection,
+                                   resolution = cfg["buildDem"]["export_resolution"],
                                    nodata_value=cfg["buildDem"]["nodata"],
                                    source_data=Metashape.ElevationData,
                                    image_compression=compression)
