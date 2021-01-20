@@ -516,6 +516,7 @@ def build_dem(doc, log_file, run_id, cfg):
         if cfg["buildDem"]["export"]:
             doc.chunk.exportRaster(path=output_file,
                                    projection=projection,
+                                   resolution = cfg["buildDem"]["export_resolution"],
                                    nodata_value=cfg["buildDem"]["nodata"],
                                    source_data=Metashape.ElevationData,
                                    image_compression=compression)
@@ -529,6 +530,7 @@ def build_dem(doc, log_file, run_id, cfg):
         if cfg["buildDem"]["export"]:
             doc.chunk.exportRaster(path=output_file,
                                    projection=projection,
+                                   resolution = cfg["buildDem"]["export_resolution"],
                                    nodata_value=cfg["buildDem"]["nodata"],
                                    source_data=Metashape.ElevationData,
                                    image_compression=compression)
