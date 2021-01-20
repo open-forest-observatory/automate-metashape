@@ -83,9 +83,10 @@ write.table(gcp_table,paste0(dir,"/gcps/prepared/gcp_table.csv"),row.names=FALSE
 
 imagecoords_table = imagecoords %>%
   mutate(gcp_id = paste0("point",gcp)) %>%
-  mutate(image_text = paste0("DJI_",str_pad(image,4,pad="0"),".JPG")) %>%
-  mutate(folder_text = paste0(folder,"MEDIA")) %>%
-  mutate(image_path = paste0(folder_text,"/",image_text)) %>%
+  mutate(image_text = paste0("DJI_",str_pad(image_file,4,pad="0"),".JPG")) %>%
+  mutate(part_text = paste0("PART_",str_pad(part_folder,2,pad="0"))) %>%
+  mutate(folder_text = paste0(media_folder,"MEDIA")) %>%
+  mutate(image_path = paste0(part_text,"/",folder_text,"/",image_text)) %>%
   dplyr::select(gcp_id,image_path,x,y) %>%
   arrange(gcp_id,image_path)
 
