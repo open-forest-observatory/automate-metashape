@@ -535,6 +535,8 @@ def build_dem(doc, log_file, run_id, cfg):
     if (cfg["buildDem"]["type"] != "DTM") & (cfg["buildDem"]["type"] == "both") & (cfg["buildDem"]["type"] == "DSM"):
         raise ValueError("DEM type must be either 'DSM' or 'DTM' or 'both'")
 
+    doc.save()
+
     # get an ending time stamp for the previous step
     timer5b = time.time()
 
