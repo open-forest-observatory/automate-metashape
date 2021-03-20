@@ -270,7 +270,7 @@ def add_gcps(doc, cfg):
     return True
 
 
-def align_photos(doc, log_file, cfg):
+def reset_region(doc, log_file, cfg):
     '''
     Match photos, align cameras, optimize cameras
     '''
@@ -296,6 +296,19 @@ def align_photos(doc, log_file, cfg):
     # record results to file
     with open(log_file, 'a') as file:
         file.write(sep.join(['Align Photos', time1])+'\n')
+
+    return True
+
+
+def align_photos(doc):
+    '''
+    Reset the region and make it much larger than the points; necessary because if points go outside the region, they get clipped when saving
+    '''
+
+    doc.chunk.resetRegion()
+    region_dims = doc.chunk.region.size
+    region_dims[2] *= 3
+    doc.chunk.region.size = region_dims
 
     return True
 
