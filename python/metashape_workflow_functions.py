@@ -270,7 +270,7 @@ def add_gcps(doc, cfg):
     return True
 
 
-def reset_region(doc, log_file, cfg):
+def align_photos(doc, log_file, cfg):
     '''
     Match photos, align cameras, optimize cameras
     '''
@@ -300,7 +300,7 @@ def reset_region(doc, log_file, cfg):
     return True
 
 
-def align_photos(doc):
+def reset_region(doc):
     '''
     Reset the region and make it much larger than the points; necessary because if points go outside the region, they get clipped when saving
     '''
