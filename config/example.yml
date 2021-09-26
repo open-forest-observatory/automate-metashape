@@ -50,7 +50,7 @@ calibrateReflectance: # (Metahsape: calibrateReflectance)
 
 alignPhotos: # (Metashape: alignPhotos)
     enabled: True
-    downscale: 1 # Recommended: 1. How much to coarsen the photos when searching for tie points. Higher number for blurrier photos. Probably only accepts numbers 4^x.
+    downscale: 2 # Recommended: 2. How much to coarsen the photos when searching for tie points. Higher number for blurrier photos or when there are small surfces that may move between photos (such as leaves). Accepts numbers 2^x (and zero) (https://www.agisoft.com/forum/index.php?topic=11697.0).
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as aligning photos?
 
 filterPointsUSGS:
@@ -69,7 +69,7 @@ optimizeCameras: # (Metashape: optimizeCameras)
 buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, classifyGroundPoints, and exportPoints)
     enabled: True
     ## For depth maps (buldDepthMaps)
-    downscale: 4 # Recommended: 4. How much to coarsen the photos when searching for matches to build the dense cloud. For large photosets, values < 4 likely take prohibitively long. Probably only accepts numbers 4^x.
+    downscale: 2 # Recommended: 2. How much to coarsen the photos when searching for matches to build the dense cloud. For large photosets, values < 4 likely take prohibitively long. Accepts numbers 2^x (https://www.agisoft.com/forum/index.php?topic=11697.0).
     filter_mode: Metashape.MildFiltering # Recommended: Metashape.MildFiltering. How to filter the point cloud. Options are NoFiltering, MildFiltering, ModerateFiltering, AggressiveFiltering. Aggressive filtering removes detail and makes worse DEMs (at least for forest). NoFiltering takes very long. In trials, it never completed.
     reuse_depth: False # Recommended: False. Purpose unknown.
     ## For dense cloud (buildDenseCloud)
