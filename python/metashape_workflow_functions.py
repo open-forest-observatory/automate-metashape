@@ -1,6 +1,6 @@
 # Derek Young and Alex Mandel
 # University of California, Davis
-# 2019
+# 2021
 
 #### Import libraries
 
@@ -64,7 +64,6 @@ def project_setup(cfg):
     Create the project
     Start a log file
     '''
-
 
     # Make project directories (necessary even if loading an existing project because this workflow saves a new project based on the old one, leaving the old one intact
     if not os.path.exists(cfg["output_path"]):
@@ -198,8 +197,6 @@ def add_photos(doc, cfg):
     return True
 
 
-
-
 def calibrate_reflectance(doc, cfg):
     # TODO: Handle failure to find panels, or mulitple panel images by returning error to user.
     doc.chunk.locateReflectancePanels()
@@ -313,7 +310,6 @@ def reset_region(doc):
     return True
 
 
-
 def optimize_cameras(doc, cfg):
     '''
     Optimize cameras
@@ -330,6 +326,7 @@ def optimize_cameras(doc, cfg):
     doc.save()
 
     return True
+
 
 def filter_points_usgs_part1(doc, cfg):
 
@@ -397,7 +394,6 @@ def filter_points_usgs_part2(doc, cfg):
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
     doc.save()
-
 
 
 def build_dense_cloud(doc, log_file, run_id, cfg):
@@ -667,9 +663,6 @@ def build_orthomosaics(doc, log_file, run_id, cfg):
     return True
 
 
-
-
-
 def export_report(doc, run_id, cfg):
     '''
     Export report
@@ -680,7 +673,6 @@ def export_report(doc, run_id, cfg):
     doc.chunk.exportReport(path = output_file)
 
     return True
-
 
 
 def finish_run(log_file,config_file):
