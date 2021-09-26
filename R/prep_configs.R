@@ -33,7 +33,7 @@ derived_yaml_path = paste0(yaml_path,"/","derived.yml")
 
 base = read_yaml(base_yaml_path)
 
-# read derived confit lines as vector
+# read derived config lines as vector
 derived_data = read_lines(derived_yaml_path, skip_empty_rows = TRUE)
 
 
@@ -51,37 +51,37 @@ config_files = NULL
 
 # For each derived parameter set, replace the base parameters with the provided derived parameters, and write a config file
 for(i in 1:length(start_rows)) {
-  
+
   # get first line of the current derived parameter set
   first_line = start_rows[i] + 1
-  
+
   # get last line of the current derived parameter set
   if(i != length(start_rows)) {
     last_line = start_rows[i+1] - 1
   } else {
     last_line = length(derived_data)
   }
-  
-  
+
+
   ## save as R object
   yaml_string = paste(derived_data[first_line:last_line],collapse="\n")
   derived_focal = yaml.load(yaml_string)
-  
+
   ## take the template and replace each element specified in the derived with the value specified in the derived
   base_derived = modifyList(base,derived_focal)
-  
-  
+
+
   ## get the number (ID) of the derived set (just use the run name from the YAML)
   id = base_derived$run_name
-  
+
   ## write the derived set with its ID number
   filename = paste0(yaml_path,"/cfg_",id,".yml")
 
   write_yaml(base_derived,filename)
-  
+
   config_files = c(config_files,filename)
-  
-  
+
+
 }
 
 
@@ -90,10 +90,3 @@ shell_lines = paste0("python ", metashape_path, " ", config_files)
 
 writeLines(shell_lines,
             con = paste0(yaml_path,"/config_batch.sh"), sep="\n")
-
-
-
-
-
-
-
