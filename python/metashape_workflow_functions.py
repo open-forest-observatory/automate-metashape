@@ -178,9 +178,9 @@ def add_photos(doc, cfg):
 
     ## Add them
     if cfg["multispectral"]:
-        doc.chunk.addPhotos(photo_files, layout = Metashape.MultiplaneLayout)
+        doc.chunk.addPhotos(photo_files, layout = Metashape.MultiplaneLayout, load_xmp_accuracy=cfg["load_xmp_accuracy"])
     else:
-        doc.chunk.addPhotos(photo_files)
+        doc.chunk.addPhotos(photo_files, load_xmp_accuracy=cfg["load_xmp_accuracy"])
 
 
     ## Need to change the label on each camera so that it includes the containing folder(S)
@@ -191,6 +191,7 @@ def add_photos(doc, cfg):
         # if it starts with a '/', remove it
         newlabel = re.sub("^/","",rel_path)
         camera.label = newlabel
+
 
     doc.save()
 
