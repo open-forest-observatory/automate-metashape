@@ -178,9 +178,9 @@ def add_photos(doc, cfg):
 
     ## Add them
     if cfg["multispectral"]:
-        doc.chunk.addPhotos(photo_files, layout = Metashape.MultiplaneLayout, load_xmp_accuracy=cfg["load_xmp_accuracy"])
+        doc.chunk.addPhotos(photo_files, layout = Metashape.MultiplaneLayout)
     else:
-        doc.chunk.addPhotos(photo_files, load_xmp_accuracy=cfg["load_xmp_accuracy"])
+        doc.chunk.addPhotos(photo_files)
 
 
     ## Need to change the label on each camera so that it includes the containing folder(S)
@@ -191,6 +191,17 @@ def add_photos(doc, cfg):
         # if it starts with a '/', remove it
         newlabel = re.sub("^/","",rel_path)
         camera.label = newlabel
+
+    ## If specified, change the accuracy of the cameras to match the RTK flag (RTK fix if flag = 50, otherwise no fix
+    if cfg["use_rtk"]:
+        for cam in doc.chunk.cameras:
+            rtkflag = cam.photo.meta['DJI/RtkFlag']
+            if rtkflag == '50':
+                cam.reference.location_accuracy = Metashape.Vector([cfg["fix_accuracy"],cfg["fix_accuracy"],cfg["fix_accuracy"]])
+                cam.reference.accuracy = Metashape.Vector([cfg["fix_accuracy"],cfg["fix_accuracy"],cfg["fix_accuracy"]])
+            else:
+                cam.reference.location_accuracy = Metashape.Vector([cfg["nofix_accuracy"],cfg["nofix_accuracy"],cfg["nofix_accuracy"]])
+                cam.reference.accuracy = Metashape.Vector([cfg["nofix_accuracy"],cfg["nofix_accuracy"],cfg["nofix_accuracy"]])
 
 
     doc.save()

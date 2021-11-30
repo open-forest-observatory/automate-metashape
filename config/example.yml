@@ -34,7 +34,10 @@ subdivide_task: True
 ## Refer to Metashape documentation for full parameter definitions: https://www.agisoft.com/pdf/metashape_python_api_1_5_0.pdf
 ## Parameter names here generally follow the parameter names of the Metashape functions.
 
-load_xmp_accuracy: True # Recommended: True. Whether to load image GPS accuracy data from the image EXIF data
+### Whether to use image EXIF RTK flags to make image geospatial accuracy more precise
+use_rtk: True # Recommended: True
+fix_accuracy: 3
+nofix_accuracy: 25
 
 # To use GCPs, a 'gcps' folder must exist in the top level photos folder. The contents of the 'gcps' folder are created by the prep_gcps.R script. See readme: https://github.com/ucdavis/metashape
 addGCPs:
