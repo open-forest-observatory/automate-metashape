@@ -472,15 +472,7 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
                               point_colors = True)
     doc.save()
 
-    # get an ending time stamp for the previous step
-    timer3b = time.time()
 
-    # calculate difference between end and start time to 1 decimal place
-    time3 = diff_time(timer3b, timer3a)
-
-    # record results to file
-    with open(log_file, 'a') as file:
-        file.write(sep.join(['Build Dense Cloud', time3])+'\n')
 
 	# classify ground points if specified
     if cfg["buildDenseCloud"]["classifyGroundPoints"]:
@@ -508,6 +500,16 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
                                    crs=Metashape.CoordinateSystem(cfg["project_crs"]),
                                    clases=cfg["buildDenseCloud"]["classes"],
                                    subdivide_task=cfg["subdivide_task"])
+
+    # get an ending time stamp for the previous step
+    timer3b = time.time()
+
+    # calculate difference between end and start time to 1 decimal place
+    time3 = diff_time(timer3b, timer3a)
+
+    # record results to file
+    with open(log_file, 'a') as file:
+        file.write(sep.join(['Build Dense Cloud', time3])+'\n')
 
     return True
 
@@ -575,16 +577,6 @@ def build_dem(doc, log_file, run_id, cfg):
     # record results to file
     with open(log_file, 'a') as file:
         file.write(sep.join(['Build DEM', time5])+'\n')
-
-    return True
-
-# This is just a helper function called by build_orthomosaic
-def export_orthomosaic(doc, log_file, run_id, cfg):
-    '''
-    Export orthomosaic
-    '''
-
-
 
     return True
 
