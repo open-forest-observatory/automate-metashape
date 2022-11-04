@@ -475,7 +475,7 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
 
 
 	# classify ground points if specified
-    if cfg["buildDenseCloud"]["classifyGroundPoints"]:
+    if cfg["buildDenseCloud"]["classify_ground_points"]:
     	classify_ground_points(doc, log_file, run_id, cfg)
 
 
@@ -522,7 +522,7 @@ def build_dem(doc, log_file, run_id, cfg):
     '''
     
     # classify ground points if specified
-    if cfg["buildDem"]["classifyGroundPoints"]:
+    if cfg["buildDem"]["classify_ground_points"]:
     	classify_ground_points(doc, log_file, run_id, cfg)
 
     # get a beginning time stamp for the next step
