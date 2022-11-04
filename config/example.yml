@@ -71,7 +71,7 @@ optimizeCameras: # (Metashape: optimizeCameras)
     enabled: True
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as optinizing photos?
 
-buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, classifyGroundPoints, and exportPoints)
+buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, (optionally) classifyGroundPoints, and exportPoints)
     enabled: True
     ## For depth maps (buldDepthMaps)
     downscale: 2 # Recommended: 2. How much to coarsen the photos when searching for matches to build the dense cloud. For large photosets, values < 4 likely take prohibitively long. Accepts numbers 2^x (https://www.agisoft.com/forum/index.php?topic=11697.0).
@@ -82,17 +82,22 @@ buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, classifyGroundPo
     ## For both
     max_neighbors: 100 # Recommended: 100. Maximum number of neighboring photos to use for estimating point cloud. Higher numbers may increase accuracy but dramatically increase processing time.
     ## For ground point classification (classifyGroundPoints). Definitions here: https://www.agisoft.com/forum/index.php?topic=9328.0
-    classify: True # Must be enabled if a digital terrain model (DTM) is needed either for orthomosaic or DTM export
-    max_angle: 15.0 # Recommended: 15.0
-    max_distance: 1.0 # Recommended: 1.0
-    cell_size: 50.0 # Recommended: 50.0
+    classifyGroundPoints: False # Should ground points be classified as a part of this step? Must be enabled (either here or in buldDem, below) if a digital terrain model (DTM) is needed either for orthomosaic or DTM export. Enabling here is an alternative to enabling as a component of buildDem (below). It depends on which stage you want the classification to be done at. If you already have a point cloud but it's unclassified, then don't do it as part of this stage as it would require computing the point cloud again.
     ## For dense cloud export (exportPoints)
     export: True # Whether to export dense cloud file.
     format: Metashape.PointsFormatLAS # Recommended: PointsFormatLAS. The file format to export points in.
     classes: "ALL" # Recommended: "ALL". Point classes to export. Must be a list. Or can set to "ALL" to use all points. An example of a specific class is: Metashape.PointClass.Ground
 
-buildDem: # (Metashape: buildDem, exportRaster)
+
+classifyGroundPoints: # (Meatshape: classifyGroundPoints) # classify points, IF SPECIFIED as a component of buildDenseCloud (above) or buldDem (below). Must be enabled (either here or in buldDem, below) if a digital terrain model (DTM) is needed either for orthomosaic or DTM export. 
+    max_angle: 15.0 # Recommended: 15.0
+    max_distance: 1.0 # Recommended: 1.0
+    cell_size: 50.0 # Recommended: 50.0
+	
+
+buildDem: # (Metashape: buildDem, (optionally) classifyGroundPoints, exportRaster)
     enabled: True
+    classifyGroundPoints: True # Should ground points be classified as part of this step? Note that an alternative is to calculate them as a part of buildDenseCloud (above)
     ## For building DEM (buildDem)
     type: "both" # Recommended: "both". Options: "DSM" or "DTM" or "both". Type of DEM to exporot (digital surface model, digital terrain model, or both).
     ## For exporting DEM (exportRaster)

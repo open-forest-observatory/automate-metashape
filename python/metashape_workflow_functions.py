@@ -408,6 +408,30 @@ def filter_points_usgs_part2(doc, cfg):
     doc.save()
 
 
+def classify_ground_points(doc, log_file, run_id, cfg):
+
+        # get a beginning time stamp for the next step
+        timer_a = time.time()
+
+        doc.chunk.dense_cloud.classifyGroundPoints(max_angle=cfg["classifyGroundPoints"]["max_angle"],
+                                                   max_distance=cfg["classifyGroundPoints"]["max_distance"],
+                                                   cell_size=cfg["classifyGroundPoints"]["cell_size"])
+        doc.save()
+
+        # get an ending time stamp for the previous step
+        timer_b = time.time()
+
+        # calculate difference between end and start time to 1 decimal place
+        time_tot = diff_time(timer_b, timer_a)
+
+        # record results to file
+        with open(log_file, 'a') as file:
+            file.write(sep.join(['Classify Ground Points', time_tot]) + '\n')
+
+
+
+
+
 def build_dense_cloud(doc, log_file, run_id, cfg):
     '''
     Build depth maps and dense cloud
@@ -458,29 +482,9 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
     with open(log_file, 'a') as file:
         file.write(sep.join(['Build Dense Cloud', time3])+'\n')
 
-    ### Classify ground points
-
-
-    if cfg["buildDenseCloud"]["classify"]:
-
-        # get a beginning time stamp for the next step
-        timer_a = time.time()
-
-        doc.chunk.dense_cloud.classifyGroundPoints(max_angle=cfg["buildDenseCloud"]["max_angle"],
-                                                   max_distance=cfg["buildDenseCloud"]["max_distance"],
-                                                   cell_size=cfg["buildDenseCloud"]["cell_size"])
-        doc.save()
-
-        # get an ending time stamp for the previous step
-        timer_b = time.time()
-
-        # calculate difference between end and start time to 1 decimal place
-        time_tot = diff_time(timer_b, timer_a)
-
-        # record results to file
-        with open(log_file, 'a') as file:
-            file.write(sep.join(['Classify Ground Points', time_tot]) + '\n')
-
+	# classify ground points if specified
+    if cfg["buildDenseCloud"]["classifyGroundPoints"]:
+    	classify_ground_points(doc, log_file, run_id, cfg)
 
 
     ### Export points
@@ -514,6 +518,10 @@ def build_dem(doc, log_file, run_id, cfg):
     '''
     Build end export DEM
     '''
+    
+    # classify ground points if specified
+    if cfg["buildDem"]["classifyGroundPoints"]:
+    	classify_ground_points(doc, log_file, run_id, cfg)
 
     # get a beginning time stamp for the next step
     timer5a = time.time()
