@@ -29,7 +29,7 @@ project_crs: "EPSG::26910" # 26910 is UTM 10N
 subdivide_task: True
 
 # Should CUDA GPU driver be used? Alternative is OpenCL. Metashape uses CUDA by default but we have observed it can cause crashes on HPC infrastructure
-use_cuda: True # Recommended: 2 (Metashape default)
+use_cuda: True # Recommended: True (Metashape default)
 
 # What value to use for the Metashape tweak "depth_max_gpu_multiplier"? May help to mitigate GPU errors per: https://www.agisoft.com/forum/index.php?topic=11771.0
 gpu_multiplier: 2 # Recommended: 2 (Metashape default)
