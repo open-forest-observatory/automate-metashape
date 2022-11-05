@@ -28,6 +28,9 @@ project_crs: "EPSG::26910" # 26910 is UTM 10N
 # Assuming there's enough memory, it seems to run 10-20% faster by disabling subdividing. But large projects can run out memory and fail if subdivide is not enabled.
 subdivide_task: True
 
+# Should CUDA GPU driver be used? Alternative is OpenCL. Metashape uses CUDA by default but we have observed it can cause crashes on HPC infrastructure
+use_cuda: True
+
 #### Processing parameters:
 ## Steps can be run or skipped using the 'enabled' parameter. If enabled == False, everything else in the step is irrelevant.
 ## The metashape functions powering each of these steps are listed in the comments in parentheses.
