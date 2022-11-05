@@ -35,7 +35,6 @@ cfg = read_yaml.read_yaml(config_file)
 doc, log, run_id = meta.project_setup(cfg)
 
 meta.enable_and_log_gpu(log)
-Metashape.app.settings.setValue("main/gpu_enable_cuda", "0")
 
 if cfg["load_project"] == "":  # only add photos if this is a brand new project, not based off an existing project
     meta.add_photos(doc, cfg)

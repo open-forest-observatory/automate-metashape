@@ -162,6 +162,9 @@ def enable_and_log_gpu(log_file):
     # set Metashape to *not* use the CPU during GPU steps (appears to be standard wisdom)
     Metashape.app.cpu_enable = False
 
+    # Disable CUDA
+    Metashape.app.settings.setValue("main/gpu_enable_cuda", "0")
+
     return True
 
 
