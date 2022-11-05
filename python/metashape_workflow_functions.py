@@ -166,6 +166,9 @@ def enable_and_log_gpu(log_file, cfg):
     if not cfg["use_cuda"]:
         Metashape.app.settings.setValue("main/gpu_enable_cuda", "0")
 
+    # Set GPU multiplier to value specified (2 is default)
+    Metashape.app.settings.setValue("main/depth_max_gpu_multiplier", cfg["gpu_multiplier"])
+
     return True
 
 
