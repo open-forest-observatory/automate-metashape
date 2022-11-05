@@ -129,7 +129,7 @@ def project_setup(cfg):
 
 
 
-def enable_and_log_gpu(log_file):
+def enable_and_log_gpu(log_file, cfg):
     '''
     Enables GPU and logs GPU specs
     '''
@@ -161,6 +161,13 @@ def enable_and_log_gpu(log_file):
 
     # set Metashape to *not* use the CPU during GPU steps (appears to be standard wisdom)
     Metashape.app.cpu_enable = False
+
+    # Disable CUDA if specified
+    if not cfg["use_cuda"]:
+        Metashape.app.settings.setValue("main/gpu_enable_cuda", "0")
+
+    # Set GPU multiplier to value specified (2 is default)
+    Metashape.app.settings.setValue("main/depth_max_gpu_multiplier", cfg["gpu_multiplier"])
 
     return True
 
