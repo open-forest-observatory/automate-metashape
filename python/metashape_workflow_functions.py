@@ -163,7 +163,7 @@ def enable_and_log_gpu(log_file, cfg):
     Metashape.app.cpu_enable = False
 
     # Disable CUDA if specified
-    if !cfg["use_cuda"]:
+    if not cfg["use_cuda"]:
         Metashape.app.settings.setValue("main/gpu_enable_cuda", "0")
 
     return True
