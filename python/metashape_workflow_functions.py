@@ -301,7 +301,7 @@ def align_photos(doc, log_file, cfg):
                           subdivide_task = cfg["subdivide_task"],
                           keep_keypoints = cfg["alignPhotos"]["keep_keypoints"])
     doc.chunk.alignCameras(adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"],
-                           subdivide_task = cfg["subdivide_task"].
+                           subdivide_task = cfg["subdivide_task"],
                            reset_alignment = cfg["alignPhotos"]["reset_alignment"])
     doc.save()
 
