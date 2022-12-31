@@ -96,12 +96,10 @@ buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, (optionally) cla
     format: Metashape.PointsFormatLAS # Recommended: PointsFormatLAS. The file format to export points in.
     classes: "ALL" # Recommended: "ALL". Point classes to export. Must be a list. Or can set to "ALL" to use all points. An example of a specific class is: Metashape.PointClass.Ground
 
-
 classifyGroundPoints: # (Meatshape: classifyGroundPoints) # classify points, IF SPECIFIED as a component of buildDenseCloud (above) or buldDem (below). Must be enabled (either here or in buldDem, below) if a digital terrain model (DTM) is needed either for orthomosaic or DTM export. 
     max_angle: 15.0 # Recommended: 15.0
     max_distance: 1.0 # Recommended: 1.0
     cell_size: 50.0 # Recommended: 50.0
-	
 
 buildDem: # (Metashape: buildDem, (optionally) classifyGroundPoints, exportRaster)
     enabled: True
