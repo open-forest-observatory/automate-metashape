@@ -302,7 +302,7 @@ def align_photos(doc, log_file, cfg):
                           keep_keypoints = cfg["alignPhotos"]["keep_keypoints"],
                           generic_preselection = cfg["alignPhotos"]["generic_preselection"],
                           reference_preselection = cfg["alignPhotos"]["reference_preselection"],
-                          reference_preselection_source = cfg["alignPhotos"]["reference_preselection_source"])
+                          reference_preselection_mode = cfg["alignPhotos"]["reference_preselection_mode"])
     doc.chunk.alignCameras(adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"],
                            subdivide_task = cfg["subdivide_task"],
                            reset_alignment = cfg["alignPhotos"]["reset_alignment"])
