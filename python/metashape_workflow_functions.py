@@ -299,7 +299,10 @@ def align_photos(doc, log_file, cfg):
     # Align cameras
     doc.chunk.matchPhotos(downscale=cfg["alignPhotos"]["downscale"],
                           subdivide_task = cfg["subdivide_task"],
-                          keep_keypoints = cfg["alignPhotos"]["keep_keypoints"])
+                          keep_keypoints = cfg["alignPhotos"]["keep_keypoints"],
+                          generic_preselection = cfg["alignPhotos"]["generic_preselection"],
+                          reference_preselection = cfg["alignPhotos"]["reference_preselection"],
+                          reference_preselection_source = cfg["alignPhotos"]["reference_preselection_source"])
     doc.chunk.alignCameras(adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"],
                            subdivide_task = cfg["subdivide_task"],
                            reset_alignment = cfg["alignPhotos"]["reset_alignment"])
@@ -422,7 +425,7 @@ def classify_ground_points(doc, log_file, run_id, cfg):
         # get a beginning time stamp for the next step
         timer_a = time.time()
 
-        doc.chunk.dense_cloud.classifyGroundPoints(max_angle=cfg["classifyGroundPoints"]["max_angle"],
+        doc.chunk.point_cloud.classifyGroundPoints(max_angle=cfg["classifyGroundPoints"]["max_angle"],
                                                    max_distance=cfg["classifyGroundPoints"]["max_distance"],
                                                    cell_size=cfg["classifyGroundPoints"]["cell_size"])
         doc.save()
@@ -441,9 +444,9 @@ def classify_ground_points(doc, log_file, run_id, cfg):
 
 
 
-def build_dense_cloud(doc, log_file, run_id, cfg):
+def build_point_cloud(doc, log_file, run_id, cfg):
     '''
-    Build depth maps and dense cloud
+    Build depth maps and point cloud
     '''
 
     ### Build depth maps
@@ -451,11 +454,11 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
     # get a beginning time stamp for the next step
     timer2a = time.time()
 
-    # build depth maps only instead of also building the dense cloud ##?? what does
-    doc.chunk.buildDepthMaps(downscale=cfg["buildDenseCloud"]["downscale"],
-                             filter_mode=cfg["buildDenseCloud"]["filter_mode"],
-                             reuse_depth=cfg["buildDenseCloud"]["reuse_depth"],
-                             max_neighbors=cfg["buildDenseCloud"]["max_neighbors"],
+    # build depth maps only instead of also building the point cloud ##?? what does
+    doc.chunk.buildDepthMaps(downscale=cfg["buildPointCloud"]["downscale"],
+                             filter_mode=cfg["buildPointCloud"]["filter_mode"],
+                             reuse_depth=cfg["buildPointCloud"]["reuse_depth"],
+                             max_neighbors=cfg["buildPointCloud"]["max_neighbors"],
                              subdivide_task=cfg["subdivide_task"])
     doc.save()
 
@@ -469,14 +472,14 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
     with open(log_file, 'a') as file:
         file.write(sep.join(['Build Depth Maps', time2]) + '\n')
 
-    ### Build dense cloud
+    ### Build point cloud
 
     # get a beginning time stamp for the next step
     timer3a = time.time()
 
-    # build dense cloud
-    doc.chunk.buildDenseCloud(max_neighbors=cfg["buildDenseCloud"]["max_neighbors"],
-                              keep_depth = cfg["buildDenseCloud"]["keep_depth"],
+    # build point cloud
+    doc.chunk.buildPointCloud(max_neighbors=cfg["buildPointCloud"]["max_neighbors"],
+                              keep_depth = cfg["buildPointCloud"]["keep_depth"],
                               subdivide_task = cfg["subdivide_task"],
                               point_colors = True)
     doc.save()
@@ -484,30 +487,30 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
 
 
 	# classify ground points if specified
-    if cfg["buildDenseCloud"]["classify_ground_points"]:
+    if cfg["buildPointCloud"]["classify_ground_points"]:
     	classify_ground_points(doc, log_file, run_id, cfg)
 
 
     ### Export points
 
-    if cfg["buildDenseCloud"]["export"]:
+    if cfg["buildPointCloud"]["export"]:
 
         output_file = os.path.join(cfg["output_path"], run_id + '_points.las')
 
-        if cfg["buildDenseCloud"]["classes"] == "ALL":
+        if cfg["buildPointCloud"]["classes"] == "ALL":
             # call without classes argument (Metashape then defaults to all classes)
             doc.chunk.exportPoints(path=output_file,
-                                   source_data=Metashape.DenseCloudData,
+                                   source_data=Metashape.PointCloudData,
                                    format=Metashape.PointsFormatLAS,
                                    crs=Metashape.CoordinateSystem(cfg["project_crs"]),
                                    subdivide_task=cfg["subdivide_task"])
         else:
             # call with classes argument
             doc.chunk.exportPoints(path=output_file,
-                                   source_data=Metashape.DenseCloudData,
+                                   source_data=Metashape.PointCloudData,
                                    format=Metashape.PointsFormatLAS,
                                    crs=Metashape.CoordinateSystem(cfg["project_crs"]),
-                                   clases=cfg["buildDenseCloud"]["classes"],
+                                   clases=cfg["buildPointCloud"]["classes"],
                                    subdivide_task=cfg["subdivide_task"])
 
     # get an ending time stamp for the previous step
@@ -518,7 +521,7 @@ def build_dense_cloud(doc, log_file, run_id, cfg):
 
     # record results to file
     with open(log_file, 'a') as file:
-        file.write(sep.join(['Build Dense Cloud', time3])+'\n')
+        file.write(sep.join(['Build Point Cloud', time3])+'\n')
 
     return True
 
@@ -549,7 +552,7 @@ def build_dem(doc, log_file, run_id, cfg):
 
     if (cfg["buildDem"]["type"] == "DSM") | (cfg["buildDem"]["type"] == "both"):
         # call without classes argument (Metashape then defaults to all classes)
-        doc.chunk.buildDem(source_data = Metashape.DenseCloudData,
+        doc.chunk.buildDem(source_data = Metashape.PointCloudData,
                            subdivide_task = cfg["subdivide_task"],
                            projection = projection)
         output_file = os.path.join(cfg["output_path"], run_id + '_dsm.tif')
@@ -561,7 +564,7 @@ def build_dem(doc, log_file, run_id, cfg):
                                    image_compression=compression)
     if (cfg["buildDem"]["type"] == "DTM") | (cfg["buildDem"]["type"] == "both"):
         # call with classes argument
-        doc.chunk.buildDem(source_data = Metashape.DenseCloudData,
+        doc.chunk.buildDem(source_data = Metashape.PointCloudData,
                            classes = Metashape.PointClass.Ground,
                            subdivide_task = cfg["subdivide_task"],
                            projection = projection)
@@ -669,14 +672,14 @@ def build_orthomosaics(doc, log_file, run_id, cfg):
     # Otherwise use Metashape point cloud to build elevation model
     # DTM: use ground points only
     if (cfg["buildOrthomosaic"]["surface"] == "DTM") | (cfg["buildOrthomosaic"]["surface"] == "DTMandDSM"):
-        doc.chunk.buildDem(source_data = Metashape.DenseCloudData,
+        doc.chunk.buildDem(source_data = Metashape.PointCloudData,
                            classes=Metashape.PointClass.Ground,
                            subdivide_task=cfg["subdivide_task"],
                            projection=projection)
         build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending = "dtm")
     # DSM: use all point classes
     if (cfg["buildOrthomosaic"]["surface"] == "DSM") | (cfg["buildOrthomosaic"]["surface"] == "DTMandDSM"):
-        doc.chunk.buildDem(source_data = Metashape.DenseCloudData,
+        doc.chunk.buildDem(source_data = Metashape.PointCloudData,
                            subdivide_task=cfg["subdivide_task"],
                            projection=projection)
         build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending = "dsm")
