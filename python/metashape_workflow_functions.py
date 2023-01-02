@@ -501,14 +501,14 @@ def build_point_cloud(doc, log_file, run_id, cfg):
             # call without classes argument (Metashape then defaults to all classes)
             doc.chunk.exportPointCloud(path=output_file,
                                    source_data=Metashape.PointCloudData,
-                                   format=Metashape.PointsFormatLAS,
+                                   format=Metashape.PointCloudFormatLAS,
                                    crs=Metashape.CoordinateSystem(cfg["project_crs"]),
                                    subdivide_task=cfg["subdivide_task"])
         else:
             # call with classes argument
             doc.chunk.exportPointCloud(path=output_file,
                                    source_data=Metashape.PointCloudData,
-                                   format=Metashape.PointsFormatLAS,
+                                   format=Metashape.PointCloudFormatLAS,
                                    crs=Metashape.CoordinateSystem(cfg["project_crs"]),
                                    clases=cfg["buildPointCloud"]["classes"],
                                    subdivide_task=cfg["subdivide_task"])
