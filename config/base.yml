@@ -4,11 +4,11 @@
 
 # Project to load. If not a blank string, this will open an existing project at the path specified. If a blank string, creates a new empty project.
 # Even if opening an existing project, all processing on it is saved as a new project (path and name specified below). The original project file is not modified.
-# When no project is specified, photos are automatically added to the new project as the first step. When a project is specified, photos are not added because they are assumed to be in the project.
 load_project: ""
 
 # The path to the directory of flight photos
 # If there are multiple photo folders, set path to the folder that contains all the photo folders
+# If there are no photos to add (e.g., this is an existing project that already has photos in it, set to an empty string ("")
 photo_path: "/storage/uav/photosets/sample_rgb_photoset"
 multispectral: False # Is this a multispectral photo set? If RGB, set to False.
 
