@@ -363,8 +363,8 @@ def filter_points_usgs_part1(doc, cfg):
     reproj_thresh_percent = cfg["filterPointsUSGS"]["reproj_thresh_percent"]
     reproj_thresh_absolute = cfg["filterPointsUSGS"]["reproj_thresh_absolute"]
 
-    fltr = Metashape.PointCloud.Filter()
-    fltr.init(doc.chunk, Metashape.PointCloud.Filter.ReconstructionUncertainty)
+    fltr = Metashape.TiePoints.Filter()
+    fltr.init(doc.chunk, Metashape.TiePoints.Filter.ReconstructionUncertainty)
     values = fltr.values.copy()
     values.sort()
     thresh = values[int(len(values) * (1 - rec_thresh_percent / 100))]
@@ -374,8 +374,8 @@ def filter_points_usgs_part1(doc, cfg):
 
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
-    fltr = Metashape.PointCloud.Filter()
-    fltr.init(doc.chunk, Metashape.PointCloud.Filter.ProjectionAccuracy)
+    fltr = Metashape.TiePoints.Filter()
+    fltr.init(doc.chunk, Metashape.TiePoints.Filter.ProjectionAccuracy)
     values = fltr.values.copy()
     values.sort()
     thresh = values[int(len(values) * (1- proj_thresh_percent / 100))]
@@ -385,8 +385,8 @@ def filter_points_usgs_part1(doc, cfg):
 
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
-    fltr = Metashape.PointCloud.Filter()
-    fltr.init(doc.chunk, Metashape.PointCloud.Filter.ReprojectionError)
+    fltr = Metashape.TiePoints.Filter()
+    fltr.init(doc.chunk, Metashape.TiePoints.Filter.ReprojectionError)
     values = fltr.values.copy()
     values.sort()
     thresh = values[int(len(values) * (1 - reproj_thresh_percent / 100))]
@@ -406,8 +406,8 @@ def filter_points_usgs_part2(doc, cfg):
     reproj_thresh_percent = cfg["filterPointsUSGS"]["reproj_thresh_percent"]
     reproj_thresh_absolute = cfg["filterPointsUSGS"]["reproj_thresh_absolute"]
 
-    fltr = Metashape.PointCloud.Filter()
-    fltr.init(doc.chunk, Metashape.PointCloud.Filter.ReprojectionError)
+    fltr = Metashape.TiePoints.Filter()
+    fltr.init(doc.chunk, Metashape.TiePoints.Filter.ReprojectionError)
     values = fltr.values.copy()
     values.sort()
     thresh = values[int(len(values) * (1 - reproj_thresh_percent / 100))]
