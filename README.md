@@ -1,3 +1,5 @@
+*******NOTE:******* Active development is now happening at https://github.com/open-forest-observatory/automate-metashape. This repository is no longer actively maintained.
+
 # Easy, reproducible Metashape workflows
 
 A tool to make it easy to run reproducible, automated, documented Metashape photogrammetry workflows in batch on individual computers or as parallel jobs on a compute cluster. No coding knowledge required.
