@@ -1,4 +1,4 @@
-*******NOTE:******* Active development is now happening at https://github.com/open-forest-observatory/automate-metashape. This repository is no longer actively maintained.
+‼️ *******NOTE:******* Active development is now happening at https://github.com/open-forest-observatory/automate-metashape. This repository is no longer actively maintained. ‼️
 
 # Easy, reproducible Metashape workflows
 
