@@ -34,9 +34,9 @@ cfg = read_yaml.read_yaml(config_file)
 
 doc, log, run_id = meta.project_setup(cfg)
 
-meta.enable_and_log_gpu(log)
+meta.enable_and_log_gpu(log, cfg)
 
-if cfg["load_project"] == "":  # only add photos if this is a brand new project, not based off an existing project
+if cfg["photo_path"] != "":  # only add photos if there is a photo directory listed
     meta.add_photos(doc, cfg)
 
 if cfg["calibrateReflectance"]["enabled"]:
@@ -62,8 +62,8 @@ if cfg["filterPointsUSGS"]["enabled"]:
     meta.filter_points_usgs_part2(doc, cfg)
     meta.reset_region(doc)
 
-if cfg["buildDenseCloud"]["enabled"]:
-    meta.build_dense_cloud(doc, log, run_id, cfg)
+if cfg["buildPointCloud"]["enabled"]:
+    meta.build_point_cloud(doc, log, run_id, cfg)
 
 if cfg["buildDem"]["enabled"]:
     meta.build_dem(doc, log, run_id, cfg)

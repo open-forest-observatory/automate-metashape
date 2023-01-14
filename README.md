@@ -6,11 +6,11 @@ A tool to make it easy to run reproducible, automated, documented Metashape phot
 
 ## Setup
 
-**Python:** You need Python (3.5, 3.6, or 3.7). We recommend the [Anaconda distribution](https://www.anaconda.com/distribution/) because it includes all the required libraries. When installing, if asked whether the installer should initialize Anaconda3, say "yes". Anaconda must be initialized upon install such that `python` can be called from the command line. A way to check is to simply enter `python` at your command prompt and see if the resulting header info includes Anaconda and Python 3. If it doesn't, you may still need to initialize your Conda install. **Alternative option:** If you want a minimal python installation (such as if you're installing on a computing cluster), you can install [miniconda](https://docs.conda.io/en/latest/miniconda.html) instead. After intalling miniconda, you will need to install additional packages required by our scripts (currently only `PyYAML`) using `pip install {package_name}`.
+**Python:** You need Python (3.6, 3.7, or 3.8). We recommend the [Anaconda distribution](https://www.anaconda.com/distribution/) because it includes all the required libraries. When installing, if asked whether the installer should initialize Anaconda3, say "yes". Anaconda must be initialized upon install such that `python` can be called from the command line. A way to check is to simply enter `python` at your command prompt and see if the resulting header info includes Anaconda and Python 3. If it doesn't, you may still need to initialize your Conda install. **Alternative option:** If you want a minimal python installation (such as if you're installing on a computing cluster), you can install [miniconda](https://docs.conda.io/en/latest/miniconda.html) instead. After intalling miniconda, you will need to install additional packages required by our scripts (currently only `PyYAML`) using `pip install {package_name}`.
 
-**Metashape:** You must install the Metashape Python 3 module (Metashape version 1.6). Download the [current .whl file](https://www.agisoft.com/downloads/installer/) and install it following [these instructions](https://agisoft.freshdesk.com/support/solutions/articles/31000148930-how-to-install-metashape-stand-alone-python-module) (using the name of the .whl file that you downloaded).
+**Metashape:** You must install the Metashape Python 3 module (Metashape version 2.0). Download the [current .whl file](https://www.agisoft.com/downloads/installer/) and install it following [these instructions](https://agisoft.freshdesk.com/support/solutions/articles/31000148930-how-to-install-metashape-stand-alone-python-module) (using the name of the .whl file that you downloaded).
 
-**Metashape license:** You need a license (and associated license file) for Metashape. The easiest way to get the license file (assuming you own a license) is by installing the [Metashape Professional Edition GUI software](https://www.agisoft.com/downloads/installer/) (distinct from the Python module) and registering it following the prompts in the software (note you need to purchase a license first). UC Davis users, inquire over the geospatial listserv or the #geosptial Slack channel for information on joining a floating license pool. Once you have a license file (whether a node-locked or floating license), you need to set the `agisoft_LICENSE` environment variable (search onilne for instructions for your OS; look for how to *permanently* set it) to the path to the folder containing the license file (`metashape.lic`).
+**Metashape license:** You need a license (and associated license file) for Metashape. The easiest way to get the license file (assuming you own a license) is by installing the [Metashape Professional Edition GUI software](https://www.agisoft.com/downloads/installer/) (distinct from the Python module) and registering it following the prompts in the software (note you need to purchase a license first). UC Davis users, inquire over the geospatial listserv or the #sptial Slack channel for information on joining a floating license pool. Once you have a license file (whether a node-locked or floating license), you need to set the `agisoft_LICENSE` environment variable (search onilne for instructions for your OS; look for how to *permanently* set it) to the path to the folder containing the license file (`metashape.lic`).
 
 **Reproducible workflow scripts:** Simply clone this repository to your machine!
 
@@ -27,7 +27,7 @@ For example:
 
 All processing parameters are specified in the .yml config file. There is an example config file in the repo at `config/example.yml`. Details on the config file are below.
 
-### Oragnizing raw imagery (and associated files) for processing
+### Organizing raw imagery (and associated files) for processing
 
 Images should be organized such that there is one root level that contains all the photos from the flight mission to be processed (these photos may optionally be organized within sub-folders), and no other missions. If the workflow is to include spectral calibration, ground control points (GCPs), and/or a USGS DEM, this root-level folder *must* also contain a corresponding folder for each. For example:
 
@@ -57,8 +57,6 @@ The namings for the ancillary data folders (`gcps`, `dem_usgs`, and `calibration
 
 A **sample RGB photo dataset** (which includes GCPs and a USGS DEM) may be [downloaded here](https://ucdavis.box.com/s/hv8m8fibe164pjj0mssdx1mj8qb996k8) (1.5 GB). Note this dataset has sparse photos (low overlap), so photogrammetry results are unimpressive.
 
-<mark>TO DO: Add sample multispectral dataset. Could potentially use cherry dataset if we figure out why it's not working well.</mark>
-
 The location of the raw imagery folder is specified in the configuration file passed to the metashape workflow script (see next section).
 
 ### Workflow configuration ###
@@ -71,7 +69,7 @@ The workflow configuration is saved in a procesing log at the end of a workflow 
 
 #### Batch workflow configuration ####
 
-If you wish to run multiple iterations of a processing workflow with small differences between each, you can specify a "base" configuration YAML file that specifies the processing parameters that all runs will have in common, plus a "derived" configuration file that specifies how each individual run's parameters should differ from the base parameters. For an example, see `config/base.yml` and `config/derived.yml`. For each run, the derived YAML only needs to include the parameters that differ from the base parameters. Each separate run in the derived YAML should be given a name and surrounded by `####` on each end (see example `derived.yml`). Then, use the R script `R/prep_configs.R` to generate a full YAML config file for each run. As arguments to the call to this R script, supply (1) the path to the directory containing the base and derived YAML config files, and (2) the path to the `metashape_workflow.py` script. The `prep_configs.R` script will create a full YAML file for each run, as well as a shell file that calls the Metashape workflow scripts once for each configuration (each run). All you have to do to execute all these runs in series is to call this automatically generated shell script.
+If you wish to run multiple iterations of a processing workflow with small differences between each, you can specify a "base" configuration YAML file that specifies the processing parameters that all runs will have in common, plus a "derived" configuration file that specifies how each individual run's parameters should differ from the base parameters. For an example, see `config/base.yml` (identical to the example.yml) and `config/derived.yml`. For each run, the derived YAML only needs to include the parameters that differ from the base parameters. Each separate run in the derived YAML should be given a name and surrounded by `####` on each end (see example `derived.yml`). Then, use the R script `R/prep_configs.R` to generate a full YAML config file for each run. As arguments to the call to this R script, supply (1) the path to the directory containing the base and derived YAML config files, and (2) the path to the `metashape_workflow.py` script. The `prep_configs.R` script will create a full YAML file for each run, as well as a shell file that calls the Metashape workflow scripts once for each configuration (each run). All you have to do to execute all these runs in series is to call this automatically generated shell script.
 
 ### Workflow outputs
 
@@ -130,20 +128,6 @@ sbatch -p bigmemh --time=24:00:00 --job-name=MetaDemo -c 64 --mem=128G shell/far
 ```
 
 The meanings of the sbatch parameters are explained in the linked resources above. Once you have submitted one job using the sbatch command, you can submit another so that they run in parallel (assuming your user group has sufficient resource allocation on farm). You can also put multiple sbatch commands into a shell script so that you only have to run the shell script.
-
-#### Options for accessing farm computing resources
-
-Efficient execution of Metashape requires a good GPU. Having *many* CPUs can help, but still does not come near to the efficiency of a GPU. For photogrammetry to make sense on farm, PIs would need to invest in GPU nodes. Here are rough estimates of a hypothetical Metashape project's execution time based on extensive benchmarking:
-
-| Machine/node type | Required computing time | Cost ballpark |
-|---|---|---|
-| Dell Alienware gaming PC with Nvidia RTX 2080 Ti and 16 CPUs | 1 day | $3,000 |
-| Free original farm nodes (24 CPUs) | 30 days | Free |
-| New farm bigmem nodes (96 CPUs) | 5 days | $22,700 |
-| Potential future farm GPU node (8 x RTX 2080 Ti) | 2 days (using only 1 of the 8 GPUs) | $25,000 (if split 8 ways, $3,125 per user) |
-
-A new farm GPU node would provide computing power that is competitive with the Alienware gaming PC for *individual projects,* but it would provide the opportunity to run multiple projects in parallel. Assuming that not all PIs/users were using the node at the same time (a reasonable assumption), those who needed extra processing power temporarily would be allowed to use other users' GPU allocations. This is the beauty of a shared computing cluster. In this circumstance, running 8 projects that would each take 1 day on the Alienware gaming PC (for a total of 8 days) would take only 2 days on the computing cluster.
-
 
 ## Preparing ground-control points (GCPs)
 

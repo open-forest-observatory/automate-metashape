@@ -10,6 +10,8 @@ import Metashape
 
 def convert_objects(a_dict):
     '''
+    Convert strings that refer to metashape objects (e.g. "Metashape.MoasicBlending") into metashape objects
+
     Based on
     https://stackoverflow.com/a/25896596/237354
     '''
@@ -17,7 +19,7 @@ def convert_objects(a_dict):
         if not isinstance(v, dict):
             if isinstance(v, str):
                 # TODO look for Metashape.
-                if v and 'Metashape' in v and not ('path' in k) and not ('project' in k):    # allow "path" and "project" keys from YAML to include "Metashape" (e.g., Metashape in the filename)
+                if v and 'Metashape' in v and not ('path' in k) and not ('project' in k) and not ('name' in k):    # allow "path" and "project" and "name" keys (e.g. "photoset_path" and "run_name") from YAML to include "Metashape" (e.g., Metashape in the filename)
                     a_dict[k] = eval(v)
             elif isinstance(v, list):
                 # TODO skip if no item have metashape
@@ -34,6 +36,7 @@ def read_yaml(yml_path):
 
     return cfg
 
+# For debugging when running this script directly:
 if __name__ == "__main__":
 
     yml_path = "config/example.yml"
