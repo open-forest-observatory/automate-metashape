@@ -62,8 +62,8 @@ if cfg["filterPointsUSGS"]["enabled"]:
     meta.filter_points_usgs_part2(doc, cfg)
     meta.reset_region(doc)
 
-if cfg["buildDenseCloud"]["enabled"]:
-    meta.build_dense_cloud(doc, log, run_id, cfg)
+if cfg["buildPointCloud"]["enabled"]:
+    meta.build_point_cloud(doc, log, run_id, cfg)
 
 if cfg["buildDem"]["enabled"]:
     meta.build_dem(doc, log, run_id, cfg)
