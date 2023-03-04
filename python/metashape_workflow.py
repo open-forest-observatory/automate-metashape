@@ -32,7 +32,7 @@ cfg = read_yaml.read_yaml(config_file)
 
 ### Run the Metashape workflow
 
-doc, log, run_id = meta.project_setup(cfg)
+doc, log, run_id = meta.project_setup(cfg, config_file)
 
 meta.enable_and_log_gpu(log, cfg)
 
