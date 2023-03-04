@@ -65,7 +65,7 @@ create_derived_configs = function(base_cfg_path, save_dir, replacements, automat
       # Line to write to shell script
       lines_to_write = paste0("python ", path_to_script, " ", configs)
       
-      write(lines_to_write, file.path(save_dir, shell_script_filename))
+      write(lines_to_write, file.path(save_dir, paste0(shell_script_filename, ".sh") ))
     }
     
     
