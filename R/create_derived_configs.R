@@ -1,5 +1,5 @@
-# Take a base YML and a data frame with alternate values (one per row) for a specific key in the base YML and make all the derived YMLs
-# Currently, this just works for (any) single key, which must be in the top level of the YML hierarchy.
+# Take a base YML and a data frame with alternate values (one per row) for specified keys in the base YML and make all the derived YMLs using those alternate values.
+# Currently, the keys must be in the top level of the YML hierarchy. TODO: Expand to include replacement of base parameters that are nested below the top YML level.
 
 library(yaml)
 library(here)
@@ -15,7 +15,10 @@ library(dplyr)
 # Each row will translate to a different derived YML.
 # Each row of the DF must contain a name (for the resulting yml file) and at elast one YML key to replace the values of.
 
-create_derived_configs = function(base_cfg_path, save_dir, replacements) {
+# `metashape_workflow_path`: Optional. Path to automate-metashape repo. If provided, the function will also write a shell script (to the same dir as the derived configs) to call the metashape workflow script to process each of the created configs in sequence
+# `shell_script_filename`: Optional. Filename for the shell script (not including the .sh extension)
+
+create_derived_configs = function(base_cfg_path, save_dir, replacements, automate_metashape_path = NA, shell_script_filename = "run_configs.sh") {
     
     #### Prep
     
@@ -49,4 +52,21 @@ create_derived_configs = function(base_cfg_path, save_dir, replacements) {
         write_yaml(derived_config, file.path(save_dir, derived_filename))
       
     }
+    
+    ### If requested, prepare a shell script to call to run all the configs that were just generated, in series
+    if(!is.na(automate_metashape_path)) {
+      
+      # Which configs were just written
+      configs = file.path(save_dir, paste0(replacements$name, ".yml"))
+      
+      # Path to metashape workflow script
+      path_to_script = file.path(automate_metashape_path, "python/metashape_workflow.py")
+      
+      # Line to write to shell script
+      lines_to_write = paste0("python ", path_to_script, " ", configs)
+      
+      write(lines_to_write, file.path(save_dir, paste0(shell_script_filename, ".sh") ))
+    }
+    
+    
 }
