@@ -1,5 +1,5 @@
 # Take a base YML and a data frame with alternate values (one per row) for specified keys in the base YML and make all the derived YMLs using those alternate values.
-# Currently, they keys must be in the top level of the YML hierarchy. TODO: Expand to include replacement of base parameters that are nested below the top YML level.
+# Currently, the keys must be in the top level of the YML hierarchy. TODO: Expand to include replacement of base parameters that are nested below the top YML level.
 
 library(yaml)
 library(here)
