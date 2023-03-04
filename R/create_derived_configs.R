@@ -23,7 +23,7 @@ create_derived_configs = function(base_cfg_path, save_dir, replacements) {
     base_config = read_yaml(base_cfg_path)
     
     # Create output dir
-    if(!dir.exists(save_dir)) dir.create(save_dir)
+    if(!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
     
     
     #### Run

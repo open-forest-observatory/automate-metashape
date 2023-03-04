@@ -56,10 +56,10 @@ def get_camera(chunk, label):
 
 #### Functions for each major step in Metashape
 
-def project_setup(cfg):
+def project_setup(cfg, config_file):
     '''
     Create output and project paths, if they don't exist
-    Define a project ID based on photoset name and timestamp
+    Define a project ID based on specified project name and timestamp
     Define a project filename and a log filename
     Create the project
     Start a log file
@@ -71,10 +71,14 @@ def project_setup(cfg):
     if not os.path.exists(cfg["project_path"]):
         os.makedirs(cfg["project_path"])
 
-    ### Set a filename template for project files and output files
-    ## Get the first parts of the filename (the photoset ID and location string)
+    ### Set a filename template for project files and output files based on the 'run_name' key of the config YML
+    ## BUT if the value for run_name is "from_config_filename", then use the config filename for the run name.
 
     run_name = cfg["run_name"]
+
+    if(run_name == "from_config_filename"):
+        file_basename = os.path.basename(config_file) # extracts file base name from path
+        run_name, _ = os.path.splitext(file_basename) # removes extension
 
     ## Project file example to make: "projectID_YYYYMMDDtHHMM-jobID.psx"
     timestamp = stamp_time()
