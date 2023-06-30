@@ -131,3 +131,10 @@ buildOrthomosaic: # (Metashape: buildOrthomosaic, exportRaster)
     tiff_tiled: False # Use tiled TIFF? This is related to internal file architecture.
     nodata: -32767 # Value used to represent nodata.
     tiff_overviews: True # Include coarse-scale raster data in file for quick display in GIS.
+
+buildModel:
+    enabled: True
+    face_count: "high" # How many faces to use, low, medium, high, custom
+    custom_face_count: 100000 # Only used if custom number of faces set
+    export: True
+ 

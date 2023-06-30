@@ -71,6 +71,9 @@ if cfg["buildDem"]["enabled"]:
 if cfg["buildOrthomosaic"]["enabled"]:
     meta.build_orthomosaics(doc, log, run_id, cfg)
 
+if cfg["buildModel"]["enabled"]:
+    meta.build_model(doc, log, run_id, cfg)
+
 meta.export_report(doc, run_id, cfg)
 
 meta.finish_run(log, config_file)

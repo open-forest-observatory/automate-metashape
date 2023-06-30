@@ -531,6 +531,49 @@ def build_point_cloud(doc, log_file, run_id, cfg):
 
 
 
+def build_model(doc, log_file, run_id, cfg):
+    '''
+    Build and export the model
+    '''
+
+    """
+    buildModel(surface_type=Arbitrary, interpolation=EnabledInterpolation, face_count=HighFaceCount,
+        face_count_custom=200000, source_data=DepthMapsData[, classes], vertex_colors=True,
+        vertex_confidence=True, volumetric_masks=False, keep_depth=True, trimming_radius=10[,
+        cameras], subdivide_task=True, workitem_size_cameras=20, max_workgroup_size=100[,
+        progress])
+    """
+    # Choose the enum for the quality
+    face_count_dict = {
+                        "low": PhotoScan.LowFaceCount,
+                        "medium": PhotoScan.MediumFaceCount,
+                        "high": PhotoScan.HighFaceCount,
+                        "custom": PhotoScan.CustomFaceCount,
+                       }
+    face_count = face_count_dict[cfg["buildModel"]["face_count"]]
+
+    start_time = time.time()
+    # Build the mesh
+    doc.chunk.buildModel(surface = PhotoScan.Arbitrary,
+                         interpolation = PhotoScan.EnabledInterpolation,
+                         face_count = face_count,
+                         face_count_custom = cfg["buildModel"]["face_count_custom"], # Only used if face_count is custom
+                         source = PhotoScan.DepthMapsData)
+    # Save the model
+    doc.save()
+
+    if cfg["buildModel"]["export"]:
+        output_file = os.path.join(cfg["output_path"], run_id + '_model.obj')
+        doc.chunk.exportModel(path=output_file)
+
+    time_taken = diff_time(start_time, time.time())
+
+    # record results to file
+    with open(log_file, 'a') as file:
+        file.write(sep.join(['Build Model', time_taken]) + '\n')
+
+    return True
+
 
 def build_dem(doc, log_file, run_id, cfg):
     '''
