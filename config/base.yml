@@ -143,8 +143,8 @@ buildOrthomosaic: # (Metashape: buildOrthomosaic, exportRaster)
 
 buildModel:
     enabled: True
-    face_count: "high" # How many faces to use, low, medium, high, custom
-    face_count_custom: 100000 # Only used if custom number of faces set. TODO how to default?
+    face_count: "Metashape.HighFaceCount" # How many faces to use, Metashape.LowFaceCount, MediumFaceCount, HighFaceCount, CustomFaceCount
+    face_count_custom: 100000 # Only used if custom number of faces set (above).
     reset_alignment: False # Reset the alignment to identity, this is necessary for aligning with the cameras but breaks geospatial referencing for the chunk
     export: True
     export_extension: "ply" # Can be any supported 3D model extension
