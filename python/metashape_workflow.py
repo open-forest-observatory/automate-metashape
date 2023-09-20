@@ -22,7 +22,7 @@ except:  # running from command line (in linux) or interactively (windows)
     import metashape_workflow_functions as meta
     import read_yaml
 
-if(sys.stdin.isatty()):
+if sys.stdin.isatty():
     config_file = sys.argv[1]
 else:
     config_file = manual_config_file
@@ -43,7 +43,7 @@ if cfg["calibrateReflectance"]["enabled"]:
     meta.calibrate_reflectance(doc, cfg)
 
 if cfg["alignPhotos"]["enabled"]:
-    meta.align_photos(doc, log, cfg)
+    meta.align_photos(doc, log, run_id, cfg)
     meta.reset_region(doc)
 
 if cfg["filterPointsUSGS"]["enabled"]:
@@ -55,15 +55,21 @@ if cfg["addGCPs"]["enabled"]:
     meta.reset_region(doc)
 
 if cfg["optimizeCameras"]["enabled"]:
-    meta.optimize_cameras(doc, cfg)
+    meta.optimize_cameras(doc, run_id, cfg)
     meta.reset_region(doc)
 
 if cfg["filterPointsUSGS"]["enabled"]:
     meta.filter_points_usgs_part2(doc, cfg)
     meta.reset_region(doc)
 
+if cfg["buildDepthMap"]["enabled"]:
+    meta.build_depth_map(doc, log, cfg)
+
 if cfg["buildPointCloud"]["enabled"]:
     meta.build_point_cloud(doc, log, run_id, cfg)
+
+if cfg["buildModel"]["enabled"]:
+    meta.build_model(doc, log, run_id, cfg)
 
 if cfg["buildDem"]["enabled"]:
     meta.build_dem(doc, log, run_id, cfg)
