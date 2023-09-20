@@ -62,17 +62,20 @@ if cfg["filterPointsUSGS"]["enabled"]:
     meta.filter_points_usgs_part2(doc, cfg)
     meta.reset_region(doc)
 
+if cfg["buildDepthMap"]["enabled"]:
+    meta.build_depth_map(doc, log, cfg)
+
 if cfg["buildPointCloud"]["enabled"]:
     meta.build_point_cloud(doc, log, run_id, cfg)
+
+if cfg["buildModel"]["enabled"]:
+    meta.build_model(doc, log, run_id, cfg)
 
 if cfg["buildDem"]["enabled"]:
     meta.build_dem(doc, log, run_id, cfg)
 
 if cfg["buildOrthomosaic"]["enabled"]:
     meta.build_orthomosaics(doc, log, run_id, cfg)
-
-if cfg["buildModel"]["enabled"]:
-    meta.build_model(doc, log, run_id, cfg)
 
 meta.export_report(doc, run_id, cfg)
 

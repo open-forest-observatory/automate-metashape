@@ -83,7 +83,14 @@ optimizeCameras: # (Metashape: optimizeCameras)
     enabled: True
     adaptive_fitting: True # Should the camera lens model be fit at the same time as optimizing photos?
 
-buildPointCloud: # (Metashape: buildDepthMaps, buildPointCloud, (optionally) classifyGroundPoints, and exportPoints)
+buildDepthMap: # (Metashape: buildDepthMaps)
+    enabled: True
+    downscale: 2 # How much to coarsen the photos when searching for matches to build the point cloud. For large photosets, values < 4 likely take prohibitively long. Accepts numbers 2^x (https://www.agisoft.com/forum/index.php?topic=11697.0).
+    filter_mode: Metashape.ModerateFiltering # How to filter the point cloud. Options are NoFiltering, MildFiltering, ModerateFiltering, AggressiveFiltering. Aggressive filtering removes detail and makes worse DEMs (at least for forest). NoFiltering takes very long. In trials, it never completed.
+    reuse_depth: False # Purpose unknown.
+    max_neighbors: 100 # Maximum number of neighboring photos to use for estimating point cloud. Higher numbers may increase accuracy but dramatically increase processing time.
+
+buildPointCloud: # (Metashape: buildPointCloud, (optionally) classifyGroundPoints, and exportPoints)
     enabled: True
     ## For depth maps (buildDepthMaps)
     downscale: 2 # How much to coarsen the photos when searching for matches to build the point cloud. For large photosets, values < 4 likely take prohibitively long. Accepts numbers 2^x (https://www.agisoft.com/forum/index.php?topic=11697.0).
@@ -135,6 +142,8 @@ buildOrthomosaic: # (Metashape: buildOrthomosaic, exportRaster)
 buildModel:
     enabled: True
     face_count: "high" # How many faces to use, low, medium, high, custom
-    custom_face_count: 100000 # Only used if custom number of faces set
+    face_count_custom: 100000 # Only used if custom number of faces set. TODO how to default?
+    reset_alignment: False # Reset the alignment to identity, this is necessary for aligning with the cameras but breaks geospatial referencing for the chunk
     export: True
- 
+    export_extension: "ply" # Can be any supported 3D model extension
+

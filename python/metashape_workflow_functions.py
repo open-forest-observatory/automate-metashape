@@ -448,22 +448,21 @@ def classify_ground_points(doc, log_file, run_id, cfg):
 
 
 
-def build_point_cloud(doc, log_file, run_id, cfg):
-    '''
-    Build depth maps and point cloud
-    '''
 
+def build_depth_map(doc, log_file, cfg):
     ### Build depth maps
 
     # get a beginning time stamp for the next step
     timer2a = time.time()
 
     # build depth maps only instead of also building the point cloud ##?? what does
-    doc.chunk.buildDepthMaps(downscale=cfg["buildPointCloud"]["downscale"],
-                             filter_mode=cfg["buildPointCloud"]["filter_mode"],
-                             reuse_depth=cfg["buildPointCloud"]["reuse_depth"],
-                             max_neighbors=cfg["buildPointCloud"]["max_neighbors"],
-                             subdivide_task=cfg["subdivide_task"])
+    doc.chunk.buildDepthMaps(
+        downscale=cfg["buildDepthMap"]["downscale"],
+        filter_mode=cfg["buildDepthMap"]["filter_mode"],
+        reuse_depth=cfg["buildDepthMap"]["reuse_depth"],
+        max_neighbors=cfg["buildDepthMap"]["max_neighbors"],
+        subdivide_task=cfg["subdivide_task"],
+    )
     doc.save()
 
     # get an ending time stamp for the previous step
@@ -473,8 +472,14 @@ def build_point_cloud(doc, log_file, run_id, cfg):
     time2 = diff_time(timer2b, timer2a)
 
     # record results to file
-    with open(log_file, 'a') as file:
-        file.write(sep.join(['Build Depth Maps', time2]) + '\n')
+    with open(log_file, "a") as file:
+        file.write(sep.join(["Build Depth Maps", time2]) + "\n")
+
+
+def build_point_cloud(doc, log_file, run_id, cfg):
+    """
+    Build depth maps and point cloud
+    """
 
     ### Build point cloud
 
@@ -482,40 +487,43 @@ def build_point_cloud(doc, log_file, run_id, cfg):
     timer3a = time.time()
 
     # build point cloud
-    doc.chunk.buildPointCloud(max_neighbors=cfg["buildPointCloud"]["max_neighbors"],
-                              keep_depth = cfg["buildPointCloud"]["keep_depth"],
-                              subdivide_task = cfg["subdivide_task"],
-                              point_colors = True)
+    doc.chunk.buildPointCloud(
+        max_neighbors=cfg["buildPointCloud"]["max_neighbors"],
+        keep_depth=cfg["buildPointCloud"]["keep_depth"],
+        subdivide_task=cfg["subdivide_task"],
+        point_colors=True,
+    )
     doc.save()
 
-
-
-	# classify ground points if specified
+    # classify ground points if specified
     if cfg["buildPointCloud"]["classify_ground_points"]:
-    	classify_ground_points(doc, log_file, run_id, cfg)
-
+        classify_ground_points(doc, log_file, run_id, cfg)
 
     ### Export points
 
     if cfg["buildPointCloud"]["export"]:
 
-        output_file = os.path.join(cfg["output_path"], run_id + '_points.las')
+        output_file = os.path.join(cfg["output_path"], run_id + "_points.las")
 
         if cfg["buildPointCloud"]["classes"] == "ALL":
             # call without classes argument (Metashape then defaults to all classes)
-            doc.chunk.exportPointCloud(path=output_file,
-                                   source_data=Metashape.PointCloudData,
-                                   format=Metashape.PointCloudFormatLAS,
-                                   crs=Metashape.CoordinateSystem(cfg["project_crs"]),
-                                   subdivide_task=cfg["subdivide_task"])
+            doc.chunk.exportPointCloud(
+                path=output_file,
+                source_data=Metashape.PointCloudData,
+                format=Metashape.PointCloudFormatLAS,
+                crs=Metashape.CoordinateSystem(cfg["project_crs"]),
+                subdivide_task=cfg["subdivide_task"],
+            )
         else:
             # call with classes argument
-            doc.chunk.exportPointCloud(path=output_file,
-                                   source_data=Metashape.PointCloudData,
-                                   format=Metashape.PointCloudFormatLAS,
-                                   crs=Metashape.CoordinateSystem(cfg["project_crs"]),
-                                   clases=cfg["buildPointCloud"]["classes"],
-                                   subdivide_task=cfg["subdivide_task"])
+            doc.chunk.exportPointCloud(
+                path=output_file,
+                source_data=Metashape.PointCloudData,
+                format=Metashape.PointCloudFormatLAS,
+                crs=Metashape.CoordinateSystem(cfg["project_crs"]),
+                clases=cfg["buildPointCloud"]["classes"],
+                subdivide_task=cfg["subdivide_task"],
+            )
 
     # get an ending time stamp for the previous step
     timer3b = time.time()
@@ -524,17 +532,16 @@ def build_point_cloud(doc, log_file, run_id, cfg):
     time3 = diff_time(timer3b, timer3a)
 
     # record results to file
-    with open(log_file, 'a') as file:
-        file.write(sep.join(['Build Point Cloud', time3])+'\n')
+    with open(log_file, "a") as file:
+        file.write(sep.join(["Build Point Cloud", time3]) + "\n")
 
     return True
 
 
-
 def build_model(doc, log_file, run_id, cfg):
-    '''
+    """
     Build and export the model
-    '''
+    """
 
     """
     buildModel(surface_type=Arbitrary, interpolation=EnabledInterpolation, face_count=HighFaceCount,
@@ -545,32 +552,47 @@ def build_model(doc, log_file, run_id, cfg):
     """
     # Choose the enum for the quality
     face_count_dict = {
-                        "low": PhotoScan.LowFaceCount,
-                        "medium": PhotoScan.MediumFaceCount,
-                        "high": PhotoScan.HighFaceCount,
-                        "custom": PhotoScan.CustomFaceCount,
-                       }
+        "low": Metashape.LowFaceCount,
+        "medium": Metashape.MediumFaceCount,
+        "high": Metashape.HighFaceCount,
+        "custom": Metashape.CustomFaceCount,
+    }
     face_count = face_count_dict[cfg["buildModel"]["face_count"]]
 
     start_time = time.time()
     # Build the mesh
-    doc.chunk.buildModel(surface = PhotoScan.Arbitrary,
-                         interpolation = PhotoScan.EnabledInterpolation,
-                         face_count = face_count,
-                         face_count_custom = cfg["buildModel"]["face_count_custom"], # Only used if face_count is custom
-                         source = PhotoScan.DepthMapsData)
-    # Save the model
-    doc.save()
+    doc.chunk.buildModel(
+        surface_type=Metashape.Arbitrary,
+        interpolation=Metashape.EnabledInterpolation,
+        face_count=face_count,
+        face_count_custom=cfg["buildModel"][
+            "face_count_custom"
+        ],  # Only used if face_count is custom
+        source_data=Metashape.DepthMapsData,
+    )
+
+    if cfg["buildModel"]["reset_alignment"]
+        # This is required for alignment with the cameras
+        # The approach was recommended here: https://www.agisoft.com/forum/index.php?topic=8210.0
+        doc.chunk.crs = None
+        doc.chunk.transform.matrix = None
+
 
     if cfg["buildModel"]["export"]:
-        output_file = os.path.join(cfg["output_path"], run_id + '_model.obj')
+        output_file = os.path.join(
+            cfg["output_path"],
+            run_id + "_model." + cfg["buildModel"]["export_extension"],
+        )
         doc.chunk.exportModel(path=output_file)
+
+    # Save the model
+    doc.save()
 
     time_taken = diff_time(start_time, time.time())
 
     # record results to file
-    with open(log_file, 'a') as file:
-        file.write(sep.join(['Build Model', time_taken]) + '\n')
+    with open(log_file, "a") as file:
+        file.write(sep.join(["Build Model", time_taken]) + "\n")
 
     return True
 
