@@ -290,10 +290,17 @@ def add_gcps(doc, cfg):
     return True
 
 
-def align_photos(doc, log_file, cfg):
-    '''
+def export_cameras(doc, run_id, cfg):
+    if cfg["alignPhotos"]["export"]:
+        output_file = os.path.join(cfg["output_path"], run_id + "_cameras.xml")
+        # Defaults to xml format, which is the only one we've used so far
+        doc.chunk.exportCameras(path=output_file)
+
+
+def align_photos(doc, log_file, run_id, cfg):
+    """
     Match photos, align cameras, optimize cameras
-    '''
+    """
 
     #### Align photos
 
@@ -301,15 +308,19 @@ def align_photos(doc, log_file, cfg):
     timer1a = time.time()
 
     # Align cameras
-    doc.chunk.matchPhotos(downscale=cfg["alignPhotos"]["downscale"],
-                          subdivide_task = cfg["subdivide_task"],
-                          keep_keypoints = cfg["alignPhotos"]["keep_keypoints"],
-                          generic_preselection = cfg["alignPhotos"]["generic_preselection"],
-                          reference_preselection = cfg["alignPhotos"]["reference_preselection"],
-                          reference_preselection_mode = cfg["alignPhotos"]["reference_preselection_mode"])
-    doc.chunk.alignCameras(adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"],
-                           subdivide_task = cfg["subdivide_task"],
-                           reset_alignment = cfg["alignPhotos"]["reset_alignment"])
+    doc.chunk.matchPhotos(
+        downscale=cfg["alignPhotos"]["downscale"],
+        subdivide_task=cfg["subdivide_task"],
+        keep_keypoints=cfg["alignPhotos"]["keep_keypoints"],
+        generic_preselection=cfg["alignPhotos"]["generic_preselection"],
+        reference_preselection=cfg["alignPhotos"]["reference_preselection"],
+        reference_preselection_mode=cfg["alignPhotos"]["reference_preselection_mode"],
+    )
+    doc.chunk.alignCameras(
+        adaptive_fitting=cfg["alignPhotos"]["adaptive_fitting"],
+        subdivide_task=cfg["subdivide_task"],
+        reset_alignment=cfg["alignPhotos"]["reset_alignment"],
+    )
     doc.save()
 
     # get an ending time stamp
@@ -318,9 +329,12 @@ def align_photos(doc, log_file, cfg):
     # calculate difference between end and start time to 1 decimal place
     time1 = diff_time(timer1b, timer1a)
 
+    # optionally export
+    export_cameras(doc, run_id, cfg)
+
     # record results to file
-    with open(log_file, 'a') as file:
-        file.write(sep.join(['Align Photos', time1])+'\n')
+    with open(log_file, "a") as file:
+        file.write(sep.join(["Align Photos", time1]) + "\n")
 
     return True
 
@@ -338,10 +352,10 @@ def reset_region(doc):
     return True
 
 
-def optimize_cameras(doc, cfg):
-    '''
+def optimize_cameras(doc, run_id, cfg):
+    """
     Optimize cameras
-    '''
+    """
 
     # Disable camera locations as reference if specified in YML
     if cfg["addGCPs"]["enabled"] and cfg["addGCPs"]["optimize_w_gcps_only"]:
@@ -350,7 +364,13 @@ def optimize_cameras(doc, cfg):
             doc.chunk.cameras[i].reference.enabled = False
 
     # Currently only optimizes the default parameters, which is not all possible parameters
-    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+    doc.chunk.optimizeCameras(
+        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
+    )
+
+    # optionally export, note this would override the export from align_cameras
+    export_cameras(doc, run_id, cfg)
+
     doc.save()
 
     return True
@@ -358,7 +378,9 @@ def optimize_cameras(doc, cfg):
 
 def filter_points_usgs_part1(doc, cfg):
 
-    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+    doc.chunk.optimizeCameras(
+        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
+    )
 
     rec_thresh_percent = cfg["filterPointsUSGS"]["rec_thresh_percent"]
     rec_thresh_absolute = cfg["filterPointsUSGS"]["rec_thresh_absolute"]

@@ -43,7 +43,7 @@ if cfg["calibrateReflectance"]["enabled"]:
     meta.calibrate_reflectance(doc, cfg)
 
 if cfg["alignPhotos"]["enabled"]:
-    meta.align_photos(doc, log, cfg)
+    meta.align_photos(doc, log, run_id, cfg)
     meta.reset_region(doc)
 
 if cfg["filterPointsUSGS"]["enabled"]:
@@ -55,7 +55,7 @@ if cfg["addGCPs"]["enabled"]:
     meta.reset_region(doc)
 
 if cfg["optimizeCameras"]["enabled"]:
-    meta.optimize_cameras(doc, cfg)
+    meta.optimize_cameras(doc, run_id, cfg)
     meta.reset_region(doc)
 
 if cfg["filterPointsUSGS"]["enabled"]:
