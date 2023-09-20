@@ -81,9 +81,7 @@ def project_setup(cfg, config_file):
     run_name = cfg["run_name"]
 
     if run_name == "from_config_filename":
-        file_basename = os.path.basename(
-            config_file
-        )  # extracts file base name from path
+        file_basename = os.path.basename(config_file)  # extracts file base name from path
         run_name, _ = os.path.splitext(file_basename)  # removes extension
 
     ## Project file example to make: "projectID_YYYYMMDDtHHMM-jobID.psx"
@@ -99,9 +97,7 @@ def project_setup(cfg, config_file):
     """
 
     # create a handle to the Metashape object
-    doc = (
-        Metashape.Document()
-    )  # When running via Metashape, can use: doc = Metashape.app.document
+    doc = Metashape.Document()  # When running via Metashape, can use: doc = Metashape.app.document
 
     # If specified, open existing project
     if cfg["load_project"] != "":
@@ -128,8 +124,7 @@ def project_setup(cfg, config_file):
         # write a line with the Metashape version
         file.write(sep.join(["Project", run_id]) + "\n")
         file.write(
-            sep.join(["Agisoft Metashape Professional Version", Metashape.app.version])
-            + "\n"
+            sep.join(["Agisoft Metashape Professional Version", Metashape.app.version]) + "\n"
         )
         # write a line with the date and time
         file.write(sep.join(["Processing started", stamp_time()]) + "\n")
@@ -153,9 +148,7 @@ def enable_and_log_gpu(log_file, cfg):
     while gpucount >= currentgpu:
         if gpustring != "":
             gpustring = gpustring + ", "
-        gpustring = (
-            gpustring + gpustringraw.split("name': '")[currentgpu].split("',")[0]
-        )
+        gpustring = gpustring + gpustringraw.split("name': '")[currentgpu].split("',")[0]
         currentgpu = currentgpu + 1
     # gpustring = gpustringraw.split("name': '")[1].split("',")[0]
     gpu_mask = Metashape.app.gpu_mask
@@ -182,9 +175,7 @@ def enable_and_log_gpu(log_file, cfg):
         Metashape.app.settings.setValue("main/gpu_enable_cuda", "0")
 
     # Set GPU multiplier to value specified (2 is default)
-    Metashape.app.settings.setValue(
-        "main/depth_max_gpu_multiplier", cfg["gpu_multiplier"]
-    )
+    Metashape.app.settings.setValue("main/depth_max_gpu_multiplier", cfg["gpu_multiplier"])
 
     return True
 
@@ -202,10 +193,7 @@ def add_photos(doc, cfg):
     photo_files = [
         x
         for x in b
-        if (
-            re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)", x)
-            and (not re.search("dem_usgs.tif", x))
-        )
+        if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)", x) and (not re.search("dem_usgs.tif", x)))
     ]
 
     ## Add them
@@ -282,23 +270,15 @@ def add_gcps(doc, cfg):
     """
 
     ## Tag specific pixels in specific images where GCPs are located
-    path = os.path.join(
-        cfg["photo_path"], "gcps", "prepared", "gcp_imagecoords_table.csv"
-    )
+    path = os.path.join(cfg["photo_path"], "gcps", "prepared", "gcp_imagecoords_table.csv")
     file = open(path)
     content = file.read().splitlines()
 
     for line in content:
         marker_label, camera_label, x_proj, y_proj = line.split(",")
-        if (
-            marker_label[0] == '"'
-        ):  # if it's in quotes (from saving CSV in Excel), remove quotes
-            marker_label = marker_label[
-                1:-1
-            ]  # need to get it out of the two pairs of quotes
-        if (
-            camera_label[0] == '"'
-        ):  # if it's in quotes (from saving CSV in Excel), remove quotes
+        if marker_label[0] == '"':  # if it's in quotes (from saving CSV in Excel), remove quotes
+            marker_label = marker_label[1:-1]  # need to get it out of the two pairs of quotes
+        if camera_label[0] == '"':  # if it's in quotes (from saving CSV in Excel), remove quotes
             camera_label = camera_label[1:-1]
 
         marker = get_marker(doc.chunk, marker_label)
@@ -323,12 +303,8 @@ def add_gcps(doc, cfg):
 
     for line in content:
         marker_label, world_x, world_y, world_z = line.split(",")
-        if (
-            marker_label[0] == '"'
-        ):  # if it's in quotes (from saving CSV in Excel), remove quotes
-            marker_label = marker_label[
-                1:-1
-            ]  # need to get it out of the two pairs of quotes
+        if marker_label[0] == '"':  # if it's in quotes (from saving CSV in Excel), remove quotes
+            marker_label = marker_label[1:-1]  # need to get it out of the two pairs of quotes
 
         marker = get_marker(doc.chunk, marker_label)
         if not marker:
@@ -428,9 +404,7 @@ def optimize_cameras(doc, run_id, cfg):
             doc.chunk.cameras[i].reference.enabled = False
 
     # Currently only optimizes the default parameters, which is not all possible parameters
-    doc.chunk.optimizeCameras(
-        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
-    )
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
     # optionally export, note this would override the export from align_cameras
     export_cameras(doc, run_id, cfg)
@@ -442,9 +416,7 @@ def optimize_cameras(doc, run_id, cfg):
 
 def filter_points_usgs_part1(doc, cfg):
 
-    doc.chunk.optimizeCameras(
-        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
-    )
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
     rec_thresh_percent = cfg["filterPointsUSGS"]["rec_thresh_percent"]
     rec_thresh_absolute = cfg["filterPointsUSGS"]["rec_thresh_absolute"]
@@ -459,14 +431,10 @@ def filter_points_usgs_part1(doc, cfg):
     values.sort()
     thresh = values[int(len(values) * (1 - rec_thresh_percent / 100))]
     if thresh < rec_thresh_absolute:
-        thresh = (
-            rec_thresh_absolute  # don't throw away too many points if they're all good
-        )
+        thresh = rec_thresh_absolute  # don't throw away too many points if they're all good
     fltr.removePoints(thresh)
 
-    doc.chunk.optimizeCameras(
-        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
-    )
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
     fltr = Metashape.TiePoints.Filter()
     fltr.init(doc.chunk, Metashape.TiePoints.Filter.ProjectionAccuracy)
@@ -474,14 +442,10 @@ def filter_points_usgs_part1(doc, cfg):
     values.sort()
     thresh = values[int(len(values) * (1 - proj_thresh_percent / 100))]
     if thresh < proj_thresh_absolute:
-        thresh = (
-            proj_thresh_absolute  # don't throw away too many points if they're all good
-        )
+        thresh = proj_thresh_absolute  # don't throw away too many points if they're all good
     fltr.removePoints(thresh)
 
-    doc.chunk.optimizeCameras(
-        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
-    )
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
     fltr = Metashape.TiePoints.Filter()
     fltr.init(doc.chunk, Metashape.TiePoints.Filter.ReprojectionError)
@@ -492,18 +456,14 @@ def filter_points_usgs_part1(doc, cfg):
         thresh = reproj_thresh_absolute  # don't throw away too many points if they're all good
     fltr.removePoints(thresh)
 
-    doc.chunk.optimizeCameras(
-        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
-    )
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
     doc.save()
 
 
 def filter_points_usgs_part2(doc, cfg):
 
-    doc.chunk.optimizeCameras(
-        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
-    )
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
     reproj_thresh_percent = cfg["filterPointsUSGS"]["reproj_thresh_percent"]
     reproj_thresh_absolute = cfg["filterPointsUSGS"]["reproj_thresh_absolute"]
@@ -517,9 +477,7 @@ def filter_points_usgs_part2(doc, cfg):
         thresh = reproj_thresh_absolute  # don't throw away too many points if they're all good
     fltr.removePoints(thresh)
 
-    doc.chunk.optimizeCameras(
-        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
-    )
+    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
     doc.save()
 
@@ -781,9 +739,7 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending):
 
     ## Export orthomosaic
     if cfg["buildOrthomosaic"]["export"]:
-        output_file = os.path.join(
-            cfg["output_path"], run_id + "_ortho_" + file_ending + ".tif"
-        )
+        output_file = os.path.join(cfg["output_path"], run_id + "_ortho_" + file_ending + ".tif")
 
         compression = Metashape.ImageCompression()
         compression.tiff_big = cfg["buildOrthomosaic"]["tiff_big"]
