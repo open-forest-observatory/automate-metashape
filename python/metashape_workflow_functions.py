@@ -647,7 +647,7 @@ def build_model(doc, log_file, run_id, cfg):
             for i in range(4):
                 transform_row = transform_tuple[i * 4 : (i + 1) * 4]
                 transform_row_strs = [str(x) for x in transform_row]
-                fileh.write(", ".join(transform_row_strs))
+                fileh.write(", ".join(transform_row_strs) + "\n")
 
         output_file = os.path.join(
             cfg["output_path"],
