@@ -95,7 +95,7 @@ buildDepthMap: # (Metashape: buildDepthMaps)
 buildPointCloud: # (Metashape: buildPointCloud, (optionally) classifyGroundPoints, and exportPoints)
     enabled: True
     ## For build point cloud (buildPointCloud)
-    keep_depth: False # Purpose unknown.
+    keep_depth: True # If False, removes depth maps from project data after building point cloud
     max_neighbors: 60 # Maximum number of neighboring photos to use for estimating point cloud. Higher numbers may increase accuracy but dramatically increase processing time.
     ## For ground point classification (classifyGroundPoints). Definitions here: https://www.agisoft.com/forum/index.php?topic=9328.0
     classify_ground_points: True # Should ground points be classified as a part of this step? Must be enabled (either here or in buildDem, below) if a digital terrain model (DTM) is needed either for orthomosaic or DTM export. Enabling here is an alternative to enabling as a component of buildDem (below). It depends on which stage you want the classification to be done at. If you already have a point cloud but it's unclassified, then don't do it as part of this stage as it would require computing the point cloud again.
