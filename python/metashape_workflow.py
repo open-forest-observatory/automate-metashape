@@ -62,8 +62,8 @@ if cfg["filterPointsUSGS"]["enabled"]:
     meta.filter_points_usgs_part2(doc, cfg)
     meta.reset_region(doc)
 
-if cfg["buildDepthMap"]["enabled"]:
-    meta.build_depth_map(doc, log, cfg)
+if cfg["buildDepthMaps"]["enabled"]:
+    meta.build_depth_maps(doc, log, cfg)
 
 if cfg["buildPointCloud"]["enabled"]:
     meta.build_point_cloud(doc, log, run_id, cfg)

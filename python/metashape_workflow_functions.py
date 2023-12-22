@@ -505,7 +505,7 @@ def classify_ground_points(doc, log_file, run_id, cfg):
         file.write(sep.join(["Classify Ground Points", time_tot]) + "\n")
 
 
-def build_depth_map(doc, log_file, cfg):
+def build_depth_maps(doc, log_file, cfg):
     ### Build depth maps
 
     # get a beginning time stamp for the next step
@@ -513,10 +513,10 @@ def build_depth_map(doc, log_file, cfg):
 
     # build depth maps only instead of also building the point cloud ##?? what does
     doc.chunk.buildDepthMaps(
-        downscale=cfg["buildDepthMap"]["downscale"],
-        filter_mode=cfg["buildDepthMap"]["filter_mode"],
-        reuse_depth=cfg["buildDepthMap"]["reuse_depth"],
-        max_neighbors=cfg["buildDepthMap"]["max_neighbors"],
+        downscale=cfg["buildDepthMaps"]["downscale"],
+        filter_mode=cfg["buildDepthMaps"]["filter_mode"],
+        reuse_depth=cfg["buildDepthMaps"]["reuse_depth"],
+        max_neighbors=cfg["buildDepthMaps"]["max_neighbors"],
         subdivide_task=cfg["subdivide_task"],
     )
     doc.save()
@@ -534,7 +534,7 @@ def build_depth_map(doc, log_file, cfg):
 
 def build_point_cloud(doc, log_file, run_id, cfg):
     """
-    Build depth maps and point cloud
+    Build point cloud
     """
 
     ### Build point cloud

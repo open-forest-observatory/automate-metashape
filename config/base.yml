@@ -85,7 +85,7 @@ optimizeCameras: # (Metashape: optimizeCameras)
     adaptive_fitting: True # Should the camera lens model be fit at the same time as optimizing photos?
     export: False # Export the camera locations, now updated from the initial alignment
 
-buildDepthMap: # (Metashape: buildDepthMaps)
+buildDepthMaps: # (Metashape: buildDepthMaps)
     enabled: True
     downscale: 4 # How much to coarsen the photos when searching for matches to build the point cloud. For large photosets, values < 4 likely take prohibitively long. Accepts numbers 2^x (https://www.agisoft.com/forum/index.php?topic=11697.0).
     filter_mode: Metashape.ModerateFiltering # How to filter the depth map. Options are NoFiltering, MildFiltering, ModerateFiltering, AggressiveFiltering. Aggressive filtering removes detail and makes worse DEMs (at least for forest). NoFiltering takes very long. In trials, it never completed.
