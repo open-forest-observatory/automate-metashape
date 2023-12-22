@@ -610,20 +610,6 @@ def build_model(doc, log_file, run_id, cfg):
         ],  # Only used if face_count is custom
         source_data=Metashape.DepthMapsData,
     )
-
-    if cfg["buildModel"]["reset_alignment"]:
-        # This is required for alignment with the cameras
-        # The approach was recommended here: https://www.agisoft.com/forum/index.php?topic=8210.0
-        doc.chunk.crs = None
-        doc.chunk.transform.matrix = None
-
-    if cfg["buildModel"]["export"]:
-        output_file = os.path.join(
-            cfg["output_path"],
-            run_id + "_model." + cfg["buildModel"]["export_extension"],
-        )
-        doc.chunk.exportModel(path=output_file)
-
     # Save the model
     doc.save()
 
@@ -632,6 +618,43 @@ def build_model(doc, log_file, run_id, cfg):
     # record results to file
     with open(log_file, "a") as file:
         file.write(sep.join(["Build Model", time_taken]) + "\n")
+
+    if cfg["buildModel"]["export_georeferenced"]:
+        output_file = os.path.join(
+            cfg["output_path"],
+            run_id + "_model_georeferenced." + cfg["buildModel"]["export_extension"],
+        )
+        doc.chunk.exportModel(path=output_file)
+
+    if cfg["buildModel"]["export_local"]:
+        # Wipe the CRS and transform so it aligns with the cameras
+        # The approach was recommended here: https://www.agisoft.com/forum/index.php?topic=8210.0
+        old_crs = doc.chunk.crs
+        old_transform_matrix = doc.chunk.transform.matrix
+        # Wipe the transform
+        doc.chunk.crs = None
+        doc.chunk.transform.matrix = None
+
+        output_file = os.path.join(
+            cfg["output_path"],
+            run_id + "_local_model_transform.csv",
+        )
+        # Export the transform
+        with open(output_file, "w") as fileh:
+            # This is a row-major representation
+            transform_tuple = tuple(old_transform_matrix)
+            # Write each row in the the transform
+            for i in range(4):
+                fileh.write(", ".join(transform_tuple[i * 4 : (i + 1) * 4]))
+
+        output_file = os.path.join(
+            cfg["output_path"],
+            run_id + "_model_local." + cfg["buildModel"]["export_extension"],
+        )
+        doc.chunk.exportModel(path=output_file)
+        # Reset CRS and transform
+        doc.chunk.crs = old_crs
+        doc.chunk.transform.matrix = old_transform_matrix
 
     return True
 

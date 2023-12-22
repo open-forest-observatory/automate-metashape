@@ -140,6 +140,6 @@ buildModel:
     enabled: False
     face_count: "Metashape.MediumFaceCount" # How many faces to use, Metashape.LowFaceCount, MediumFaceCount, HighFaceCount, CustomFaceCount
     face_count_custom: 100000 # Only used if custom number of faces set (above).
-    reset_alignment: False # Reset the alignment to identity, this is necessary for aligning with the cameras but breaks geospatial referencing for the chunk
-    export: True
+    export_local: True # Export the model in local coordinates
+    export_georeferenced: True # Export the georeferenced model. If there's no georeferencing it will be the same as local
     export_extension: "ply" # Can be any supported 3D model extension
