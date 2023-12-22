@@ -655,9 +655,12 @@ def build_model(doc, log_file, run_id, cfg):
             run_id + "_model_local." + cfg["buildModel"]["export_extension"],
         )
         doc.chunk.exportModel(path=output_file)
+
         # Reset CRS and transform
         doc.chunk.crs = old_crs
         doc.chunk.transform.matrix = old_transform_matrix
+
+        doc.open(doc.path)
 
     return True
 
@@ -740,7 +743,7 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                     image_compression=compression,
                 )
                 if cfg["buildOrthomosaic"]["enabled"] and "DSM-mesh" in cfg["buildOrthomosaic"]["surface"]:
-                    build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dtm-ptcloud")
+                    build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dsm-mesh")
 
     # Building an orthomosaic from the mesh does not require a DEM, so this is done separately, independent of any DEM building
     if (cfg["buildOrthomosaic"]["enabled"] and "Mesh" in cfg["buildOrthomosaic"]["surface"]):
