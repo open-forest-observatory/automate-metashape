@@ -28,8 +28,9 @@ def convert_objects(a_dict):
                 ):  # allow "path" and "project" and "name" keys (e.g. "photoset_path" and "run_name") from YAML to include "Metashape" (e.g., Metashape in the filename)
                     a_dict[k] = eval(v)
             elif isinstance(v, list):
-                # TODO skip if no item have metashape
-                a_dict[k] = [eval(item) for item in v if ("Metashape" in item)]
+                # skip if no item in list have metashape, else convert string to metashape object
+                if any("Metashape" in item for item in v):
+                    a_dict[k] = [eval(item) for item in v if ("Metashape" in item)]
         else:
             convert_objects(v)
 
@@ -40,7 +41,7 @@ def read_yaml(yml_path):
 
     # TODO: wrap in a Try to catch errors
     convert_objects(cfg)
-
+    
     return cfg
 
 

@@ -71,11 +71,8 @@ if cfg["buildPointCloud"]["enabled"]:
 if cfg["buildModel"]["enabled"]:
     meta.build_model(doc, log, run_id, cfg)
 
-if cfg["buildDem"]["enabled"]:
-    meta.build_dem(doc, log, run_id, cfg)
-
-if cfg["buildOrthomosaic"]["enabled"]:
-    meta.build_orthomosaics(doc, log, run_id, cfg)
+# For this step, the check for whether it is enabled in the config happens inside the function, because there are two steps (DEM and ortho), each of which can be enabled independently
+meta.build_dem_orthomosaic(doc, log, run_id, cfg)
 
 meta.export_report(doc, run_id, cfg)
 

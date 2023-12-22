@@ -635,31 +635,37 @@ def build_model(doc, log_file, run_id, cfg):
         doc.chunk.crs = None
         doc.chunk.transform.matrix = None
 
-        output_file = os.path.join(
-            cfg["output_path"],
-            run_id + "_local_model_transform.csv",
-        )
         # Export the transform
-        with open(output_file, "w") as fileh:
-            # This is a row-major representation
-            transform_tuple = tuple(old_transform_matrix)
-            # Write each row in the the transform
-            for i in range(4):
-                fileh.write(", ".join(transform_tuple[i * 4 : (i + 1) * 4]))
+        if cfg["buildModel"]["export_transform"]:
+            output_file = os.path.join(
+                cfg["output_path"],
+                run_id + "_local_model_transform.csv",
+            )
 
+            with open(output_file, "w") as fileh:
+                # This is a row-major representation
+                transform_tuple = tuple(old_transform_matrix)
+                # Write each row in the the transform
+                for i in range(4):
+                    fileh.write(", ".join(str(transform_tuple[i * 4 : (i + 1) * 4])))
+
+        # Export the model
         output_file = os.path.join(
             cfg["output_path"],
             run_id + "_model_local." + cfg["buildModel"]["export_extension"],
         )
         doc.chunk.exportModel(path=output_file)
+
         # Reset CRS and transform
         doc.chunk.crs = old_crs
         doc.chunk.transform.matrix = old_transform_matrix
 
+        doc.open(doc.path)
+
     return True
 
 
-def build_dem(doc, log_file, run_id, cfg):
+def build_dem_orthomosaic(doc, log_file, run_id, cfg):
     """
     Build end export DEM
     """
@@ -671,55 +677,77 @@ def build_dem(doc, log_file, run_id, cfg):
     # get a beginning time stamp for the next step
     timer5a = time.time()
 
-    # prepping params for buildDem
-    projection = Metashape.OrthoProjection()
-    projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
+    if (cfg["buildDem"]["enabled"]):
+        # prepping params for buildDem
+        projection = Metashape.OrthoProjection()
+        projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
 
-    # prepping params for export
-    compression = Metashape.ImageCompression()
-    compression.tiff_big = cfg["buildDem"]["tiff_big"]
-    compression.tiff_tiled = cfg["buildDem"]["tiff_tiled"]
-    compression.tiff_overviews = cfg["buildDem"]["tiff_overviews"]
+        # prepping params for export
+        compression = Metashape.ImageCompression()
+        compression.tiff_big = cfg["buildDem"]["tiff_big"]
+        compression.tiff_tiled = cfg["buildDem"]["tiff_tiled"]
+        compression.tiff_overviews = cfg["buildDem"]["tiff_overviews"]
 
-    if (cfg["buildDem"]["type"] == "DSM") | (cfg["buildDem"]["type"] == "both"):
-        # call without classes argument (Metashape then defaults to all classes)
-        doc.chunk.buildDem(
-            source_data=Metashape.PointCloudData,
-            subdivide_task=cfg["subdivide_task"],
-            projection=projection,
-        )
-        output_file = os.path.join(cfg["output_path"], run_id + "_dsm.tif")
-        if cfg["buildDem"]["export"]:
-            doc.chunk.exportRaster(
-                path=output_file,
+        if ("DSM-ptcloud" in cfg["buildDem"]["surface"]):
+            # call without classes argument (Metashape then defaults to all classes)
+            doc.chunk.buildDem(
+                source_data=Metashape.PointCloudData,
+                subdivide_task=cfg["subdivide_task"],
                 projection=projection,
-                nodata_value=cfg["buildDem"]["nodata"],
-                source_data=Metashape.ElevationData,
-                image_compression=compression,
             )
-    if (cfg["buildDem"]["type"] == "DTM") | (cfg["buildDem"]["type"] == "both"):
-        # call with classes argument
-        doc.chunk.buildDem(
-            source_data=Metashape.PointCloudData,
-            classes=Metashape.PointClass.Ground,
-            subdivide_task=cfg["subdivide_task"],
-            projection=projection,
-        )
-        output_file = os.path.join(cfg["output_path"], run_id + "_dtm.tif")
-        if cfg["buildDem"]["export"]:
-            doc.chunk.exportRaster(
-                path=output_file,
+            output_file = os.path.join(cfg["output_path"], run_id + "_dsm-ptcloud.tif")
+            if cfg["buildDem"]["export"]:
+                doc.chunk.exportRaster(
+                    path=output_file,
+                    projection=projection,
+                    nodata_value=cfg["buildDem"]["nodata"],
+                    source_data=Metashape.ElevationData,
+                    image_compression=compression,
+                )
+                if cfg["buildOrthomosaic"]["enabled"] and "DSM-ptcloud" in cfg["buildOrthomosaic"]["surface"]:
+                    build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dsm-ptcloud")
+        if ("DTM-ptcloud" in cfg["buildDem"]["surface"]):
+            # call with classes argument
+            doc.chunk.buildDem(
+                source_data=Metashape.PointCloudData,
+                classes=Metashape.PointClass.Ground,
+                subdivide_task=cfg["subdivide_task"],
                 projection=projection,
-                nodata_value=cfg["buildDem"]["nodata"],
-                source_data=Metashape.ElevationData,
-                image_compression=compression,
             )
-    if (
-        (cfg["buildDem"]["type"] != "DTM")
-        & (cfg["buildDem"]["type"] == "both")
-        & (cfg["buildDem"]["type"] == "DSM")
-    ):
-        raise ValueError("DEM type must be either 'DSM' or 'DTM' or 'both'")
+            output_file = os.path.join(cfg["output_path"], run_id + "_dtm-ptcloud.tif")
+            if cfg["buildDem"]["export"]:
+                doc.chunk.exportRaster(
+                    path=output_file,
+                    projection=projection,
+                    nodata_value=cfg["buildDem"]["nodata"],
+                    source_data=Metashape.ElevationData,
+                    image_compression=compression,
+                )
+                if cfg["buildOrthomosaic"]["enabled"] and "DTM-ptcloud" in cfg["buildOrthomosaic"]["surface"]:
+                    build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dtm-ptcloud")
+
+        if ("DSM-mesh" in cfg["buildDem"]["surface"]):
+            # call with classes argument
+            doc.chunk.buildDem(
+                source_data=Metashape.ModelData,
+                subdivide_task=cfg["subdivide_task"],
+                projection=projection,
+            )
+            output_file = os.path.join(cfg["output_path"], run_id + "_dsm-mesh.tif")
+            if cfg["buildDem"]["export"]:
+                doc.chunk.exportRaster(
+                    path=output_file,
+                    projection=projection,
+                    nodata_value=cfg["buildDem"]["nodata"],
+                    source_data=Metashape.ElevationData,
+                    image_compression=compression,
+                )
+                if cfg["buildOrthomosaic"]["enabled"] and "DSM-mesh" in cfg["buildOrthomosaic"]["surface"]:
+                    build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dsm-mesh")
+
+    # Building an orthomosaic from the mesh does not require a DEM, so this is done separately, independent of any DEM building
+    if (cfg["buildOrthomosaic"]["enabled"] and "Mesh" in cfg["buildOrthomosaic"]["surface"]):
+        build_export_orthomosaic(doc, log_file, run_id, cfg, from_mesh = True, file_ending="mesh")
 
     doc.save()
 
@@ -736,10 +764,10 @@ def build_dem(doc, log_file, run_id, cfg):
     return True
 
 
-def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending):
+def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending, from_mesh = False):
     """
-    Helper function called by build_orthomosaics. build_export_orthomosaic builds and exports an ortho based on the current elevation data.
-    build_orthomosaics sets the current elevation data and calls build_export_orthomosaic (one or more times depending on how many orthomosaics requested)
+    Helper function called by build_dem_orthomosaic. build_export_orthomosaic builds and exports an ortho based on the current elevation data.
+    build_dem_orthomosaic sets the current elevation data and calls build_export_orthomosaic (one or more times depending on how many orthomosaics requested)
     """
 
     # get a beginning time stamp for the next step
@@ -749,8 +777,13 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending):
     projection = Metashape.OrthoProjection()
     projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
 
+    if from_mesh:
+        surface_data = Metashape.ModelData
+    else:
+        surface_data = Metashape.ElevationData
+
     doc.chunk.buildOrthomosaic(
-        surface_data=Metashape.ElevationData,
+        surface_data=surface_data,
         blending_mode=cfg["buildOrthomosaic"]["blending"],
         fill_holes=cfg["buildOrthomosaic"]["fill_holes"],
         refine_seamlines=cfg["buildOrthomosaic"]["refine_seamlines"],
@@ -789,53 +822,6 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending):
     # record results to file
     with open(log_file, "a") as file:
         file.write(sep.join(["Build Orthomosaic", time6]) + "\n")
-
-    return True
-
-
-def build_orthomosaics(doc, log_file, run_id, cfg):
-    """
-    Build orthomosaic. This function just calculates the needed elevation data(s) and then calls build_export_orthomosaic to do the actual building and exporting. It does this multiple times if orthos based on multiple surfaces were requsted
-    """
-
-    # prep projection for export step below (in case export is enabled)
-    projection = Metashape.OrthoProjection()
-    projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
-
-    # get a beginning time stamp for the next step
-    timer6a = time.time()
-
-    # what should the orthomosaic filename end in? e.g., DSM, DTM, USGS to indicate the surface it was built on
-    file_ending = cfg["buildOrthomosaic"]["surface"]
-
-    # Import USGS DEM as surface for orthomosaic if specified
-    if cfg["buildOrthomosaic"]["surface"] == "USGS":
-        path = os.path.join(cfg["photo_path"], cfg["buildOrthomosaic"]["usgs_dem_path"])
-        crs = Metashape.CoordinateSystem(cfg["buildOrthomosaic"]["usgs_dem_crs"])
-        doc.chunk.importRaster(path=path, crs=crs, raster_type=Metashape.ElevationData)
-        build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="USGS")
-    # Otherwise use Metashape point cloud to build elevation model
-    # DTM: use ground points only
-    if (cfg["buildOrthomosaic"]["surface"] == "DTM") | (
-        cfg["buildOrthomosaic"]["surface"] == "DTMandDSM"
-    ):
-        doc.chunk.buildDem(
-            source_data=Metashape.PointCloudData,
-            classes=Metashape.PointClass.Ground,
-            subdivide_task=cfg["subdivide_task"],
-            projection=projection,
-        )
-        build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dtm")
-    # DSM: use all point classes
-    if (cfg["buildOrthomosaic"]["surface"] == "DSM") | (
-        cfg["buildOrthomosaic"]["surface"] == "DTMandDSM"
-    ):
-        doc.chunk.buildDem(
-            source_data=Metashape.PointCloudData,
-            subdivide_task=cfg["subdivide_task"],
-            projection=projection,
-        )
-        build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dsm")
 
     return True
 
