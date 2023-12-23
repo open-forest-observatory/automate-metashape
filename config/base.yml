@@ -19,7 +19,7 @@ output_path: "/example/output/path"
 project_path: "/example/project/path"
 
 # The identifier for the run. Will be used in naming output files. Recommended to include a photoset name and processing parameter set name.
-# Optionally, set it to "from_config_filename" to use the config file name (minus extension) as the run name
+# Optionally, set it to an empty string ("") to use the config file name (minus extension) as the run name
 run_name: "example-run-001"
 
 # CRS EPSG code that project outputs should be in (projection should be in meter units and intended for the project area)
@@ -118,6 +118,7 @@ buildDem: # (Metashape: buildDem, (optionally) classifyGroundPoints, exportRaste
     enabled: True
     classify_ground_points: False # Should ground points be classified as part of this step? Note that an alternative is to calculate them as a part of buildPointCloud (above)
     surface: ["DTM-ptcloud", "DSM-ptcloud", "DSM-mesh"] # Options: "DTM-ptcloud", "DSM-ptcloud", and/or "DSM-mesh". Type of DEM to export and data to build it from (digital terrain model or digital surface model, and from point cloud or mesh)
+    resolution: 0 # DSM resolution. Only affects DSM built using the mesh (other DSM types are set by Metashape and not customizable). Note that this also sets the resolution of the orthomosaic built from this DSM, which is 1/4 of the DSM resolution. If using a mesh-derived DSM, and you also desire an orthomosaic with maximal detail, set the DEM resolution to 4x your GSD. Set to 0 to use Metashape-determined default.
     export: True # Whether to export DEM(s)
     tiff_big: True # Use BigTIFF format? Required for larger projects with large DEMs
     tiff_tiled: False # Use tiled TIFF? This is related to internal file architecture.

@@ -80,7 +80,7 @@ def project_setup(cfg, config_file):
 
     run_name = cfg["run_name"]
 
-    if run_name == "from_config_filename":
+    if run_name == "from_config_filename" or run_name ==  "":
         file_basename = os.path.basename(config_file)  # extracts file base name from path
         run_name, _ = os.path.splitext(file_basename)  # removes extension
 
@@ -689,11 +689,12 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
         compression.tiff_overviews = cfg["buildDem"]["tiff_overviews"]
 
         if ("DSM-ptcloud" in cfg["buildDem"]["surface"]):
-            # call without classes argument (Metashape then defaults to all classes)
+            # call without point classes argument (Metashape then defaults to all classes)
             doc.chunk.buildDem(
                 source_data=Metashape.PointCloudData,
                 subdivide_task=cfg["subdivide_task"],
                 projection=projection,
+                resolution=cfg["buildDem"]["resolution"]
             )
             output_file = os.path.join(cfg["output_path"], run_id + "_dsm-ptcloud.tif")
             if cfg["buildDem"]["export"]:
@@ -707,12 +708,13 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                 if cfg["buildOrthomosaic"]["enabled"] and "DSM-ptcloud" in cfg["buildOrthomosaic"]["surface"]:
                     build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dsm-ptcloud")
         if ("DTM-ptcloud" in cfg["buildDem"]["surface"]):
-            # call with classes argument
+            # call with point classes argument to specify ground points only
             doc.chunk.buildDem(
                 source_data=Metashape.PointCloudData,
                 classes=Metashape.PointClass.Ground,
                 subdivide_task=cfg["subdivide_task"],
                 projection=projection,
+                resolution=cfg["buildDem"]["resolution"]
             )
             output_file = os.path.join(cfg["output_path"], run_id + "_dtm-ptcloud.tif")
             if cfg["buildDem"]["export"]:
@@ -727,11 +729,11 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                     build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dtm-ptcloud")
 
         if ("DSM-mesh" in cfg["buildDem"]["surface"]):
-            # call with classes argument
             doc.chunk.buildDem(
                 source_data=Metashape.ModelData,
                 subdivide_task=cfg["subdivide_task"],
                 projection=projection,
+                resolution=cfg["buildDem"]["resolution"]
             )
             output_file = os.path.join(cfg["output_path"], run_id + "_dsm-mesh.tif")
             if cfg["buildDem"]["export"]:
@@ -768,6 +770,8 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending, from_mesh 
     """
     Helper function called by build_dem_orthomosaic. build_export_orthomosaic builds and exports an ortho based on the current elevation data.
     build_dem_orthomosaic sets the current elevation data and calls build_export_orthomosaic (one or more times depending on how many orthomosaics requested)
+    
+    Note that we have tried using the 'resolution' parameter of buildOrthomosaic, but it does not have any effect. An orthomosaic built onto a DSM always has a reslution of 1/4 the DSM, and one built onto the mesh has a resolution of ~the GSD.
     """
 
     # get a beginning time stamp for the next step
