@@ -28,7 +28,7 @@ library(ggplot2)
 
 #### User-defined vars (only used when running interactivesly) ####
 
-dir_manual = "/home/derek/Downloads/crater_gcps"
+dir_manual = "/ofo-share/str-disp_drone-data-partial/str-disp_drone-data_imagery-missions/Lassic/Lassic_120m"
 
 
 
@@ -44,16 +44,36 @@ if(length(dir) == 0) {
   dir = dir_manual
 }
 
-gcps = read_sf(paste0(dir,"/gcps/raw/gcps.geojson"))
+gcps = read_sf(paste0(dir,"/gcps/raw/gcps.gpkg"))
 imagecoords = read.csv(paste0(dir,"/gcps/raw/gcp_imagecoords.csv"),header=TRUE,stringsAsFactors=FALSE)
+
+# for lassic raw GCPs, must remove row 18 because it is bad
+imagecoords = imagecoords[-18, ]
+
+
+if(!file.exists(paste0(dir,"/dem_usgs/dem_usgs.tif"))) {
+  # Get DEM from opentopo
+
+  dem = get_elev_raster(gcps |> st_transform(3310) |> st_buffer(1000),
+                        src = "gl1")
+
+  dir.create(paste0(dir, "/dem_usgs"))
+
+  writeRaster(dem, paste0(dir,"/dem_usgs/dem_usgs.tif"))
+
+}
+
 dem_usgs = raster(paste0(dir,"/dem_usgs/dem_usgs.tif"))
 
 # remove blank lines from image coords file
 imagecoords = imagecoords %>%
   filter(!is.na(x))
 
+# remove blank geometry entries from gcps (probably demo/example lines)
+gcps = gcps[!st_is_empty(gcps), ]
 
-#### Make prepared data directory if it doesn't ecist ####
+
+#### Make prepared data directory if it doesn't exist ####
 dir.create(paste0(dir,"/gcps/prepared"),showWarnings=FALSE)
 
 
@@ -83,10 +103,11 @@ write.table(gcp_table,paste0(dir,"/gcps/prepared/gcp_table.csv"),row.names=FALSE
 
 imagecoords_table = imagecoords %>%
   mutate(gcp_id = paste0("point",gcp)) %>%
-  mutate(image_text = paste0("DJI_",str_pad(image_file,4,pad="0"),".JPG")) %>%
-  mutate(part_text = paste0("PART_",str_pad(part_folder,2,pad="0"))) %>%
-  mutate(folder_text = paste0(media_folder,"MEDIA")) %>%
-  mutate(image_path = paste0(part_text,"/",folder_text,"/",image_text)) %>%
+  mutate(image_text = paste0("DJI_",str_pad(image,4,pad="0"),".JPG")) %>%
+  mutate(image_path = paste0(folder,"/",image_text)) %>%
+  mutate(image_path = str_replace(image_path, fixed("media"), "MEDIA")) |>
+  mutate(x = abs(x),
+         y = abs(y)) |>
   dplyr::select(gcp_id,image_path,x,y) %>%
   arrange(gcp_id,image_path)
 
@@ -128,6 +149,3 @@ for(i in 1:nrow(imagecoords_table)) {
 }
 
 garbage = dev.off()
-
-
-
