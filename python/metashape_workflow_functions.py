@@ -331,10 +331,9 @@ def add_gcps(doc, cfg):
 
 
 def export_cameras(doc, run_id, cfg):
-    if cfg["alignPhotos"]["export"]:
-        output_file = os.path.join(cfg["output_path"], run_id + "_cameras.xml")
-        # Defaults to xml format, which is the only one we've used so far
-        doc.chunk.exportCameras(path=output_file)
+    output_file = os.path.join(cfg["output_path"], run_id + "_cameras.xml")
+    # Defaults to xml format, which is the only one we've used so far
+    doc.chunk.exportCameras(path=output_file)
 
 
 def align_photos(doc, log_file, run_id, cfg):
@@ -370,7 +369,8 @@ def align_photos(doc, log_file, run_id, cfg):
     time1 = diff_time(timer1b, timer1a)
 
     # optionally export
-    export_cameras(doc, run_id, cfg)
+    if cfg["alignPhotos"]["export"]:
+        export_cameras(doc, run_id, cfg)
 
     # record results to file
     with open(log_file, "a") as file:
@@ -407,7 +407,8 @@ def optimize_cameras(doc, run_id, cfg):
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
     # optionally export, note this would override the export from align_cameras
-    export_cameras(doc, run_id, cfg)
+    if cfg["optimizeCameras"]["export"]:
+        export_cameras(doc, run_id, cfg)
 
     doc.save()
 
