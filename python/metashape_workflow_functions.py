@@ -397,6 +397,9 @@ def optimize_cameras(doc, run_id, cfg):
     Optimize cameras
     """
 
+    # get a beginning time stamp
+    timer1a = time.time()
+
     # Disable camera locations as reference if specified in YML
     if cfg["addGCPs"]["enabled"] and cfg["addGCPs"]["optimize_w_gcps_only"]:
         n_cameras = len(doc.chunk.cameras)
@@ -406,11 +409,21 @@ def optimize_cameras(doc, run_id, cfg):
     # Currently only optimizes the default parameters, which is not all possible parameters
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
+    # get an ending time stamp
+    timer1b = time.time()
+
+    # calculate difference between end and start time to 1 decimal place
+    time1 = diff_time(timer1b, timer1a)
+
+    # record results to file
+    with open(log_file, "a") as file:
+        file.write(sep.join(["Optimize cameras", time1]) + "\n")
+
+    doc.save()
+
     # optionally export, note this would override the export from align_cameras
     if cfg["optimizeCameras"]["export"]:
         export_cameras(doc, run_id, cfg)
-
-    doc.save()
 
     return True
 
@@ -493,13 +506,14 @@ def classify_ground_points(doc, log_file, run_id, cfg):
         max_distance=cfg["classifyGroundPoints"]["max_distance"],
         cell_size=cfg["classifyGroundPoints"]["cell_size"],
     )
-    doc.save()
 
     # get an ending time stamp for the previous step
     timer_b = time.time()
 
     # calculate difference between end and start time to 1 decimal place
     time_tot = diff_time(timer_b, timer_a)
+
+    doc.save()
 
     # record results to file
     with open(log_file, "a") as file:
@@ -520,7 +534,6 @@ def build_depth_maps(doc, log_file, cfg):
         max_neighbors=cfg["buildDepthMaps"]["max_neighbors"],
         subdivide_task=cfg["subdivide_task"],
     )
-    doc.save()
 
     # get an ending time stamp for the previous step
     timer2b = time.time()
@@ -531,6 +544,8 @@ def build_depth_maps(doc, log_file, cfg):
     # record results to file
     with open(log_file, "a") as file:
         file.write(sep.join(["Build Depth Maps", time2]) + "\n")
+
+    doc.save()
 
 
 def build_point_cloud(doc, log_file, run_id, cfg):
@@ -550,6 +565,17 @@ def build_point_cloud(doc, log_file, run_id, cfg):
         subdivide_task=cfg["subdivide_task"],
         point_colors=True,
     )
+
+    # get an ending time stamp for the previous step
+    timer3b = time.time()
+
+    # calculate difference between end and start time to 1 decimal place
+    time3 = diff_time(timer3b, timer3a)
+
+    # record results to file
+    with open(log_file, "a") as file:
+        file.write(sep.join(["Build Point Cloud", time3]) + "\n")
+
     doc.save()
 
     # classify ground points if specified
@@ -581,16 +607,6 @@ def build_point_cloud(doc, log_file, run_id, cfg):
                 clases=cfg["buildPointCloud"]["classes"],
                 subdivide_task=cfg["subdivide_task"],
             )
-
-    # get an ending time stamp for the previous step
-    timer3b = time.time()
-
-    # calculate difference between end and start time to 1 decimal place
-    time3 = diff_time(timer3b, timer3a)
-
-    # record results to file
-    with open(log_file, "a") as file:
-        file.write(sep.join(["Build Point Cloud", time3]) + "\n")
 
     return True
 
@@ -675,9 +691,6 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
     if cfg["buildDem"]["classify_ground_points"]:
         classify_ground_points(doc, log_file, run_id, cfg)
 
-    # get a beginning time stamp for the next step
-    timer5a = time.time()
-
     if (cfg["buildDem"]["enabled"]):
         # prepping params for buildDem
         projection = Metashape.OrthoProjection()
@@ -754,16 +767,6 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
 
     doc.save()
 
-    # get an ending time stamp for the previous step
-    timer5b = time.time()
-
-    # calculate difference between end and start time to 1 decimal place
-    time5 = diff_time(timer5b, timer5a)
-
-    # record results to file
-    with open(log_file, "a") as file:
-        file.write(sep.join(["Build DEM", time5]) + "\n")
-
     return True
 
 
@@ -796,6 +799,16 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending, from_mesh 
         projection=projection,
     )
 
+    # get an ending time stamp for the previous step
+    timer6b = time.time()
+
+    # calculate difference between end and start time to 1 decimal place
+    time6 = diff_time(timer6b, timer6a)
+
+    # record results to file
+    with open(log_file, "a") as file:
+        file.write(sep.join(["Build Orthomosaic", time6]) + "\n")
+
     doc.save()
 
     ## Export orthomosaic
@@ -817,16 +830,6 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending, from_mesh 
             source_data=Metashape.OrthomosaicData,
             image_compression=compression,
         )
-
-    # get an ending time stamp for the previous step
-    timer6b = time.time()
-
-    # calculate difference between end and start time to 1 decimal place
-    time6 = diff_time(timer6b, timer6a)
-
-    # record results to file
-    with open(log_file, "a") as file:
-        file.write(sep.join(["Build Orthomosaic", time6]) + "\n")
 
     return True
 
