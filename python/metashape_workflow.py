@@ -47,7 +47,7 @@ if cfg["alignPhotos"]["enabled"]:
     meta.reset_region(doc)
 
 if cfg["filterPointsUSGS"]["enabled"]:
-    meta.filter_points_usgs_part1(doc, cfg)
+    meta.filter_points_usgs_part1(doc, log, cfg)
     meta.reset_region(doc)
 
 if cfg["addGCPs"]["enabled"]:
@@ -55,11 +55,11 @@ if cfg["addGCPs"]["enabled"]:
     meta.reset_region(doc)
 
 if cfg["optimizeCameras"]["enabled"]:
-    meta.optimize_cameras(doc, run_id, cfg)
+    meta.optimize_cameras(doc, log, run_id, cfg)
     meta.reset_region(doc)
 
 if cfg["filterPointsUSGS"]["enabled"]:
-    meta.filter_points_usgs_part2(doc, cfg)
+    meta.filter_points_usgs_part2(doc, log, cfg)
     meta.reset_region(doc)
 
 if cfg["buildDepthMaps"]["enabled"]:

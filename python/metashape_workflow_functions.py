@@ -392,7 +392,7 @@ def reset_region(doc):
     return True
 
 
-def optimize_cameras(doc, run_id, cfg):
+def optimize_cameras(doc, log_file, run_id, cfg):
     """
     Optimize cameras
     """
@@ -428,7 +428,10 @@ def optimize_cameras(doc, run_id, cfg):
     return True
 
 
-def filter_points_usgs_part1(doc, cfg):
+def filter_points_usgs_part1(doc, log_file, cfg):
+
+    # get a beginning time stamp
+    timer1a = time.time()
 
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
@@ -472,10 +475,23 @@ def filter_points_usgs_part1(doc, cfg):
 
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
+    # get an ending time stamp
+    timer1b = time.time()
+
+    # calculate difference between end and start time to 1 decimal place
+    time1 = diff_time(timer1b, timer1a)
+
+    # record results to file
+    with open(log_file, "a") as file:
+        file.write(sep.join(["USGS filter points part 1", time1]) + "\n")
+
     doc.save()
 
 
-def filter_points_usgs_part2(doc, cfg):
+def filter_points_usgs_part2(doc, log_file, cfg):
+
+    # get a beginning time stamp
+    timer1a = time.time()
 
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
 
@@ -492,6 +508,16 @@ def filter_points_usgs_part2(doc, cfg):
     fltr.removePoints(thresh)
 
     doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+
+    # get an ending time stamp
+    timer1b = time.time()
+
+    # calculate difference between end and start time to 1 decimal place
+    time1 = diff_time(timer1b, timer1a)
+
+    # record results to file
+    with open(log_file, "a") as file:
+        file.write(sep.join(["USGS filter points part 2", time1]) + "\n")
 
     doc.save()
 
