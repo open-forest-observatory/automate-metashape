@@ -656,7 +656,7 @@ def build_model(doc, log_file, run_id, cfg):
     # Save the model
     doc.save()
 
-    time_taken = diff_time(start_time, time.time())
+    time_taken = diff_time(time.time(), start_time)
 
     # record results to file
     with open(log_file, "a") as file:
