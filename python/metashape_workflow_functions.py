@@ -653,14 +653,15 @@ def build_model(doc, log_file, run_id, cfg):
         ],  # Only used if face_count is custom
         source_data=Metashape.DepthMapsData,
     )
-    # Save the model
-    doc.save()
 
     time_taken = diff_time(time.time(), start_time)
 
     # record results to file
     with open(log_file, "a") as file:
         file.write(sep.join(["Build Model", time_taken]) + "\n")
+
+    # Save the model
+    doc.save()
 
     if cfg["buildModel"]["export_georeferenced"]:
         output_file = os.path.join(
@@ -729,6 +730,8 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
         compression.tiff_overviews = cfg["buildDem"]["tiff_overviews"]
 
         if ("DSM-ptcloud" in cfg["buildDem"]["surface"]):
+            start_time = time.time()
+
             # call without point classes argument (Metashape then defaults to all classes)
             doc.chunk.buildDem(
                 source_data=Metashape.PointCloudData,
@@ -736,6 +739,13 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                 projection=projection,
                 resolution=cfg["buildDem"]["resolution"]
             )
+
+            time_taken = diff_time(time.time(), start_time)
+
+            # record results to file
+            with open(log_file, "a") as file:
+                file.write(sep.join(["Build DSM-ptcloud", time_taken]) + "\n")
+
             output_file = os.path.join(cfg["output_path"], run_id + "_dsm-ptcloud.tif")
             if cfg["buildDem"]["export"]:
                 doc.chunk.exportRaster(
@@ -748,6 +758,9 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                 if cfg["buildOrthomosaic"]["enabled"] and "DSM-ptcloud" in cfg["buildOrthomosaic"]["surface"]:
                     build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dsm-ptcloud")
         if ("DTM-ptcloud" in cfg["buildDem"]["surface"]):
+
+            start_time = time.time()
+
             # call with point classes argument to specify ground points only
             doc.chunk.buildDem(
                 source_data=Metashape.PointCloudData,
@@ -756,6 +769,13 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                 projection=projection,
                 resolution=cfg["buildDem"]["resolution"]
             )
+
+            time_taken = diff_time(time.time(), start_time)
+
+            # record results to file
+            with open(log_file, "a") as file:
+                file.write(sep.join(["Build DTM-ptcloud", time_taken]) + "\n")
+
             output_file = os.path.join(cfg["output_path"], run_id + "_dtm-ptcloud.tif")
             if cfg["buildDem"]["export"]:
                 doc.chunk.exportRaster(
@@ -769,12 +789,22 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                     build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dtm-ptcloud")
 
         if ("DSM-mesh" in cfg["buildDem"]["surface"]):
+
+            start_time = time.time()
+
             doc.chunk.buildDem(
                 source_data=Metashape.ModelData,
                 subdivide_task=cfg["subdivide_task"],
                 projection=projection,
                 resolution=cfg["buildDem"]["resolution"]
             )
+
+            time_taken = diff_time(time.time(), start_time)
+
+            # record results to file
+            with open(log_file, "a") as file:
+                file.write(sep.join(["Build DSM-mesh", time_taken]) + "\n")
+
             output_file = os.path.join(cfg["output_path"], run_id + "_dsm-mesh.tif")
             if cfg["buildDem"]["export"]:
                 doc.chunk.exportRaster(
