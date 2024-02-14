@@ -21,6 +21,51 @@ def parse_args():
     return args
 
 
+def fix_grouped(
+    input_camera_file,
+    input_image_folder_grouped,
+    input_image_folder_ungrouped,
+    output_camera_file,
+):
+    tree = ET.parse(input_camera_file)
+    cameras = tree.getroot().find("chunk").find("cameras")
+
+    all_two_deep_folders = sorted(
+        [f for f in Path(input_image_folder_grouped).glob("*/*") if f.is_dir()]
+    )
+
+    num_skips = 0
+    group_ind = 0
+
+    for camera_or_group in cameras:
+        if camera_or_group.tag == "group":
+            label_folder = all_two_deep_folders[group_ind]
+            if camera_or_group.get("label") != label_folder.parts[-1]:
+                raise ValueError()
+
+            for camera in camera_or_group:
+                camera_name = camera.get("label")
+                camera_path = Path(label_folder, camera_name)
+                updated_path_matching = list(
+                    camera_path.parent.glob(camera_path.name + "*")
+                )
+                if len(updated_path_matching) != 1:
+                    raise ValueError()
+                updated_path = updated_path_matching[0]
+                camera.set("label", str(updated_path))
+
+            group_ind += 1
+        else:
+            camera_path = Path(
+                input_image_folder_ungrouped, camera_or_group.get("label")
+            )
+            updated_path = next(camera_path.parent.glob(camera_path.name + "*"))
+            camera_or_group.set("label", str(updated_path))
+
+    Path(output_camera_file).parent.mkdir(parents=True, exist_ok=True)
+    tree.write(output_camera_file)
+
+
 def fix_old_multi_folder(input_camera_file, input_image_folder, output_camera_file):
     tree = ET.parse(input_camera_file)
     cameras = tree.getroot().find("chunk").find("cameras")
@@ -111,7 +156,13 @@ def main(input_camera_file, input_image_folder, output_camera_file):
 
 if __name__ == "__main__":
     args = parse_args()
-
+    fix_grouped(
+        args.input_camera_file,
+        args.input_image_folder,
+        "/ofo-share/str-disp_drone-data-partial/str-disp_drone-data_imagery-missions/ValleyA/ValleyA_120m",
+        args.output_camera_file,
+    )
+    exit()
     if args.fix_old_style:
         fix_old_multi_folder(
             args.input_camera_file,
