@@ -5,18 +5,16 @@ import xml.etree.ElementTree as ET
 from tqdm import tqdm
 from glob import glob
 
+fixup_actions = ("relabel_from_DVC", "grouped", "common_root")
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("input_camera_file", type=Path)
-    parser.add_argument("input_image_folder_grouped", type=Path)
-    parser.add_argument("input_image_folder_ungrouped", type=Path)
-    parser.add_argument("output_camera_file", type=Path)
-    parser.add_argument(
-        "--fix-old-style",
-        action="store_true",
-        help="Fixup style where some are absolute and others aren't",
-    )
+    parser.add_argument("--input-camera-file", type=Path)
+    parser.add_argument("--output-camera-file", type=Path)
+    parser.add_argument("--input-image-folder", type=Path)
+    parser.add_argument("--input-image-folder-grouped", type=Path)
+    parser.add_argument("--action", choices=fixup_actions, default="relabel_from_DVC")
 
     args = parser.parse_args()
     return args
@@ -172,7 +170,7 @@ def build_dvc_to_raw_dict(image_folder: Path, extension="JPG"):
     return mapping_dict
 
 
-def main(input_camera_file, input_image_folder, output_camera_file):
+def relabel_from_DVC(input_camera_file, input_image_folder, output_camera_file):
     mapping_dict = build_dvc_to_raw_dict(input_image_folder)
     tree = ET.parse(input_camera_file)
     cameras = tree.getroot().find("chunk").find("cameras")
@@ -186,22 +184,28 @@ def main(input_camera_file, input_image_folder, output_camera_file):
 
 if __name__ == "__main__":
     args = parse_args()
-    make_relative_to_common_root(
-        args.input_camera_file,
-        args.output_camera_file,
-    )
-    exit()
-    fix_grouped(
-        args.input_camera_file,
-        args.input_image_folder_grouped,
-        args.input_image_folder_ungrouped,
-        args.output_camera_file,
-    )
-    if args.fix_old_style:
+    action = args.action
+    if action == "common_root":
+        make_relative_to_common_root(
+            args.input_camera_file,
+            args.output_camera_file,
+        )
+    elif action == "grouped":
+        fix_grouped(
+            args.input_camera_file,
+            args.input_image_folder_grouped,
+            args.input_image_folder_ungrouped,
+            args.output_camera_file,
+        )
+    elif action == "old_style":
         fix_old_multi_folder(
             args.input_camera_file,
             args.input_image_folder,
             args.output_camera_file,
         )
+    elif action == "relabel_from_DVC":
+        relabel_from_DVC(
+            args.input_camera_file, args.input_image_folder, args.output_camera_file
+        )
     else:
-        main(args.input_camera_file, args.input_image_folder, args.output_camera_file)
+        breakpoint()
