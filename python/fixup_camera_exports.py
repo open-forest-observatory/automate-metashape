@@ -9,7 +9,8 @@ from glob import glob
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("input_camera_file", type=Path)
-    parser.add_argument("input_image_folder", type=Path)
+    parser.add_argument("input_image_folder_grouped", type=Path)
+    parser.add_argument("input_image_folder_ungrouped", type=Path)
     parser.add_argument("output_camera_file", type=Path)
     parser.add_argument(
         "--fix-old-style",
@@ -32,15 +33,16 @@ def fix_grouped(
 
     all_two_deep_folders = sorted(
         [f for f in Path(input_image_folder_grouped).glob("*/*") if f.is_dir()]
+        + [f for f in Path(input_image_folder_grouped).glob("*Patch*") if f.is_dir()]
     )
 
-    num_skips = 0
     group_ind = 0
 
     for camera_or_group in cameras:
         if camera_or_group.tag == "group":
             label_folder = all_two_deep_folders[group_ind]
             if camera_or_group.get("label") != label_folder.parts[-1]:
+                breakpoint()
                 raise ValueError()
 
             for camera in camera_or_group:
@@ -50,6 +52,7 @@ def fix_grouped(
                     camera_path.parent.glob(camera_path.name + "*")
                 )
                 if len(updated_path_matching) != 1:
+                    breakpoint()
                     raise ValueError()
                 updated_path = updated_path_matching[0]
                 camera.set("label", str(updated_path))
@@ -135,6 +138,33 @@ def fixup(camera_labels, image_folder, exclude_str=None, validate_existance=True
     return absolute_camera_labels
 
 
+def make_relative_to_common_root(input_camera_file, output_camera_file):
+    tree = ET.parse(input_camera_file)
+    cameras = tree.getroot().find("chunk").find("cameras")
+
+    old_labels = []
+    for cam_or_chunk in cameras:
+        if cam_or_chunk.tag == "group":
+            for cam in cam_or_chunk:
+                old_labels.append(cam.get("label"))
+        else:
+            cam = cam_or_chunk
+            old_labels.append(cam.get("label"))
+    common_folder = Path(os.path.commonpath(old_labels))
+    for cam_or_chunk in cameras:
+        if cam_or_chunk.tag == "group":
+            for cam in cam_or_chunk:
+                old_label = Path(cam.get("label"))
+                new_label = str(old_label.relative_to(common_folder))
+                cam.set("label", new_label)
+        else:
+            cam = cam_or_chunk
+            old_label = Path(cam.get("label"))
+            new_label = str(old_label.relative_to(common_folder))
+            cam.set("label", new_label)
+    tree.write(output_camera_file)
+
+
 def build_dvc_to_raw_dict(image_folder: Path, extension="JPG"):
     files = list(image_folder.rglob("**/*" + extension))
     points_to = [os.path.realpath(file) for file in files]
@@ -156,13 +186,17 @@ def main(input_camera_file, input_image_folder, output_camera_file):
 
 if __name__ == "__main__":
     args = parse_args()
-    fix_grouped(
+    make_relative_to_common_root(
         args.input_camera_file,
-        args.input_image_folder,
-        "/ofo-share/str-disp_drone-data-partial/str-disp_drone-data_imagery-missions/ValleyA/ValleyA_120m",
         args.output_camera_file,
     )
     exit()
+    fix_grouped(
+        args.input_camera_file,
+        args.input_image_folder_grouped,
+        args.input_image_folder_ungrouped,
+        args.output_camera_file,
+    )
     if args.fix_old_style:
         fix_old_multi_folder(
             args.input_camera_file,
