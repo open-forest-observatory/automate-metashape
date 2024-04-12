@@ -5,7 +5,13 @@ import xml.etree.ElementTree as ET
 from tqdm import tqdm
 from glob import glob
 
-fixup_actions = ("relabel_from_DVC", "grouped", "common_root")
+fixup_actions = (
+    "relabel_from_DVC",
+    "grouped",
+    "common_root",
+    "old_multi_folder",
+    "ensure_images_exists",
+)
 
 
 def parse_args():
@@ -122,7 +128,7 @@ def fixup(camera_labels, image_folder, exclude_str=None, validate_existance=True
             if len(not_already_used_files) != 1:
                 print(not_already_used_files)
                 raise ValueError(
-                    f"Bad match for {search_str} resulted in {len(selected_files)} files"
+                    f"Bad match for {search_str} resulted in {len(not_already_used_files)} files"
                 )
             absolute_camera_labels.append(not_already_used_files[0])
     # Transform to paths
@@ -134,6 +140,24 @@ def fixup(camera_labels, image_folder, exclude_str=None, validate_existance=True
                 raise ValueError(f"File {acl} doesn't exist")
 
     return absolute_camera_labels
+
+
+def ensure_file_exists(input_camera_file, output_camera_file, image_folder):
+    tree = ET.parse(input_camera_file)
+    root = tree.getroot()
+    cameras = root.find("chunk").find("cameras")
+    for cam_or_group in cameras:
+        if cam_or_group.tag == "group":
+            for cam in cam_or_group:
+                if not Path(image_folder, cam.get("label")).exists():
+                    cam_or_group.remove(cam)
+
+        else:
+            cam = cam_or_group
+            if not Path(image_folder, cam.get("label")).exists():
+                cameras.remove(cam)
+
+    tree.write(output_camera_file)
 
 
 def make_relative_to_common_root(input_camera_file, output_camera_file):
@@ -206,6 +230,16 @@ if __name__ == "__main__":
     elif action == "relabel_from_DVC":
         relabel_from_DVC(
             args.input_camera_file, args.input_image_folder, args.output_camera_file
+        )
+    elif action == "old_multi_folder":
+        fix_old_multi_folder(
+            args.input_camera_file, args.input_image_folder, args.output_camera_file
+        )
+    elif action == "ensure_images_exists":
+        ensure_file_exists(
+            input_camera_file=args.input_camera_file,
+            output_camera_file=args.output_camera_file,
+            image_folder=args.input_image_folder,
         )
     else:
         breakpoint()
