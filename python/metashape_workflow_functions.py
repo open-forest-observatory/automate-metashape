@@ -886,6 +886,9 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending, from_mesh 
             source_data=Metashape.OrthomosaicData,
             image_compression=compression,
         )
+    
+    if cfg["buildOrthomosaic"]["remove_after_export"]:
+        doc.chunk.remove(doc.chunk.orthomosaics)
 
     return True
 

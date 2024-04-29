@@ -136,3 +136,4 @@ buildOrthomosaic: # (Metashape: buildOrthomosaic, exportRaster)
     tiff_tiled: True # Use tiled TIFF? This is related to internal file architecture. Tiled may be (semi-)equivalent to COG.
     nodata: -32767 # Value used to represent nodata.
     tiff_overviews: True # Include coarse-scale raster data in file for quick display in GIS.
+    remove_after_export: True # Remove orthomosaic from project after export to reduce the metashape project file size
