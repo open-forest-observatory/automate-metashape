@@ -184,32 +184,38 @@ def add_photos(doc, cfg):
     """
     Add photos to project and change their labels to include their containing folder
     """
+    
+    photo_paths = cfg["photo_path"]
+    
+    # If it's a single string (i.e. one directory), make it a list of one string so we can iterate
+    # over it the same as if it were a list of strings
+    if (isinstance(photo_paths, str)):
+        photo_paths = [photo_paths]
+    
+    groupcounter = 1
+    
+    for photo_path in photo_paths:
+        
+        grp = doc.chunk.addCameraGroup()
 
-    ## Get paths to all the project photos
-    a = glob.iglob(
-        os.path.join(cfg["photo_path"], "**", "*.*"), recursive=True
-    )  # (([jJ][pP][gG])|([tT][iI][fF]))
-    b = [path for path in a]
-    photo_files = [
-        x
-        for x in b
-        if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)", x) and (not re.search("dem_usgs.tif", x)))
-    ]
+        ## Get paths to all the project photos
+        a = glob.iglob(
+            os.path.join(photo_path, "**", "*.*"), recursive=True
+        )  # (([jJ][pP][gG])|([tT][iI][fF]))
+        b = [path for path in a]
+        photo_files = [
+            x
+            for x in b
+            if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)", x) and (not re.search("dem_usgs.tif", x)))
+        ]
 
-    ## Add them
-    if cfg["multispectral"]:
-        doc.chunk.addPhotos(photo_files, layout=Metashape.MultiplaneLayout)
-    else:
-        doc.chunk.addPhotos(photo_files)
-
-    ## Need to change the label on each camera so that it includes the containing folder(S)
-    for camera in doc.chunk.cameras:
-        path = camera.photo.path
-        # remove the base imagery dir from this string
-        rel_path = path.replace(cfg["photo_path"], "")
-        # if it starts with a '/', remove it
-        newlabel = re.sub("^/", "", rel_path)
-        camera.label = newlabel
+        ## Add them
+        if cfg["multispectral"]:
+            doc.chunk.addPhotos(photo_files, layout=Metashape.MultiplaneLayout, group = grp)
+        else:
+            doc.chunk.addPhotos(photo_files, group = grp)
+        
+        groupcounter += 1
 
     ## If specified, change the accuracy of the cameras to match the RTK flag (RTK fix if flag = 50, otherwise no fix
     if cfg["use_rtk"]:
@@ -820,6 +826,9 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
     # Building an orthomosaic from the mesh does not require a DEM, so this is done separately, independent of any DEM building
     if (cfg["buildOrthomosaic"]["enabled"] and "Mesh" in cfg["buildOrthomosaic"]["surface"]):
         build_export_orthomosaic(doc, log_file, run_id, cfg, from_mesh = True, file_ending="mesh")
+    
+    if(cfg["buildPointCloud"]["remove_after_export"]):
+        doc.chunk.remove(doc.chunk.point_clouds)
 
     doc.save()
 
