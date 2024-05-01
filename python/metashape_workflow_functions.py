@@ -192,8 +192,6 @@ def add_photos(doc, cfg):
     if (isinstance(photo_paths, str)):
         photo_paths = [photo_paths]
     
-    groupcounter = 1
-    
     for photo_path in photo_paths:
         
         grp = doc.chunk.addCameraGroup()
@@ -214,8 +212,26 @@ def add_photos(doc, cfg):
             doc.chunk.addPhotos(photo_files, layout=Metashape.MultiplaneLayout, group = grp)
         else:
             doc.chunk.addPhotos(photo_files, group = grp)
-        
-        groupcounter += 1
+    
+    if cfg["separate_calibration_per_path"] :
+        # Assign a different (new) sensor (i.e. independent calibration) to each group of photos
+        for grp in doc.chunk.camera_groups:
+
+            # Get the template for the sensor from the first photo in the group
+            for cam in doc.chunk.cameras:
+                if cam.group == grp:
+                    sensor = cam.sensor
+                    break
+
+            doc.chunk.addSensor(doc.chunk.cameras[0].sensor)
+            sensor = doc.chunk.sensors[-1]
+            
+            for cam in doc.chunk.cameras:
+                if cam.group == grp:
+                    cam.sensor = sensor
+                    
+        # Remove the first (deafult) sensor, which should no longer be assigned to any photos
+        doc.chunk.remove(doc.chunk.sensors[0])
 
     ## If specified, change the accuracy of the cameras to match the RTK flag (RTK fix if flag = 50, otherwise no fix
     if cfg["use_rtk"]:

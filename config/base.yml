@@ -7,9 +7,11 @@
 load_project: ""
 
 # The path to the directory of flight photos
-# If there are multiple photo folders, set path to the folder that contains all the photo folders
+# If there are multiple photo folders, set path to the folder that contains all the photo folders,
+# or provide a list of paths via the YAML list syntax (e.g., ["/path/to/photo/folder1", "/path/to/photo/folder2"])
 # If there are no photos to add (e.g., this is an existing project that already has photos in it, set to an empty string ("")
 photo_path: "/example/path/to/photo/folder"
+separate_calibration_per_path: True # If True, each photo path (i.e. each element in the list supplied to 'photo_path' above) will be calibrated independently. Regardless whether True or False, separate camera *models* are calibrated separately; if True, identical camera *models* are calibrated separately if they are provided as separate paths. This addresses the case where two different instances of the same camera model are used in the same project. Note that when True, the logic for assigning separate calibration to each path assumes that the same camera is used for all photos in the path.
 multispectral: False # Is this a multispectral photo set? If RGB, set to False.
 
 # Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
