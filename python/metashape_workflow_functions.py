@@ -212,7 +212,12 @@ def add_photos(doc, cfg):
             doc.chunk.addPhotos(photo_files, layout=Metashape.MultiplaneLayout, group = grp)
         else:
             doc.chunk.addPhotos(photo_files, group = grp)
-
+            
+    ## Need to change the label on each camera so that it includes the containing folder(s)
+    for camera in doc.chunk.cameras:
+        path = camera.photo.path
+        camera.label = path
+    
     if cfg["separate_calibration_per_path"] :
         # Assign a different (new) sensor (i.e. independent calibration) to each group of photos
         for grp in doc.chunk.camera_groups:
