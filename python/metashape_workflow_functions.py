@@ -184,25 +184,36 @@ def add_photos(doc, cfg):
     """
     Add photos to project and change their labels to include their containing folder
     """
+    
+    photo_paths = cfg["photo_path"]
+    
+    # If it's a single string (i.e. one directory), make it a list of one string so we can iterate
+    # over it the same as if it were a list of strings
+    if (isinstance(photo_paths, str)):
+        photo_paths = [photo_paths]
+    
+    for photo_path in photo_paths:
+        
+        grp = doc.chunk.addCameraGroup()
 
-    ## Get paths to all the project photos
-    a = glob.iglob(
-        os.path.join(cfg["photo_path"], "**", "*.*"), recursive=True
-    )  # (([jJ][pP][gG])|([tT][iI][fF]))
-    b = [path for path in a]
-    photo_files = [
-        x
-        for x in b
-        if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)", x) and (not re.search("dem_usgs.tif", x)))
-    ]
+        ## Get paths to all the project photos
+        a = glob.iglob(
+            os.path.join(photo_path, "**", "*.*"), recursive=True
+        )  # (([jJ][pP][gG])|([tT][iI][fF]))
+        b = [path for path in a]
+        photo_files = [
+            x
+            for x in b
+            if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)", x) and (not re.search("dem_usgs.tif", x)))
+        ]
 
-    ## Add them
-    if cfg["multispectral"]:
-        doc.chunk.addPhotos(photo_files, layout=Metashape.MultiplaneLayout)
-    else:
-        doc.chunk.addPhotos(photo_files)
-
-    ## Need to change the label on each camera so that it includes the containing folder(S)
+        ## Add them
+        if cfg["multispectral"]:
+            doc.chunk.addPhotos(photo_files, layout=Metashape.MultiplaneLayout, group = grp)
+        else:
+            doc.chunk.addPhotos(photo_files, group = grp)
+            
+    ## Need to change the label on each camera so that it includes the containing folder(s)
     for camera in doc.chunk.cameras:
         path = camera.photo.path
         # remove the base imagery dir from this string
@@ -210,6 +221,26 @@ def add_photos(doc, cfg):
         # if it starts with a '/', remove it
         newlabel = re.sub("^/", "", rel_path)
         camera.label = newlabel
+    
+    if cfg["separate_calibration_per_path"] :
+        # Assign a different (new) sensor (i.e. independent calibration) to each group of photos
+        for grp in doc.chunk.camera_groups:
+
+            # Get the template for the sensor from the first photo in the group
+            for cam in doc.chunk.cameras:
+                if cam.group == grp:
+                    sensor = cam.sensor
+                    break
+
+            doc.chunk.addSensor(doc.chunk.cameras[0].sensor)
+            sensor = doc.chunk.sensors[-1]
+            
+            for cam in doc.chunk.cameras:
+                if cam.group == grp:
+                    cam.sensor = sensor
+                    
+        # Remove the first (deafult) sensor, which should no longer be assigned to any photos
+        doc.chunk.remove(doc.chunk.sensors[0])
 
     ## If specified, change the accuracy of the cameras to match the RTK flag (RTK fix if flag = 50, otherwise no fix
     if cfg["use_rtk"]:
@@ -612,7 +643,7 @@ def build_point_cloud(doc, log_file, run_id, cfg):
 
     if cfg["buildPointCloud"]["export"]:
 
-        output_file = os.path.join(cfg["output_path"], run_id + "_points.las")
+        output_file = os.path.join(cfg["output_path"], run_id + "_points.laz")
 
         if cfg["buildPointCloud"]["classes"] == "ALL":
             # call without classes argument (Metashape then defaults to all classes)
@@ -628,7 +659,7 @@ def build_point_cloud(doc, log_file, run_id, cfg):
             doc.chunk.exportPointCloud(
                 path=output_file,
                 source_data=Metashape.PointCloudData,
-                format=Metashape.PointCloudFormatLAS,
+                format=Metashape.PointCloudFormatLAZ,
                 crs=Metashape.CoordinateSystem(cfg["project_crs"]),
                 clases=cfg["buildPointCloud"]["classes"],
                 subdivide_task=cfg["subdivide_task"],
@@ -820,6 +851,9 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
     # Building an orthomosaic from the mesh does not require a DEM, so this is done separately, independent of any DEM building
     if (cfg["buildOrthomosaic"]["enabled"] and "Mesh" in cfg["buildOrthomosaic"]["surface"]):
         build_export_orthomosaic(doc, log_file, run_id, cfg, from_mesh = True, file_ending="mesh")
+    
+    if(cfg["buildPointCloud"]["remove_after_export"]):
+        doc.chunk.remove(doc.chunk.point_clouds)
 
     doc.save()
 
