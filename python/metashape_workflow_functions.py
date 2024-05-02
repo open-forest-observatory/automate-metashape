@@ -212,6 +212,15 @@ def add_photos(doc, cfg):
             doc.chunk.addPhotos(photo_files, layout=Metashape.MultiplaneLayout, group = grp)
         else:
             doc.chunk.addPhotos(photo_files, group = grp)
+            
+    ## Need to change the label on each camera so that it includes the containing folder(s)
+    for camera in doc.chunk.cameras:
+        path = camera.photo.path
+        # remove the base imagery dir from this string
+        rel_path = path.replace(cfg["photo_path"], "")
+        # if it starts with a '/', remove it
+        newlabel = re.sub("^/", "", rel_path)
+        camera.label = newlabel
     
     if cfg["separate_calibration_per_path"] :
         # Assign a different (new) sensor (i.e. independent calibration) to each group of photos
@@ -634,7 +643,7 @@ def build_point_cloud(doc, log_file, run_id, cfg):
 
     if cfg["buildPointCloud"]["export"]:
 
-        output_file = os.path.join(cfg["output_path"], run_id + "_points.las")
+        output_file = os.path.join(cfg["output_path"], run_id + "_points.laz")
 
         if cfg["buildPointCloud"]["classes"] == "ALL":
             # call without classes argument (Metashape then defaults to all classes)
@@ -650,7 +659,7 @@ def build_point_cloud(doc, log_file, run_id, cfg):
             doc.chunk.exportPointCloud(
                 path=output_file,
                 source_data=Metashape.PointCloudData,
-                format=Metashape.PointCloudFormatLAS,
+                format=Metashape.PointCloudFormatLAZ,
                 crs=Metashape.CoordinateSystem(cfg["project_crs"]),
                 clases=cfg["buildPointCloud"]["classes"],
                 subdivide_task=cfg["subdivide_task"],
