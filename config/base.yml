@@ -14,6 +14,15 @@ photo_path: "/example/path/to/photo/folder"
 separate_calibration_per_path: True # If True, each photo path (i.e. each element in the list supplied to 'photo_path' above) will be calibrated independently. Regardless whether True or False, separate camera *models* are calibrated separately; if True, identical camera *models* are calibrated separately if they are provided as separate paths. This addresses the case where two different instances of the same camera model are used in the same project. Note that when True, the logic for assigning separate calibration to each path assumes that the same camera is used for all photos in the path.
 multispectral: False # Is this a multispectral photo set? If RGB, set to False.
 
+# The path to a secondary directory of flight photos, which are only aligned to the project *after*
+# all the other processing is done. This is useful if you want to use secondary photos for multiview
+# analyses (e.g., species ID) without affecting the photogrammetry. Note that the secondary photos
+# are processed in the same way as the primary (e.g., same resolution, same procedure regarding
+# separate calibration per path) and that align_photos:reset_alignment must be False and
+# align_photos:keep_keypoints must be True. If there are no secondary photos to add, set to an empty
+# string ("").
+photo_path_secondary: "/example/path/to/secondary/photo/folder"
+
 # Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
 output_path: "/example/output/path"
 

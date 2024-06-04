@@ -74,6 +74,9 @@ if cfg["buildModel"]["enabled"]:
 # For this step, the check for whether it is enabled in the config happens inside the function, because there are two steps (DEM and ortho), each of which can be enabled independently
 meta.build_dem_orthomosaic(doc, log, run_id, cfg)
 
+if cfg["photo_path_secondary"] != "":
+    meta.add_and_align_secondary_photos(doc, log, run_id, cfg)
+
 meta.export_report(doc, run_id, cfg)
 
 meta.finish_run(log, config_file)

@@ -180,12 +180,17 @@ def enable_and_log_gpu(log_file, cfg):
     return True
 
 
-def add_photos(doc, cfg):
+def add_photos(doc, cfg, secondary = False):
     """
-    Add photos to project and change their labels to include their containing folder
+    Add photos to project and change their labels to include their containing folder. Secondary: if
+    True, this is a secondary set of photos to be aligned only, after all photogrammetry products
+    have been produced from the primary set of photos.
     """
     
-    photo_paths = cfg["photo_path"]
+    if (secondary):
+        photo_paths = cfg["photo_path_secondary"]
+    else:
+        photo_paths = cfg["photo_path"]
     
     # If it's a single string (i.e. one directory), make it a list of one string so we can iterate
     # over it the same as if it were a list of strings
@@ -921,6 +926,61 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending, from_mesh 
         doc.chunk.remove(doc.chunk.orthomosaics)
 
     return True
+    
+def add_and_align_secondary_photos(doc, log_file, run_id, cfg):
+    """
+    Add and align a second set of photos, to be aligned only. The main use case for this currently
+    is to be able to build all photogrammetry products from the primary set of photos (e.g., a nadir
+    mission), but to also estimate the positions of a secondary set of photos (e.g., oblique photos)
+    to use for multiview object detection/classification.
+    """
+    
+    if (cfg["alignPhotos"]["reset_alignment"] == True):
+        raise ValueError("For aligning secondary photos, reset_alignment must be False.")
+    if (cfg["alignPhotos"]["keep_keypoints"] == False):
+        raise ValueError("For aligning secondary photos, keep_keypoints must be True.")
+
+    # get a beginning time stamp for the next step
+    timer2a = time.time()
+
+    # Add the secondary photos
+    add_photos(doc, cfg, secondary = True)
+
+    # get an ending time stamp for the previous step
+    timer2b = time.time()
+
+    # calculate difference between end and start time to 1 decimal place
+    time2 = diff_time(timer2b, timer2a)
+
+    # record results to file
+    with open(log_file, "a") as file:
+        file.write(sep.join(["Add secondary photos", time2]) + "\n")
+        
+    # get a beginning time stamp for the next step
+    timer2a = time.time()
+    
+    # Save the transform matrix
+    matrix_saved = doc.chunk.transform.matrix
+
+    # Align the secondary photos (really, align all photos, but only the secondary photos will be
+    # affected because Metashape only matches and aligns photos that were not already
+    # matched/aligned, assuming keep_keypoints and reset_alignment were set as required).
+    align_photos(doc, log, run_id, cfg)
+    
+    # Restore the saved transform matrix
+    doc.chunk.transform.matrix = matrix_saved
+
+    # get an ending time stamp for the previous step
+    timer2b = time.time()
+
+    # calculate difference between end and start time to 1 decimal place
+    time2 = diff_time(timer2b, timer2a)
+
+    # record results to file
+    with open(log_file, "a") as file:
+        file.write(sep.join(["Align secondary photos", time2]) + "\n")    
+
+    doc.save()
 
 
 def export_report(doc, run_id, cfg):
