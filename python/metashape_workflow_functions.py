@@ -927,7 +927,7 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending, from_mesh 
 
     return True
     
-def add_and_align_secondary_photos(doc, log_file, run_id, cfg):
+def add_align_secondary_photos(doc, log_file, run_id, cfg):
     """
     Add and align a second set of photos, to be aligned only. The main use case for this currently
     is to be able to build all photogrammetry products from the primary set of photos (e.g., a nadir
@@ -956,9 +956,6 @@ def add_and_align_secondary_photos(doc, log_file, run_id, cfg):
     with open(log_file, "a") as file:
         file.write(sep.join(["Add secondary photos", time2]) + "\n")
         
-    # # get a beginning time stamp for the next step
-    # timer2a = time.time()
-    
     # Save the transform matrix
     matrix_saved = doc.chunk.transform.matrix
 
@@ -969,16 +966,6 @@ def add_and_align_secondary_photos(doc, log_file, run_id, cfg):
     
     # Restore the saved transform matrix
     doc.chunk.transform.matrix = matrix_saved
-
-    # # get an ending time stamp for the previous step
-    # timer2b = time.time()
-
-    # # calculate difference between end and start time to 1 decimal place
-    # time2 = diff_time(timer2b, timer2a)
-
-    # # record results to file
-    # with open(log_file, "a") as file:
-    #     file.write(sep.join(["Align secondary photos", time2]) + "\n")    
 
     doc.save()
 

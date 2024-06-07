@@ -75,7 +75,7 @@ if cfg["buildModel"]["enabled"]:
 meta.build_dem_orthomosaic(doc, log, run_id, cfg)
 
 if cfg["photo_path_secondary"] != "":
-    meta.add_and_align_secondary_photos(doc, log, run_id, cfg)
+    meta.add_align_secondary_photos(doc, log, run_id, cfg)
 
 meta.export_report(doc, run_id, cfg)
 
