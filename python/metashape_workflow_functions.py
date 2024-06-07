@@ -352,7 +352,7 @@ def add_gcps(doc, cfg):
         )
 
     ## Assign real-world coordinates to each GCP
-    path = os.path.join(cfg["photo_path"], "gcps", "prepared", "gcp_table.csv")
+    path = os.path.join(photo_path, "gcps", "prepared", "gcp_table.csv")
 
     file = open(path)
     content = file.read().splitlines()
