@@ -11,8 +11,6 @@ load_project: ""
 # or provide a list of paths via the YAML list syntax (e.g., ["/path/to/photo/folder1", "/path/to/photo/folder2"])
 # If there are no photos to add (e.g., this is an existing project that already has photos in it, set to an empty string ("")
 photo_path: "/example/path/to/photo/folder"
-separate_calibration_per_path: True # If True, each photo path (i.e. each element in the list supplied to 'photo_path' above) will be calibrated independently. Regardless whether True or False, separate camera *models* are calibrated separately; if True, identical camera *models* are calibrated separately if they are provided as separate paths. This addresses the case where two different instances of the same camera model are used in the same project. Note that when True, the logic for assigning separate calibration to each path assumes that the same camera is used for all photos in the path.
-multispectral: False # Is this a multispectral photo set? If RGB, set to False.
 
 # The path to a secondary directory of flight photos, which are only aligned to the project *after*
 # all the other processing is done. This is useful if you want to use secondary photos for multiview
@@ -52,18 +50,15 @@ gpu_multiplier: 2
 ## Refer to Metashape documentation for full parameter definitions: https://www.agisoft.com/pdf/metashape_python_api_1_5_0.pdf
 ## Parameter names here generally follow the parameter names of the Metashape functions.
 
-### Whether to use image EXIF RTK flags to make image geospatial accuracy more precise. If enabled but photos don't have RTK data, will treat them as regular photos and use the nofix accuracy.
-use_rtk: False
-fix_accuracy: 3 # Accuracy to set for photos that have a RTK fix, in units of the CRS
-nofix_accuracy: 25 # Accuracy to set for photos that have no fix, in units of the CRS
-
-# To use GCPs, a 'gcps' folder must exist in the top level photos folder. The contents of the 'gcps' folder are created by the prep_gcps.R script. See readme: https://github.com/ucdavis/metashape
-addGCPs:
-    enabled: False
-    gcp_crs: "EPSG::26910" # CRS EPSG code of GCP coordinates. 26910 (UTM 10 N) is the CRS of the sample RGB photoset.
-    marker_location_accuracy: 0.1 # Accuracy of GCPs real-world coordinates, in meters.
-    marker_projection_accuracy: 8 # Accuracy of the identified locations of the GCPs within the images, in pixels.
-    optimize_w_gcps_only: True # Optimize alignment using GCPs only: required for GCP locations to take precedence over photo GPS data. Disabling it makes GCPs essentially irrelevant.
+# Should the photos at the path(s) listed above be added to the project? Can disable if, for
+# example, you only want to add GCPs (or do additional processing) to an existing project.
+addPhotos: # (Metashape: addPhotos)
+  enabled: True # This applies tot he main photos specified in photo_path above. Secondary photos are always added and aligned if a path (or paths) is provided.
+  separate_calibration_per_path: False # If True, each photo path (i.e. each element in the list supplied to 'photo_path' above) will be calibrated independently. Regardless whether True or False, separate camera *models* are calibrated separately; if True, identical camera *models* are calibrated separately if they are provided as separate paths. This addresses the case where two different instances of the same camera model are used in the same project. Note that when True, the logic for assigning separate calibration to each path assumes that the same camera is used for all photos in the path.
+  multispectral: False # Is this a multispectral photo set? If RGB, set to False.
+  use_rtk: False # Whether to use image EXIF RTK flags to make image geospatial accuracy more precise. If enabled but photos don't have RTK data, will treat them as regular photos and use the nofix accuracy.
+  fix_accuracy: 3 # Accuracy to set for photos that have a RTK fix, in units of the CRS
+  nofix_accuracy: 25 # Accuracy to set for photos that have no fix, in units of the CRS
 
 calibrateReflectance: # (Metahsape: calibrateReflectance)
     enabled: False
@@ -81,6 +76,16 @@ alignPhotos: # (Metashape: matchPhotos, alignCameras, (optionally) exportCameras
     reference_preselection: True # When matching photos, use the camera location data to narrow down the potential neighbors to pair?
     reference_preselection_mode: Metashape.ReferencePreselectionSource # When matching photos, use the camera location data to narrow down the potential neighbors to pair?
     export: True # Export the camera locations
+
+# To use GCPs, a 'gcps' folder must exist in the root of the photo folder provided in photo_path
+# above (or the first folder, if a list is passed). The contents of the 'gcps' folder are created by
+# the prep_gcps.R script. See readme: https://github.com/ucdavis/metashape
+addGCPs:
+    enabled: False
+    gcp_crs: "EPSG::26910" # CRS EPSG code of GCP coordinates. 26910 (UTM 10 N) is the CRS of the sample RGB photoset.
+    marker_location_accuracy: 0.1 # Accuracy of GCPs real-world coordinates, in meters.
+    marker_projection_accuracy: 8 # Accuracy of the identified locations of the GCPs within the images, in pixels.
+    optimize_w_gcps_only: True # Optimize alignment using GCPs only: required for GCP locations to take precedence over photo GPS data. Disabling it makes GCPs essentially irrelevant.
 
 filterPointsUSGS:
     enabled: False

@@ -213,7 +213,7 @@ def add_photos(doc, cfg, secondary = False):
         ]
 
         ## Add them
-        if cfg["multispectral"]:
+        if cfg["addPhotos"]["multispectral"]:
             doc.chunk.addPhotos(photo_files, layout=Metashape.MultiplaneLayout, group = grp)
         else:
             doc.chunk.addPhotos(photo_files, group = grp)
@@ -223,7 +223,7 @@ def add_photos(doc, cfg, secondary = False):
         path = camera.photo.path
         camera.label = path
     
-    if cfg["separate_calibration_per_path"] :
+    if cfg["addPhotos"]["separate_calibration_per_path"] :
         # Assign a different (new) sensor (i.e. independent calibration) to each group of photos
         for grp in doc.chunk.camera_groups:
 
@@ -244,29 +244,29 @@ def add_photos(doc, cfg, secondary = False):
         doc.chunk.remove(doc.chunk.sensors[0])
 
     ## If specified, change the accuracy of the cameras to match the RTK flag (RTK fix if flag = 50, otherwise no fix
-    if cfg["use_rtk"]:
+    if cfg["addPhotos"]["use_rtk"]:
         for cam in doc.chunk.cameras:
             rtkflag = cam.photo.meta["DJI/RtkFlag"]
             if rtkflag == "50":
                 cam.reference.location_accuracy = Metashape.Vector(
-                    [cfg["fix_accuracy"], cfg["fix_accuracy"], cfg["fix_accuracy"]]
+                    [cfg["addPhotos"]["fix_accuracy"], cfg["addPhotos"]["fix_accuracy"], cfg["addPhotos"]["fix_accuracy"]]
                 )
                 cam.reference.accuracy = Metashape.Vector(
-                    [cfg["fix_accuracy"], cfg["fix_accuracy"], cfg["fix_accuracy"]]
+                    [cfg["addPhotos"]["fix_accuracy"], cfg["addPhotos"]["fix_accuracy"], cfg["addPhotos"]["fix_accuracy"]]
                 )
             else:
                 cam.reference.location_accuracy = Metashape.Vector(
                     [
-                        cfg["nofix_accuracy"],
-                        cfg["nofix_accuracy"],
-                        cfg["nofix_accuracy"],
+                        cfg["addPhotos"]["nofix_accuracy"],
+                        cfg["addPhotos"]["nofix_accuracy"],
+                        cfg["addPhotos"]["nofix_accuracy"],
                     ]
                 )
                 cam.reference.accuracy = Metashape.Vector(
                     [
-                        cfg["nofix_accuracy"],
-                        cfg["nofix_accuracy"],
-                        cfg["nofix_accuracy"],
+                        cfg["addPhotos"]["nofix_accuracy"],
+                        cfg["addPhotos"]["nofix_accuracy"],
+                        cfg["addPhotos"]["nofix_accuracy"],
                     ]
                 )
 
@@ -300,9 +300,30 @@ def add_gcps(doc, cfg):
     Add GCPs (GCP coordinates and the locations of GCPs in individual photos.
     See the helper script (and the comments therein) for details on how to prepare the data needed by this function: R/prep_gcps.R
     """
+    
+    # Determine the location of the GCPs file, which is also the base path to prepend to the GCP
+    # camera label (relative to what's specified in the GCPs file, which is a relative path), to
+    # make it into an absolute path to match the label of the camera in the Metashape. Note the
+    # difference between the two camera labels: one is the camera label specified in the GCPs file
+    # (relative path), and one is the camera label in the Metashape (absolute). Currently, this
+    # assumes that all of the GCPs apply to the first provided folder of cameras (i.e., the only
+    # folder provided, or the first folder provided if multiple are provided) -- and that this is
+    # the folder containing the GCP definition file. TODO: Tolerate GCPs split across multiple
+    # folders of input images:
+    # https://github.com/open-forest-observatory/automate-metashape-2/issues/49.
+    
+    photo_paths = cfg["photo_path"]
+    
+    # If it's a single string (i.e. one directory), make it a list of one string so we can take the
+    # first element using the same operation we would use on a list of strings
+    if (isinstance(photo_paths, str)):
+        photo_paths = [photo_paths]
+    
+    # Take the first folder and assume it's the one with the GCPs file    
+    photo_path = photo_paths[0]
 
     ## Tag specific pixels in specific images where GCPs are located
-    path = os.path.join(cfg["photo_path"], "gcps", "prepared", "gcp_imagecoords_table.csv")
+    path = os.path.join(photo_path, "gcps", "prepared", "gcp_imagecoords_table.csv")
     file = open(path)
     content = file.read().splitlines()
 
@@ -317,6 +338,9 @@ def add_gcps(doc, cfg):
         if not marker:
             marker = doc.chunk.addMarker()
             marker.label = marker_label
+            
+        # Prepend the image path to the GCP's camera label to make it an absolute path
+        camera_label = os.path.join(photo_path, camera_label)
 
         camera = get_camera(doc.chunk, camera_label)
         if not camera:
@@ -328,7 +352,7 @@ def add_gcps(doc, cfg):
         )
 
     ## Assign real-world coordinates to each GCP
-    path = os.path.join(cfg["photo_path"], "gcps", "prepared", "gcp_table.csv")
+    path = os.path.join(photo_path, "gcps", "prepared", "gcp_table.csv")
 
     file = open(path)
     content = file.read().splitlines()
