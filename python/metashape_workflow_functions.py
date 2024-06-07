@@ -956,8 +956,8 @@ def add_and_align_secondary_photos(doc, log_file, run_id, cfg):
     with open(log_file, "a") as file:
         file.write(sep.join(["Add secondary photos", time2]) + "\n")
         
-    # get a beginning time stamp for the next step
-    timer2a = time.time()
+    # # get a beginning time stamp for the next step
+    # timer2a = time.time()
     
     # Save the transform matrix
     matrix_saved = doc.chunk.transform.matrix
@@ -965,20 +965,20 @@ def add_and_align_secondary_photos(doc, log_file, run_id, cfg):
     # Align the secondary photos (really, align all photos, but only the secondary photos will be
     # affected because Metashape only matches and aligns photos that were not already
     # matched/aligned, assuming keep_keypoints and reset_alignment were set as required).
-    align_photos(doc, log, run_id, cfg)
+    align_photos(doc, log_file, run_id, cfg)
     
     # Restore the saved transform matrix
     doc.chunk.transform.matrix = matrix_saved
 
-    # get an ending time stamp for the previous step
-    timer2b = time.time()
+    # # get an ending time stamp for the previous step
+    # timer2b = time.time()
 
-    # calculate difference between end and start time to 1 decimal place
-    time2 = diff_time(timer2b, timer2a)
+    # # calculate difference between end and start time to 1 decimal place
+    # time2 = diff_time(timer2b, timer2a)
 
-    # record results to file
-    with open(log_file, "a") as file:
-        file.write(sep.join(["Align secondary photos", time2]) + "\n")    
+    # # record results to file
+    # with open(log_file, "a") as file:
+    #     file.write(sep.join(["Align secondary photos", time2]) + "\n")    
 
     doc.save()
 
