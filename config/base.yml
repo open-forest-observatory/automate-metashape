@@ -50,11 +50,6 @@ gpu_multiplier: 2
 ## Refer to Metashape documentation for full parameter definitions: https://www.agisoft.com/pdf/metashape_python_api_1_5_0.pdf
 ## Parameter names here generally follow the parameter names of the Metashape functions.
 
-### Whether to use image EXIF RTK flags to make image geospatial accuracy more precise. If enabled but photos don't have RTK data, will treat them as regular photos and use the nofix accuracy.
-use_rtk: False
-fix_accuracy: 3 # Accuracy to set for photos that have a RTK fix, in units of the CRS
-nofix_accuracy: 25 # Accuracy to set for photos that have no fix, in units of the CRS
-
 # Should the photos at the path(s) listed above be added to the project? Can disable if, for
 # example, you only want to add GCPs (or do additional processing) to an existing project.
 addPhotos: # (Metashape: addPhotos)
