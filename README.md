@@ -61,13 +61,19 @@ The location of the raw imagery folder is specified in the configuration file pa
 
 All of the parameters defining the Metashape workflow are specified in the configuration file (a [YAML-format](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html) file). This includes directories of input and output files, workflow steps to include, quality settings, and many other parameters.
 
-An example configuration file is provided in this repo at `config/example.yml`. The file contains comments explaining the purpose of each customizable parameter. To prepare a customized workflow, copy the `config/example.yml` file to a new location, edit the parameter values to meet your specifications, save it, and then run the metashape workflow from the command line as described above, passing it the location of the customized configuration file. Do not remove or add parameters to the configuration file; adding will have no effect unless the Python code is changed along with the addition, and removing will produce errors.
+An example configuration file is provided in this repo at `config/config-example.yml`. The file contains comments explaining the purpose of each customizable parameter. To prepare a customized workflow, copy the `config/config-example.yml` file to a new location, edit the parameter values to meet your specifications, save it, and then run the metashape workflow from the command line as described above, passing it the location of the customized configuration file. Do not remove or add parameters to the configuration file; adding will have no effect unless the Python code is changed along with the addition, and removing will produce errors.
 
 The workflow configuration is saved in a procesing log at the end of a workflow run (see below).
 
 #### Batch workflow configuration ####
 
-If you wish to run multiple iterations of a processing workflow with small differences between each, you can specify a "base" configuration YAML file that specifies the processing parameters that all runs will have in common, plus a "derived" configuration file that specifies how each individual run's parameters should differ from the base parameters. For an example, see `config/base.yml` (identical to the example.yml) and `config/derived.yml`. For each run, the derived YAML only needs to include the parameters that differ from the base parameters. Each separate run in the derived YAML should be given a name and surrounded by `####` on each end (see example `derived.yml`). Then, use the R script `R/prep_configs.R` to generate a full YAML config file for each run. As arguments to the call to this R script, supply (1) the path to the directory containing the base and derived YAML config files, and (2) the path to the `metashape_workflow.py` script. The `prep_configs.R` script will create a full YAML file for each run, as well as a shell file that calls the Metashape workflow scripts once for each configuration (each run). All you have to do to execute all these runs in series is to call this automatically generated shell script.
+If you wish to run multiple iterations of a processing workflow with small differences between each,
+you can specify a "base" configuration YAML file that specifies the processing parameters that all
+runs will have in common, and then using the `ofo-r` function
+[make_derived_configs](https://github.com/open-forest-observatory/ofo-r/blob/main/R/photogrammetry-prep.R),
+which takes a data frame of parameter replacements and creates a "derived" config file for each row
+of the data frame, along with a shell script that will call the metashape workflow once for each of
+the resulting config files, in serial.
 
 ### Workflow outputs
 
