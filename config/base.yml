@@ -53,7 +53,7 @@ gpu_multiplier: 2
 # Should the photos at the path(s) listed above be added to the project? Can disable if, for
 # example, you only want to add GCPs (or do additional processing) to an existing project.
 addPhotos: # (Metashape: addPhotos)
-  enabled: True # This applies tot he main photos specified in photo_path above. Secondary photos are always added and aligned if a path (or paths) is provided.
+  enabled: True # This applies to the main photos specified in photo_path above. Secondary photos are always added and aligned if a path (or paths) is provided.
   separate_calibration_per_path: False # If True, each photo path (i.e. each element in the list supplied to 'photo_path' above) will be calibrated independently. Regardless whether True or False, separate camera *models* are calibrated separately; if True, identical camera *models* are calibrated separately if they are provided as separate paths. This addresses the case where two different instances of the same camera model are used in the same project. Note that when True, the logic for assigning separate calibration to each path assumes that the same camera is used for all photos in the path.
   multispectral: False # Is this a multispectral photo set? If RGB, set to False.
   use_rtk: False # Whether to use image EXIF RTK flags to make image geospatial accuracy more precise. If enabled but photos don't have RTK data, will treat them as regular photos and use the nofix accuracy.
@@ -109,7 +109,7 @@ buildDepthMaps: # (Metashape: buildDepthMaps)
     max_neighbors: 60 # Maximum number of neighboring photos to use for estimating depth map. Higher numbers may increase accuracy but dramatically increase processing time.
 
 buildPointCloud: # (Metashape: buildPointCloud, (optionally) classifyGroundPoints, and exportPoints)
-    enabled: False
+    enabled: True
     keep_depth: True # If False, removes depth maps from project data after building point cloud
     max_neighbors: 60 # Maximum number of neighboring photos to use for estimating point cloud. Higher numbers may increase accuracy but dramatically increase processing time.
     classify_ground_points: True # Should ground points be classified as a part of this step? Must be enabled (either here or in buildDem, below) if a digital terrain model (DTM) is needed either for orthomosaic or DTM export. Enabling here is an alternative to enabling as a component of buildDem (below). It depends on which stage you want the classification to be done at. If you already have a point cloud but it's unclassified, then don't do it as part of this stage as it would require computing the point cloud again.
