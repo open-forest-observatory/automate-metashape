@@ -41,7 +41,7 @@ def read_yaml(yml_path):
 
     # TODO: wrap in a Try to catch errors
     convert_objects(cfg)
-    
+
     return cfg
 
 
