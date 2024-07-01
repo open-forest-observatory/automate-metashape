@@ -36,7 +36,9 @@ doc, log, run_id = meta.project_setup(cfg, config_file)
 
 meta.enable_and_log_gpu(log, cfg)
 
-if (cfg["photo_path"] != "") and (cfg["addPhotos"]["enabled"]):  # only add photos if there is a photo directory listed
+if (cfg["photo_path"] != "") and (
+    cfg["addPhotos"]["enabled"]
+):  # only add photos if there is a photo directory listed
     meta.add_photos(doc, cfg)
 
 if cfg["calibrateReflectance"]["enabled"]:

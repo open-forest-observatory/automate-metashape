@@ -1,0 +1,40 @@
+name: Black Linter
+
+# This allows Black be called from the isort workflow
+on:
+  workflow_call:
+
+jobs:
+  black-linter:
+    name: Run Black
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Determine Branch Name
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "BRANCH_NAME=${{ github.head_ref }}" >> $GITHUB_ENV
+          else
+            BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})
+            echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.BRANCH_NAME }}
+
+      - name: Pull latest changes
+        run: git pull origin ${{ env.BRANCH_NAME }}
+
+      - name: Run Black formatter
+        uses: psf/black@stable
+        with:
+          options: "--verbose"
+          src: "."
+          jupyter: true
+
+      - name: Push changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Apply black formatting changes

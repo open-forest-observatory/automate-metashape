@@ -4,8 +4,8 @@ Created on Mon Oct 21 13:45:15 2019
 @author: Alex Mandel
 """
 
-import yaml
 import Metashape
+import yaml
 
 
 def convert_objects(a_dict):
@@ -41,7 +41,7 @@ def read_yaml(yml_path):
 
     # TODO: wrap in a Try to catch errors
     convert_objects(cfg)
-    
+
     return cfg
 
 

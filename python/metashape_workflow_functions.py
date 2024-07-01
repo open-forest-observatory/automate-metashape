@@ -4,18 +4,18 @@
 
 #### Import libraries
 
+import datetime
+import glob
+import os
+import platform
+import re
+
 # import the fuctionality we need to make time stamps to measure performance
 import time
-import datetime
-import platform
-import os
-import glob
-import re
-import yaml
 
 ### import the Metashape functionality
 import Metashape
-
+import yaml
 
 #### Helper functions and globals
 
@@ -80,8 +80,10 @@ def project_setup(cfg, config_file):
 
     run_name = cfg["run_name"]
 
-    if run_name == "from_config_filename" or run_name ==  "":
-        file_basename = os.path.basename(config_file)  # extracts file base name from path
+    if run_name == "from_config_filename" or run_name == "":
+        file_basename = os.path.basename(
+            config_file
+        )  # extracts file base name from path
         run_name, _ = os.path.splitext(file_basename)  # removes extension
 
     ## Project file example to make: "projectID_YYYYMMDDtHHMM-jobID.psx"
@@ -97,7 +99,9 @@ def project_setup(cfg, config_file):
     """
 
     # create a handle to the Metashape object
-    doc = Metashape.Document()  # When running via Metashape, can use: doc = Metashape.app.document
+    doc = (
+        Metashape.Document()
+    )  # When running via Metashape, can use: doc = Metashape.app.document
 
     # If specified, open existing project
     if cfg["load_project"] != "":
@@ -124,7 +128,8 @@ def project_setup(cfg, config_file):
         # write a line with the Metashape version
         file.write(sep.join(["Project", run_id]) + "\n")
         file.write(
-            sep.join(["Agisoft Metashape Professional Version", Metashape.app.version]) + "\n"
+            sep.join(["Agisoft Metashape Professional Version", Metashape.app.version])
+            + "\n"
         )
         # write a line with the date and time
         file.write(sep.join(["Processing started", stamp_time()]) + "\n")
@@ -148,7 +153,9 @@ def enable_and_log_gpu(log_file, cfg):
     while gpucount >= currentgpu:
         if gpustring != "":
             gpustring = gpustring + ", "
-        gpustring = gpustring + gpustringraw.split("name': '")[currentgpu].split("',")[0]
+        gpustring = (
+            gpustring + gpustringraw.split("name': '")[currentgpu].split("',")[0]
+        )
         currentgpu = currentgpu + 1
     # gpustring = gpustringraw.split("name': '")[1].split("',")[0]
     gpu_mask = Metashape.app.gpu_mask
@@ -175,30 +182,32 @@ def enable_and_log_gpu(log_file, cfg):
         Metashape.app.settings.setValue("main/gpu_enable_cuda", "0")
 
     # Set GPU multiplier to value specified (2 is default)
-    Metashape.app.settings.setValue("main/depth_max_gpu_multiplier", cfg["gpu_multiplier"])
+    Metashape.app.settings.setValue(
+        "main/depth_max_gpu_multiplier", cfg["gpu_multiplier"]
+    )
 
     return True
 
 
-def add_photos(doc, cfg, secondary = False):
+def add_photos(doc, cfg, secondary=False):
     """
     Add photos to project and change their labels to include their containing folder. Secondary: if
     True, this is a secondary set of photos to be aligned only, after all photogrammetry products
     have been produced from the primary set of photos.
     """
-    
-    if (secondary):
+
+    if secondary:
         photo_paths = cfg["photo_path_secondary"]
     else:
         photo_paths = cfg["photo_path"]
-    
+
     # If it's a single string (i.e. one directory), make it a list of one string so we can iterate
     # over it the same as if it were a list of strings
-    if (isinstance(photo_paths, str)):
+    if isinstance(photo_paths, str):
         photo_paths = [photo_paths]
-    
+
     for photo_path in photo_paths:
-        
+
         grp = doc.chunk.addCameraGroup()
 
         ## Get paths to all the project photos
@@ -209,21 +218,26 @@ def add_photos(doc, cfg, secondary = False):
         photo_files = [
             x
             for x in b
-            if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)", x) and (not re.search("dem_usgs.tif", x)))
+            if (
+                re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)", x)
+                and (not re.search("dem_usgs.tif", x))
+            )
         ]
 
         ## Add them
         if cfg["addPhotos"]["multispectral"]:
-            doc.chunk.addPhotos(photo_files, layout=Metashape.MultiplaneLayout, group = grp)
+            doc.chunk.addPhotos(
+                photo_files, layout=Metashape.MultiplaneLayout, group=grp
+            )
         else:
-            doc.chunk.addPhotos(photo_files, group = grp)
-            
+            doc.chunk.addPhotos(photo_files, group=grp)
+
     ## Need to change the label on each camera so that it includes the containing folder(s)
     for camera in doc.chunk.cameras:
         path = camera.photo.path
         camera.label = path
-    
-    if cfg["addPhotos"]["separate_calibration_per_path"] :
+
+    if cfg["addPhotos"]["separate_calibration_per_path"]:
         # Assign a different (new) sensor (i.e. independent calibration) to each group of photos
         for grp in doc.chunk.camera_groups:
 
@@ -235,11 +249,11 @@ def add_photos(doc, cfg, secondary = False):
 
             doc.chunk.addSensor(doc.chunk.cameras[0].sensor)
             sensor = doc.chunk.sensors[-1]
-            
+
             for cam in doc.chunk.cameras:
                 if cam.group == grp:
                     cam.sensor = sensor
-                    
+
         # Remove the first (deafult) sensor, which should no longer be assigned to any photos
         doc.chunk.remove(doc.chunk.sensors[0])
 
@@ -249,10 +263,18 @@ def add_photos(doc, cfg, secondary = False):
             rtkflag = cam.photo.meta["DJI/RtkFlag"]
             if rtkflag == "50":
                 cam.reference.location_accuracy = Metashape.Vector(
-                    [cfg["addPhotos"]["fix_accuracy"], cfg["addPhotos"]["fix_accuracy"], cfg["addPhotos"]["fix_accuracy"]]
+                    [
+                        cfg["addPhotos"]["fix_accuracy"],
+                        cfg["addPhotos"]["fix_accuracy"],
+                        cfg["addPhotos"]["fix_accuracy"],
+                    ]
                 )
                 cam.reference.accuracy = Metashape.Vector(
-                    [cfg["addPhotos"]["fix_accuracy"], cfg["addPhotos"]["fix_accuracy"], cfg["addPhotos"]["fix_accuracy"]]
+                    [
+                        cfg["addPhotos"]["fix_accuracy"],
+                        cfg["addPhotos"]["fix_accuracy"],
+                        cfg["addPhotos"]["fix_accuracy"],
+                    ]
                 )
             else:
                 cam.reference.location_accuracy = Metashape.Vector(
@@ -300,7 +322,7 @@ def add_gcps(doc, cfg):
     Add GCPs (GCP coordinates and the locations of GCPs in individual photos.
     See the helper script (and the comments therein) for details on how to prepare the data needed by this function: R/prep_gcps.R
     """
-    
+
     # Determine the location of the GCPs file, which is also the base path to prepend to the GCP
     # camera label (relative to what's specified in the GCPs file, which is a relative path), to
     # make it into an absolute path to match the label of the camera in the Metashape. Note the
@@ -311,15 +333,15 @@ def add_gcps(doc, cfg):
     # the folder containing the GCP definition file. TODO: Tolerate GCPs split across multiple
     # folders of input images:
     # https://github.com/open-forest-observatory/automate-metashape-2/issues/49.
-    
+
     photo_paths = cfg["photo_path"]
-    
+
     # If it's a single string (i.e. one directory), make it a list of one string so we can take the
     # first element using the same operation we would use on a list of strings
-    if (isinstance(photo_paths, str)):
+    if isinstance(photo_paths, str):
         photo_paths = [photo_paths]
-    
-    # Take the first folder and assume it's the one with the GCPs file    
+
+    # Take the first folder and assume it's the one with the GCPs file
     photo_path = photo_paths[0]
 
     ## Tag specific pixels in specific images where GCPs are located
@@ -329,16 +351,22 @@ def add_gcps(doc, cfg):
 
     for line in content:
         marker_label, camera_label, x_proj, y_proj = line.split(",")
-        if marker_label[0] == '"':  # if it's in quotes (from saving CSV in Excel), remove quotes
-            marker_label = marker_label[1:-1]  # need to get it out of the two pairs of quotes
-        if camera_label[0] == '"':  # if it's in quotes (from saving CSV in Excel), remove quotes
+        if (
+            marker_label[0] == '"'
+        ):  # if it's in quotes (from saving CSV in Excel), remove quotes
+            marker_label = marker_label[
+                1:-1
+            ]  # need to get it out of the two pairs of quotes
+        if (
+            camera_label[0] == '"'
+        ):  # if it's in quotes (from saving CSV in Excel), remove quotes
             camera_label = camera_label[1:-1]
 
         marker = get_marker(doc.chunk, marker_label)
         if not marker:
             marker = doc.chunk.addMarker()
             marker.label = marker_label
-            
+
         # Prepend the image path to the GCP's camera label to make it an absolute path
         camera_label = os.path.join(photo_path, camera_label)
 
@@ -359,8 +387,12 @@ def add_gcps(doc, cfg):
 
     for line in content:
         marker_label, world_x, world_y, world_z = line.split(",")
-        if marker_label[0] == '"':  # if it's in quotes (from saving CSV in Excel), remove quotes
-            marker_label = marker_label[1:-1]  # need to get it out of the two pairs of quotes
+        if (
+            marker_label[0] == '"'
+        ):  # if it's in quotes (from saving CSV in Excel), remove quotes
+            marker_label = marker_label[
+                1:-1
+            ]  # need to get it out of the two pairs of quotes
 
         marker = get_marker(doc.chunk, marker_label)
         if not marker:
@@ -463,7 +495,9 @@ def optimize_cameras(doc, log_file, run_id, cfg):
             doc.chunk.cameras[i].reference.enabled = False
 
     # Currently only optimizes the default parameters, which is not all possible parameters
-    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+    doc.chunk.optimizeCameras(
+        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
+    )
 
     # get an ending time stamp
     timer1b = time.time()
@@ -489,7 +523,9 @@ def filter_points_usgs_part1(doc, log_file, cfg):
     # get a beginning time stamp
     timer1a = time.time()
 
-    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+    doc.chunk.optimizeCameras(
+        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
+    )
 
     rec_thresh_percent = cfg["filterPointsUSGS"]["rec_thresh_percent"]
     rec_thresh_absolute = cfg["filterPointsUSGS"]["rec_thresh_absolute"]
@@ -504,10 +540,14 @@ def filter_points_usgs_part1(doc, log_file, cfg):
     values.sort()
     thresh = values[int(len(values) * (1 - rec_thresh_percent / 100))]
     if thresh < rec_thresh_absolute:
-        thresh = rec_thresh_absolute  # don't throw away too many points if they're all good
+        thresh = (
+            rec_thresh_absolute  # don't throw away too many points if they're all good
+        )
     fltr.removePoints(thresh)
 
-    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+    doc.chunk.optimizeCameras(
+        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
+    )
 
     fltr = Metashape.TiePoints.Filter()
     fltr.init(doc.chunk, Metashape.TiePoints.Filter.ProjectionAccuracy)
@@ -515,10 +555,14 @@ def filter_points_usgs_part1(doc, log_file, cfg):
     values.sort()
     thresh = values[int(len(values) * (1 - proj_thresh_percent / 100))]
     if thresh < proj_thresh_absolute:
-        thresh = proj_thresh_absolute  # don't throw away too many points if they're all good
+        thresh = (
+            proj_thresh_absolute  # don't throw away too many points if they're all good
+        )
     fltr.removePoints(thresh)
 
-    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+    doc.chunk.optimizeCameras(
+        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
+    )
 
     fltr = Metashape.TiePoints.Filter()
     fltr.init(doc.chunk, Metashape.TiePoints.Filter.ReprojectionError)
@@ -529,7 +573,9 @@ def filter_points_usgs_part1(doc, log_file, cfg):
         thresh = reproj_thresh_absolute  # don't throw away too many points if they're all good
     fltr.removePoints(thresh)
 
-    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+    doc.chunk.optimizeCameras(
+        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
+    )
 
     # get an ending time stamp
     timer1b = time.time()
@@ -549,7 +595,9 @@ def filter_points_usgs_part2(doc, log_file, cfg):
     # get a beginning time stamp
     timer1a = time.time()
 
-    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+    doc.chunk.optimizeCameras(
+        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
+    )
 
     reproj_thresh_percent = cfg["filterPointsUSGS"]["reproj_thresh_percent"]
     reproj_thresh_absolute = cfg["filterPointsUSGS"]["reproj_thresh_absolute"]
@@ -563,7 +611,9 @@ def filter_points_usgs_part2(doc, log_file, cfg):
         thresh = reproj_thresh_absolute  # don't throw away too many points if they're all good
     fltr.removePoints(thresh)
 
-    doc.chunk.optimizeCameras(adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"])
+    doc.chunk.optimizeCameras(
+        adaptive_fitting=cfg["optimizeCameras"]["adaptive_fitting"]
+    )
 
     # get an ending time stamp
     timer1b = time.time()
@@ -774,7 +824,7 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
     if cfg["buildDem"]["classify_ground_points"]:
         classify_ground_points(doc, log_file, run_id, cfg)
 
-    if (cfg["buildDem"]["enabled"]):
+    if cfg["buildDem"]["enabled"]:
         # prepping params for buildDem
         projection = Metashape.OrthoProjection()
         projection.crs = Metashape.CoordinateSystem(cfg["project_crs"])
@@ -785,7 +835,7 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
         compression.tiff_tiled = cfg["buildDem"]["tiff_tiled"]
         compression.tiff_overviews = cfg["buildDem"]["tiff_overviews"]
 
-        if ("DSM-ptcloud" in cfg["buildDem"]["surface"]):
+        if "DSM-ptcloud" in cfg["buildDem"]["surface"]:
             start_time = time.time()
 
             # call without point classes argument (Metashape then defaults to all classes)
@@ -793,7 +843,7 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                 source_data=Metashape.PointCloudData,
                 subdivide_task=cfg["subdivide_task"],
                 projection=projection,
-                resolution=cfg["buildDem"]["resolution"]
+                resolution=cfg["buildDem"]["resolution"],
             )
 
             time_taken = diff_time(time.time(), start_time)
@@ -811,9 +861,14 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                     source_data=Metashape.ElevationData,
                     image_compression=compression,
                 )
-                if cfg["buildOrthomosaic"]["enabled"] and "DSM-ptcloud" in cfg["buildOrthomosaic"]["surface"]:
-                    build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dsm-ptcloud")
-        if ("DTM-ptcloud" in cfg["buildDem"]["surface"]):
+                if (
+                    cfg["buildOrthomosaic"]["enabled"]
+                    and "DSM-ptcloud" in cfg["buildOrthomosaic"]["surface"]
+                ):
+                    build_export_orthomosaic(
+                        doc, log_file, run_id, cfg, file_ending="dsm-ptcloud"
+                    )
+        if "DTM-ptcloud" in cfg["buildDem"]["surface"]:
 
             start_time = time.time()
 
@@ -823,7 +878,7 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                 classes=Metashape.PointClass.Ground,
                 subdivide_task=cfg["subdivide_task"],
                 projection=projection,
-                resolution=cfg["buildDem"]["resolution"]
+                resolution=cfg["buildDem"]["resolution"],
             )
 
             time_taken = diff_time(time.time(), start_time)
@@ -841,10 +896,15 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                     source_data=Metashape.ElevationData,
                     image_compression=compression,
                 )
-                if cfg["buildOrthomosaic"]["enabled"] and "DTM-ptcloud" in cfg["buildOrthomosaic"]["surface"]:
-                    build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dtm-ptcloud")
+                if (
+                    cfg["buildOrthomosaic"]["enabled"]
+                    and "DTM-ptcloud" in cfg["buildOrthomosaic"]["surface"]
+                ):
+                    build_export_orthomosaic(
+                        doc, log_file, run_id, cfg, file_ending="dtm-ptcloud"
+                    )
 
-        if ("DSM-mesh" in cfg["buildDem"]["surface"]):
+        if "DSM-mesh" in cfg["buildDem"]["surface"]:
 
             start_time = time.time()
 
@@ -852,7 +912,7 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                 source_data=Metashape.ModelData,
                 subdivide_task=cfg["subdivide_task"],
                 projection=projection,
-                resolution=cfg["buildDem"]["resolution"]
+                resolution=cfg["buildDem"]["resolution"],
             )
 
             time_taken = diff_time(time.time(), start_time)
@@ -870,14 +930,24 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
                     source_data=Metashape.ElevationData,
                     image_compression=compression,
                 )
-                if cfg["buildOrthomosaic"]["enabled"] and "DSM-mesh" in cfg["buildOrthomosaic"]["surface"]:
-                    build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending="dsm-mesh")
+                if (
+                    cfg["buildOrthomosaic"]["enabled"]
+                    and "DSM-mesh" in cfg["buildOrthomosaic"]["surface"]
+                ):
+                    build_export_orthomosaic(
+                        doc, log_file, run_id, cfg, file_ending="dsm-mesh"
+                    )
 
     # Building an orthomosaic from the mesh does not require a DEM, so this is done separately, independent of any DEM building
-    if (cfg["buildOrthomosaic"]["enabled"] and "Mesh" in cfg["buildOrthomosaic"]["surface"]):
-        build_export_orthomosaic(doc, log_file, run_id, cfg, from_mesh = True, file_ending="mesh")
-    
-    if(cfg["buildPointCloud"]["remove_after_export"]):
+    if (
+        cfg["buildOrthomosaic"]["enabled"]
+        and "Mesh" in cfg["buildOrthomosaic"]["surface"]
+    ):
+        build_export_orthomosaic(
+            doc, log_file, run_id, cfg, from_mesh=True, file_ending="mesh"
+        )
+
+    if cfg["buildPointCloud"]["remove_after_export"]:
         doc.chunk.remove(doc.chunk.point_clouds)
 
     doc.save()
@@ -885,11 +955,11 @@ def build_dem_orthomosaic(doc, log_file, run_id, cfg):
     return True
 
 
-def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending, from_mesh = False):
+def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending, from_mesh=False):
     """
     Helper function called by build_dem_orthomosaic. build_export_orthomosaic builds and exports an ortho based on the current elevation data.
     build_dem_orthomosaic sets the current elevation data and calls build_export_orthomosaic (one or more times depending on how many orthomosaics requested)
-    
+
     Note that we have tried using the 'resolution' parameter of buildOrthomosaic, but it does not have any effect. An orthomosaic built onto a DSM always has a reslution of 1/4 the DSM, and one built onto the mesh has a resolution of ~the GSD.
     """
 
@@ -928,7 +998,9 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending, from_mesh 
 
     ## Export orthomosaic
     if cfg["buildOrthomosaic"]["export"]:
-        output_file = os.path.join(cfg["output_path"], run_id + "_ortho_" + file_ending + ".tif")
+        output_file = os.path.join(
+            cfg["output_path"], run_id + "_ortho_" + file_ending + ".tif"
+        )
 
         compression = Metashape.ImageCompression()
         compression.tiff_big = cfg["buildOrthomosaic"]["tiff_big"]
@@ -945,12 +1017,13 @@ def build_export_orthomosaic(doc, log_file, run_id, cfg, file_ending, from_mesh 
             source_data=Metashape.OrthomosaicData,
             image_compression=compression,
         )
-    
+
     if cfg["buildOrthomosaic"]["remove_after_export"]:
         doc.chunk.remove(doc.chunk.orthomosaics)
 
     return True
-    
+
+
 def add_align_secondary_photos(doc, log_file, run_id, cfg):
     """
     Add and align a second set of photos, to be aligned only. The main use case for this currently
@@ -958,17 +1031,19 @@ def add_align_secondary_photos(doc, log_file, run_id, cfg):
     mission), but to also estimate the positions of a secondary set of photos (e.g., oblique photos)
     to use for multiview object detection/classification.
     """
-    
-    if (cfg["alignPhotos"]["reset_alignment"] == True):
-        raise ValueError("For aligning secondary photos, reset_alignment must be False.")
-    if (cfg["alignPhotos"]["keep_keypoints"] == False):
+
+    if cfg["alignPhotos"]["reset_alignment"] == True:
+        raise ValueError(
+            "For aligning secondary photos, reset_alignment must be False."
+        )
+    if cfg["alignPhotos"]["keep_keypoints"] == False:
         raise ValueError("For aligning secondary photos, keep_keypoints must be True.")
 
     # get a beginning time stamp for the next step
     timer2a = time.time()
 
     # Add the secondary photos
-    add_photos(doc, cfg, secondary = True)
+    add_photos(doc, cfg, secondary=True)
 
     # get an ending time stamp for the previous step
     timer2b = time.time()
@@ -979,7 +1054,7 @@ def add_align_secondary_photos(doc, log_file, run_id, cfg):
     # record results to file
     with open(log_file, "a") as file:
         file.write(sep.join(["Add secondary photos", time2]) + "\n")
-        
+
     # Save the transform matrix
     matrix_saved = doc.chunk.transform.matrix
 
@@ -987,7 +1062,7 @@ def add_align_secondary_photos(doc, log_file, run_id, cfg):
     # affected because Metashape only matches and aligns photos that were not already
     # matched/aligned, assuming keep_keypoints and reset_alignment were set as required).
     align_photos(doc, log_file, run_id, cfg)
-    
+
     # Restore the saved transform matrix
     doc.chunk.transform.matrix = matrix_saved
 
