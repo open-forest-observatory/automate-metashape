@@ -4,8 +4,8 @@ Created on Mon Oct 21 13:45:15 2019
 @author: Alex Mandel
 """
 
-import yaml
 import Metashape
+import yaml
 
 
 def convert_objects(a_dict):

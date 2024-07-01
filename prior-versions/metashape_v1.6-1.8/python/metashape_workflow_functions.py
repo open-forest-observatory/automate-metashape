@@ -4,18 +4,17 @@
 
 #### Import libraries
 
+import datetime
+import glob
+import os
+import platform
+import re
 # import the fuctionality we need to make time stamps to measure performance
 import time
-import datetime
-import platform
-import os
-import glob
-import re
-import yaml
 
 ### import the Metashape functionality
 import Metashape
-
+import yaml
 
 #### Helper functions and globals
 
