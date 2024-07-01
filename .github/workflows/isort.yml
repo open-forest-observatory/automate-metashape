@@ -1,0 +1,45 @@
+name: Code Formatter
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  isort:
+    name: Run Isort
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Determine Branch Name
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "BRANCH_NAME=${{ github.head_ref }}" >> $GITHUB_ENV
+          else
+            BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})
+            echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.BRANCH_NAME }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Run Isort
+        run: pip install isort==5.13.2 && isort .
+
+      - name: Push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Apply isort formatting changes
+
+  # Ensure Black runs after Isort has completed
+  black:
+    needs: isort
+    uses: ./.github/workflows/black.yml
