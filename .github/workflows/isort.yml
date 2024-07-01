@@ -1,6 +1,6 @@
 name: Code Formatter
 
-# Add `pull_request:` to apply on active PRs 
+# Add 'pull_request:' beneath 'on:' to apply on active PRs
 on:
   push:
     branches:
@@ -11,6 +11,7 @@ jobs:
     name: Run Isort
     runs-on: ubuntu-latest
 
+    # Redundant to determine branch name since workflow only runs on main, but will be useful if we also want the workflow to run PRs
     steps:
       - name: Determine Branch Name
         run: |
