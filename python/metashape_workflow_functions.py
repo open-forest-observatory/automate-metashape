@@ -8,12 +8,15 @@ import datetime
 import glob
 import os
 import platform
+import os
+import platform
 import re
 # import the fuctionality we need to make time stamps to measure performance
 import time
 
 ### import the Metashape functionality
 import Metashape
+import yaml
 import yaml
 
 #### Helper functions and globals
