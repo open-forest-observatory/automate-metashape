@@ -10,7 +10,7 @@ load_project: ""
 # If there are multiple photo folders, set path to the folder that contains all the photo folders,
 # or provide a list of paths via the YAML list syntax (e.g., ["/path/to/photo/folder1", "/path/to/photo/folder2"])
 # If there are no photos to add (e.g., this is an existing project that already has photos in it, set to an empty string ("")
-photo_path: "/ofo-share/emerald-point-benchmark"
+photo_path: "/example/path/to/photo/folder"
 
 # The path to a secondary directory of flight photos, which are only aligned to the project *after*
 # all the other processing is done. This is useful if you want to use secondary photos for multiview
@@ -19,17 +19,17 @@ photo_path: "/ofo-share/emerald-point-benchmark"
 # separate calibration per path) and that align_photos:reset_alignment must be False and
 # align_photos:keep_keypoints must be True. If there are no secondary photos to add, set to an empty
 # string ("").
-photo_path_secondary: ""
+photo_path_secondary: "/example/path/to/secondary/photo/folder"
 
 # Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
-output_path: "/home/asidhu/automate-metashape-2/initialRun"
+output_path: "/example/output/path"
 
 # Path to save Metashape project file (.psx). Will be created if does not exist
-project_path: "/home/asidhu/automate-metashape-2/initialRun"
+project_path: "/example/project/path"
 
 # The identifier for the run. Will be used in naming output files. Recommended to include a photoset name and processing parameter set name.
 # Optionally, set it to an empty string ("") to use the config file name (minus extension) as the run name
-run_name: "emeraldData-run-001"
+run_name: "example-run-001"
 
 # CRS EPSG code that project outputs should be in (projection should be in meter units and intended for the project area)
 project_crs: "EPSG::26910" # 26910 is UTM 10N

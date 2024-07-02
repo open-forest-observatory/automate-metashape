@@ -23,10 +23,10 @@ if __name__ == "__main__":
     Photo_path = meta.cfg["Photo_path"]
 
     # Get a True/False
-    GPU_use = meta.cfgcfg["GPU"]["GPU_use"]
+    GPU_use = meta.cfg["GPU"]["GPU_use"]
 
     # Get a Num
-    GPU_num = meta.cfgcfg["GPU"]["GPU_num"]
+    GPU_num = meta.cfg["GPU"]["GPU_num"]
 
     # Convert a to a Metashape Object
-    accuracy = eval(meta.cfgcfg["matchPhotos"]["accuracy"])
+    accuracy = eval(meta.cfg["matchPhotos"]["accuracy"])
