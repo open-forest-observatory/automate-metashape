@@ -1,9 +1,10 @@
 import argparse
 import os
-from pathlib import Path
 import xml.etree.ElementTree as ET
-from tqdm import tqdm
 from glob import glob
+from pathlib import Path
+
+from tqdm import tqdm
 
 fixup_actions = (
     "relabel_from_DVC",
