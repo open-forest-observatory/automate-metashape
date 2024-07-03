@@ -22,7 +22,7 @@ except:  # running from command line (in linux) or interactively (windows)
     import metashape_workflow_functions as meta
     import read_yaml
 
-if(sys.stdin.isatty()):
+if sys.stdin.isatty():
     config_file = sys.argv[1]
 else:
     config_file = manual_config_file

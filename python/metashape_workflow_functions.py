@@ -8,15 +8,13 @@ import datetime
 import glob
 import os
 import platform
-import os
-import platform
 import re
+
 # import the fuctionality we need to make time stamps to measure performance
 import time
 
 ### import the Metashape functionality
 import Metashape
-import yaml
 import yaml
 
 #### Helper functions and globals
@@ -181,7 +179,10 @@ class MetashapeWorkflow:
                 + "\n"
             )
             # write a line with the date and time
-            file.write(MetashapeWorkflow.sep.join(["Processing started", self.stamp_time()]) + "\n")
+            file.write(
+                MetashapeWorkflow.sep.join(["Processing started", self.stamp_time()])
+                + "\n"
+            )
             # write a line with CPU info - if possible, improve the way the CPU info is found / recorded
             file.write(MetashapeWorkflow.sep.join(["Node", platform.node()]) + "\n")
             file.write(MetashapeWorkflow.sep.join(["CPU", platform.processor()]) + "\n")
@@ -207,7 +208,10 @@ class MetashapeWorkflow:
         gpu_mask = Metashape.app.gpu_mask
 
         with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Number of GPUs Found", str(gpucount)]) + "\n")
+            file.write(
+                MetashapeWorkflow.sep.join(["Number of GPUs Found", str(gpucount)])
+                + "\n"
+            )
             file.write(MetashapeWorkflow.sep.join(["GPU Model", gpustring]) + "\n")
             file.write(MetashapeWorkflow.sep.join(["GPU Mask", str(gpu_mask)]) + "\n")
 
@@ -215,7 +219,10 @@ class MetashapeWorkflow:
             if (gpucount > 0) and (gpu_mask == 0):
                 Metashape.app.gpu_mask = 1
                 gpu_mask = Metashape.app.gpu_mask
-                file.write(MetashapeWorkflow.sep.join(["GPU Mask Enabled", str(gpu_mask)]) + "\n")
+                file.write(
+                    MetashapeWorkflow.sep.join(["GPU Mask Enabled", str(gpu_mask)])
+                    + "\n"
+                )
 
             # This writes down all the GPU devices available
             # file.write('GPU(s): '+str(Metashape.app.enumGPUDevices())+'\n')
@@ -630,7 +637,9 @@ class MetashapeWorkflow:
 
         # record results to file
         with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["USGS filter points part 1", time1]) + "\n")
+            file.write(
+                MetashapeWorkflow.sep.join(["USGS filter points part 1", time1]) + "\n"
+            )
 
         self.doc.save()
 
@@ -667,7 +676,9 @@ class MetashapeWorkflow:
 
         # record results to file
         with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["USGS filter points part 2", time1]) + "\n")
+            file.write(
+                MetashapeWorkflow.sep.join(["USGS filter points part 2", time1]) + "\n"
+            )
 
         self.doc.save()
 
@@ -692,7 +703,9 @@ class MetashapeWorkflow:
 
         # record results to file
         with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Classify Ground Points", time_tot]) + "\n")
+            file.write(
+                MetashapeWorkflow.sep.join(["Classify Ground Points", time_tot]) + "\n"
+            )
 
     def build_depth_maps(self):
         ### Build depth maps
@@ -897,7 +910,10 @@ class MetashapeWorkflow:
 
                 # record results to file
                 with open(self.log_file, "a") as file:
-                    file.write(MetashapeWorkflow.sep.join(["Build DSM-ptcloud", time_taken]) + "\n")
+                    file.write(
+                        MetashapeWorkflow.sep.join(["Build DSM-ptcloud", time_taken])
+                        + "\n"
+                    )
 
                 output_file = os.path.join(
                     self.cfg["output_path"], self.run_id + "_dsm-ptcloud.tif"
@@ -932,7 +948,10 @@ class MetashapeWorkflow:
 
                 # record results to file
                 with open(self.log_file, "a") as file:
-                    file.write(MetashapeWorkflow.sep.join(["Build DTM-ptcloud", time_taken]) + "\n")
+                    file.write(
+                        MetashapeWorkflow.sep.join(["Build DTM-ptcloud", time_taken])
+                        + "\n"
+                    )
 
                 output_file = os.path.join(
                     self.cfg["output_path"], self.run_id + "_dtm-ptcloud.tif"
@@ -966,7 +985,10 @@ class MetashapeWorkflow:
 
                 # record results to file
                 with open(self.log_file, "a") as file:
-                    file.write(MetashapeWorkflow.sep.join(["Build DSM-mesh", time_taken]) + "\n")
+                    file.write(
+                        MetashapeWorkflow.sep.join(["Build DSM-mesh", time_taken])
+                        + "\n"
+                    )
 
                 output_file = os.path.join(
                     self.cfg["output_path"], self.run_id + "_dsm-mesh.tif"
@@ -1098,7 +1120,9 @@ class MetashapeWorkflow:
 
         # record results to file
         with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Add secondary photos", time2]) + "\n")
+            file.write(
+                MetashapeWorkflow.sep.join(["Add secondary photos", time2]) + "\n"
+            )
 
         # Save the transform matrix
         matrix_saved = self.doc.chunk.transform.matrix
@@ -1131,7 +1155,9 @@ class MetashapeWorkflow:
 
         # finish local results log and close it for the last time
         with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Run Completed", self.stamp_time()]) + "\n")
+            file.write(
+                MetashapeWorkflow.sep.join(["Run Completed", self.stamp_time()]) + "\n"
+            )
 
         # open run configuration again. We can't just use the existing self.cfg file because its objects had already been converted to Metashape objects (they don't write well)
         with open(self.config_file) as file:
