@@ -1,37 +1,61 @@
 import argparse
 import os
+import typing
 import xml.etree.ElementTree as ET
 from glob import glob
 from pathlib import Path
 
 from tqdm import tqdm
 
-fixup_actions = (
+FIXUP_ACTIONS = (
+    "common_root",
     "relabel_from_DVC",
     "grouped",
-    "common_root",
     "old_multi_folder",
     "ensure_images_exists",
 )
 
+PATH_TYPE = typing.Union[Path, str]
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input-camera-file", type=Path)
-    parser.add_argument("--output-camera-file", type=Path)
-    parser.add_argument("--input-image-folder", type=Path)
-    parser.add_argument("--input-image-folder-grouped", type=Path)
-    parser.add_argument("--action", choices=fixup_actions, default="relabel_from_DVC")
+    parser.add_argument(
+        "--input-camera-file",
+        type=Path,
+        help="Path to the camera file to be fixed. This is exported by Metashape and ends in a .xml extension",
+    )
+    parser.add_argument(
+        "--output-camera-file",
+        type=Path,
+        help="Path to save updated file to. If the same as the --input-camera-file, the input will be overwritten.",
+    )
+    parser.add_argument(
+        "--input-image-folder",
+        type=Path,
+        help="Path to the folder of images that Metashape was run on.",
+    )
+    parser.add_argument(
+        "--input-image-folder-grouped",
+        type=Path,
+        help="Only applicable with the `grouped` action. The path to images which were added as one group. Applicable to older metashape workflows.",
+    )
+    parser.add_argument(
+        "--action",
+        choices=FIXUP_ACTIONS,
+        default="common_root",
+        help="Which workflow to run.",
+    )
 
     args = parser.parse_args()
     return args
 
 
 def fix_grouped(
-    input_camera_file,
-    input_image_folder_grouped,
-    input_image_folder_ungrouped,
-    output_camera_file,
+    input_camera_file: PATH_TYPE,
+    input_image_folder_grouped: PATH_TYPE,
+    input_image_folder_ungrouped: PATH_TYPE,
+    output_camera_file: PATH_TYPE,
 ):
     tree = ET.parse(input_camera_file)
     cameras = tree.getroot().find("chunk").find("cameras")
@@ -74,7 +98,11 @@ def fix_grouped(
     tree.write(output_camera_file)
 
 
-def fix_old_multi_folder(input_camera_file, input_image_folder, output_camera_file):
+def fix_old_multi_folder(
+    input_camera_file: PATH_TYPE,
+    input_image_folder: PATH_TYPE,
+    output_camera_file: PATH_TYPE,
+):
     tree = ET.parse(input_camera_file)
     cameras = tree.getroot().find("chunk").find("cameras")
     labels = [camera.get("label") for camera in cameras]
@@ -90,7 +118,12 @@ def fix_old_multi_folder(input_camera_file, input_image_folder, output_camera_fi
     tree.write(output_camera_file)
 
 
-def fixup(camera_labels, image_folder, exclude_str=None, validate_existance=True):
+def fixup(
+    camera_labels,
+    image_folder: PATH_TYPE,
+    exclude_str=None,
+    validate_existance: bool = True,
+):
     # These ones were absolute, just the leading slash was incorrectly removed
     absolute_filenames = [
         "/" + str(camera_label)
@@ -143,7 +176,9 @@ def fixup(camera_labels, image_folder, exclude_str=None, validate_existance=True
     return absolute_camera_labels
 
 
-def ensure_file_exists(input_camera_file, output_camera_file, image_folder):
+def ensure_file_exists(
+    input_camera_file: PATH_TYPE, output_camera_file: PATH_TYPE, image_folder: PATH_TYPE
+):
     tree = ET.parse(input_camera_file)
     root = tree.getroot()
     cameras = root.find("chunk").find("cameras")
@@ -161,41 +196,72 @@ def ensure_file_exists(input_camera_file, output_camera_file, image_folder):
     tree.write(output_camera_file)
 
 
-def make_relative_to_common_root(input_camera_file, output_camera_file):
+def make_relative_to_common_root(
+    input_camera_file: PATH_TYPE, output_camera_file: PATH_TYPE
+):
+    """Update labels to be relative to the common root of all filepaths
+
+    Args:
+        input_camera_file (PATH_TYPE): Path to input camera file
+        output_camera_file (PATH_TYPE): Path to write modified camera file to
+    """
+    # Load the xml file
     tree = ET.parse(input_camera_file)
+    # Get the cameras object
     cameras = tree.getroot().find("chunk").find("cameras")
 
+    # Get the list of old labels
     old_labels = []
+    # Iterate over all items in the cameras object
     for cam_or_chunk in cameras:
+        # They may either be a camera or a group of cameras
         if cam_or_chunk.tag == "group":
+            # If it's a group, we know it's only one level deep, so iterate over the individual camera elements
             for cam in cam_or_chunk:
                 old_labels.append(cam.get("label"))
         else:
-            cam = cam_or_chunk
-            old_labels.append(cam.get("label"))
+            # Otherwise, it's a camera so we can directly get the label
+            old_labels.append(cam_or_chunk.get("label"))
+
+    # Determine the common folder of all the labels.
+    # TODO determine what happens if there is no common root. I suspect it will leave everything as-is
+    # which seems like reasonable behavior.
     common_folder = Path(os.path.commonpath(old_labels))
+
+    # Convenience function to update the label based on the common root
+    # This updates the label in place to be relative to the common root
+    def update_label(cam, common_folder):
+        old_label = Path(cam.get("label"))
+        new_label = str(old_label.relative_to(common_folder))
+        cam.set("label", new_label)
+
+    # Iterate over all of the camera to update the label
     for cam_or_chunk in cameras:
+        # Same logic as before, some elements may actually be a group of cameras
         if cam_or_chunk.tag == "group":
+            # Group, so iterate over elements
             for cam in cam_or_chunk:
-                old_label = Path(cam.get("label"))
-                new_label = str(old_label.relative_to(common_folder))
-                cam.set("label", new_label)
+                update_label(cam=cam, common_folder=common_folder)
         else:
-            cam = cam_or_chunk
-            old_label = Path(cam.get("label"))
-            new_label = str(old_label.relative_to(common_folder))
-            cam.set("label", new_label)
+            # Camera, so use directly
+            update_label(cam=cam_or_chunk, common_folder=common_folder)
+
+    # Since the tree was updated in-place, we can just write it out
     tree.write(output_camera_file)
 
 
-def build_dvc_to_raw_dict(image_folder: Path, extension="JPG"):
+def build_dvc_to_raw_dict(image_folder: PATH_TYPE, extension: str = "JPG"):
     files = list(image_folder.rglob("**/*" + extension))
     points_to = [os.path.realpath(file) for file in files]
     mapping_dict = {p: str(f) for p, f in zip(points_to, files)}
     return mapping_dict
 
 
-def relabel_from_DVC(input_camera_file, input_image_folder, output_camera_file):
+def relabel_from_DVC(
+    input_camera_file: PATH_TYPE,
+    input_image_folder: PATH_TYPE,
+    output_camera_file: PATH_TYPE,
+):
     mapping_dict = build_dvc_to_raw_dict(input_image_folder)
     tree = ET.parse(input_camera_file)
     cameras = tree.getroot().find("chunk").find("cameras")
@@ -208,9 +274,15 @@ def relabel_from_DVC(input_camera_file, input_image_folder, output_camera_file):
 
 
 if __name__ == "__main__":
+    # Parse args
     args = parse_args()
+    # Extract action for convenience
     action = args.action
+
+    # Determine which workflow to run
     if action == "common_root":
+        # Make all labels relative to the common root. Useful for turning absolute filepaths into
+        # relative paths which are more portable.
         make_relative_to_common_root(
             args.input_camera_file,
             args.output_camera_file,
@@ -243,4 +315,4 @@ if __name__ == "__main__":
             image_folder=args.input_image_folder,
         )
     else:
-        breakpoint()
+        raise ValueError(f"Action {action} not supported")
