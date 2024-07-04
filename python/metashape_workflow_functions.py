@@ -3,32 +3,86 @@
 # 2021
 
 #### Import libraries
-
 import datetime
 import glob
 import os
 import platform
 import re
 
-# import the fuctionality we need to make time stamps to measure performance
+# Import the fuctionality we need to make time stamps to measure performance
 import time
 
-### import the Metashape functionality
+### Import the Metashape functionality
 import Metashape
 import yaml
 
-#### Helper functions and globals
+#### Helper functions
+def convert_objects(a_dict):
+    """
+    Convert strings that refer to metashape objects (e.g. "Metashape.MoasicBlending") into metashape objects
+
+    Based on
+    https://stackoverflow.com/a/25896596/237354
+    """
+    for k, v in a_dict.items():
+        if not isinstance(v, dict):
+            if isinstance(v, str):
+                # TODO look for Metashape.
+                if (
+                    v
+                    and "Metashape" in v
+                    and not ("path" in k)
+                    and not ("project" in k)
+                    and not ("name" in k)
+                ):  # allow "path" and "project" and "name" keys (e.g. "photoset_path" and "run_name") from YAML to include "Metashape" (e.g., Metashape in the filename)
+                    a_dict[k] = eval(v)
+            elif isinstance(v, list):
+                # skip if no item in list have metashape, else convert string to metashape object
+                if any("Metashape" in item for item in v):
+                    a_dict[k] = [eval(item) for item in v if ("Metashape" in item)]
+        else:
+            convert_objects(v)
+
+def stamp_time():
+    """
+    Format the timestamps as needed
+    """
+    stamp = datetime.datetime.now().strftime("%Y%m%dT%H%M")
+    return stamp
+
+def diff_time(t2, t1):
+    """
+    Give a end and start time, subtract, and round
+    """
+    total = str(round(t2 - t1, 1))
+    return total
+
+# Used by add_gcps function
+def get_marker(chunk, label):
+    for marker in chunk.markers:
+        if marker.label == label:
+            return marker
+    return None
+
+# Used by add_gcps function
+def get_camera(chunk, label):
+    for camera in chunk.cameras:
+        if camera.label.lower() == label.lower():
+            return camera
+    return None
 
 # Set the log file name-value separator
 # Chose ; as : is in timestamps
 # TODO: Consider moving log to json/yaml formatting using a dict
-
 
 class MetashapeWorkflow:
 
     sep = "; "
 
     def __init__(self, config_file):
+        """
+        Initializes an instance of the MetashapeWorkflow class based on the config file given
+        """
         self.config_file = config_file
         self.doc = None
         self.log_file = None
@@ -36,66 +90,12 @@ class MetashapeWorkflow:
         self.cfg = None
         self.read_yaml()
 
-    def convert_objects(self, a_dict):
-        """
-        Convert strings that refer to metashape objects (e.g. "Metashape.MoasicBlending") into metashape objects
-
-        Based on
-        https://stackoverflow.com/a/25896596/237354
-        """
-        for k, v in a_dict.items():
-            if not isinstance(v, dict):
-                if isinstance(v, str):
-                    # TODO look for Metashape.
-                    if (
-                        v
-                        and "Metashape" in v
-                        and not ("path" in k)
-                        and not ("project" in k)
-                        and not ("name" in k)
-                    ):  # allow "path" and "project" and "name" keys (e.g. "photoset_path" and "run_name") from YAML to include "Metashape" (e.g., Metashape in the filename)
-                        a_dict[k] = eval(v)
-                elif isinstance(v, list):
-                    # skip if no item in list have metashape, else convert string to metashape object
-                    if any("Metashape" in item for item in v):
-                        a_dict[k] = [eval(item) for item in v if ("Metashape" in item)]
-            else:
-                self.convert_objects(v)
-
     def read_yaml(self):
         with open(self.config_file, "r") as ymlfile:
             self.cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
 
         # TODO: wrap in a Try to catch errors
-        self.convert_objects(self.cfg)
-
-    def stamp_time(self):
-        """
-        Format the timestamps as needed
-        """
-        stamp = datetime.datetime.now().strftime("%Y%m%dT%H%M")
-        return stamp
-
-    def diff_time(self, t2, t1):
-        """
-        Give a end and start time, subtract, and round
-        """
-        total = str(round(t2 - t1, 1))
-        return total
-
-    # Used by add_gcps function
-    def get_marker(self, chunk, label):
-        for marker in chunk.markers:
-            if marker.label == label:
-                return marker
-        return None
-
-    # Used by add_gcps function
-    def get_camera(self, chunk, label):
-        for camera in chunk.cameras:
-            if camera.label.lower() == label.lower():
-                return camera
-        return None
+        convert_objects(self.cfg)
 
     #### Functions for each major step in Metashape
 
@@ -126,7 +126,7 @@ class MetashapeWorkflow:
             run_name, _ = os.path.splitext(file_basename)  # removes extension
 
         ## Project file example to make: "projectID_YYYYMMDDtHHMM-jobID.psx"
-        timestamp = self.stamp_time()
+        timestamp = stamp_time()
         self.run_id = "_".join([run_name, timestamp])
         # TODO: If there is a slurm JobID, append to time (separated with "-", not "_"). This will keep jobs initiated in the same minute distinct
 
@@ -180,7 +180,7 @@ class MetashapeWorkflow:
             )
             # write a line with the date and time
             file.write(
-                MetashapeWorkflow.sep.join(["Processing started", self.stamp_time()])
+                MetashapeWorkflow.sep.join(["Processing started", stamp_time()])
                 + "\n"
             )
             # write a line with CPU info - if possible, improve the way the CPU info is found / recorded
@@ -414,7 +414,7 @@ class MetashapeWorkflow:
             ):  # if it's in quotes (from saving CSV in Excel), remove quotes
                 camera_label = camera_label[1:-1]
 
-            marker = self.get_marker(self.doc.chunk, marker_label)
+            marker = get_marker(self.doc.chunk, marker_label)
             if not marker:
                 marker = self.doc.chunk.addMarker()
                 marker.label = marker_label
@@ -422,7 +422,7 @@ class MetashapeWorkflow:
             # Prepend the image path to the GCP's camera label to make it an absolute path
             camera_label = os.path.join(photo_path, camera_label)
 
-            camera = self.get_camera(self.doc.chunk, camera_label)
+            camera = get_camera(self.doc.chunk, camera_label)
             if not camera:
                 print(camera_label + " camera not found in project")
                 continue
@@ -446,7 +446,7 @@ class MetashapeWorkflow:
                     1:-1
                 ]  # need to get it out of the two pairs of quotes
 
-            marker = self.get_marker(self.doc.chunk, marker_label)
+            marker = get_marker(self.doc.chunk, marker_label)
             if not marker:
                 marker = self.doc.chunk.addMarker()
                 marker.label = marker_label
@@ -510,7 +510,7 @@ class MetashapeWorkflow:
         timer1b = time.time()
 
         # calculate difference between end and start time to 1 decimal place
-        time1 = self.diff_time(timer1b, timer1a)
+        time1 = diff_time(timer1b, timer1a)
 
         # optionally export
         if self.cfg["alignPhotos"]["export"]:
@@ -560,7 +560,7 @@ class MetashapeWorkflow:
         timer1b = time.time()
 
         # calculate difference between end and start time to 1 decimal place
-        time1 = self.diff_time(timer1b, timer1a)
+        time1 = diff_time(timer1b, timer1a)
 
         # record results to file
         with open(self.log_file, "a") as file:
@@ -633,7 +633,7 @@ class MetashapeWorkflow:
         timer1b = time.time()
 
         # calculate difference between end and start time to 1 decimal place
-        time1 = self.diff_time(timer1b, timer1a)
+        time1 = diff_time(timer1b, timer1a)
 
         # record results to file
         with open(self.log_file, "a") as file:
@@ -672,7 +672,7 @@ class MetashapeWorkflow:
         timer1b = time.time()
 
         # calculate difference between end and start time to 1 decimal place
-        time1 = self.diff_time(timer1b, timer1a)
+        time1 = diff_time(timer1b, timer1a)
 
         # record results to file
         with open(self.log_file, "a") as file:
@@ -697,7 +697,7 @@ class MetashapeWorkflow:
         timer_b = time.time()
 
         # calculate difference between end and start time to 1 decimal place
-        time_tot = self.diff_time(timer_b, timer_a)
+        time_tot = diff_time(timer_b, timer_a)
 
         self.doc.save()
 
@@ -726,7 +726,7 @@ class MetashapeWorkflow:
         timer2b = time.time()
 
         # calculate difference between end and start time to 1 decimal place
-        time2 = self.diff_time(timer2b, timer2a)
+        time2 = diff_time(timer2b, timer2a)
 
         # record results to file
         with open(self.log_file, "a") as file:
@@ -756,7 +756,7 @@ class MetashapeWorkflow:
         timer3b = time.time()
 
         # calculate difference between end and start time to 1 decimal place
-        time3 = self.diff_time(timer3b, timer3a)
+        time3 = diff_time(timer3b, timer3a)
 
         # record results to file
         with open(self.log_file, "a") as file:
@@ -815,7 +815,7 @@ class MetashapeWorkflow:
             source_data=Metashape.DepthMapsData,
         )
 
-        time_taken = self.diff_time(time.time(), start_time)
+        time_taken = diff_time(time.time(), start_time)
 
         # record results to file
         with open(self.log_file, "a") as file:
@@ -906,7 +906,7 @@ class MetashapeWorkflow:
                     resolution=self.cfg["buildDem"]["resolution"],
                 )
 
-                time_taken = self.diff_time(time.time(), start_time)
+                time_taken = diff_time(time.time(), start_time)
 
                 # record results to file
                 with open(self.log_file, "a") as file:
@@ -944,7 +944,7 @@ class MetashapeWorkflow:
                     resolution=self.cfg["buildDem"]["resolution"],
                 )
 
-                time_taken = self.diff_time(time.time(), start_time)
+                time_taken = diff_time(time.time(), start_time)
 
                 # record results to file
                 with open(self.log_file, "a") as file:
@@ -981,7 +981,7 @@ class MetashapeWorkflow:
                     resolution=self.cfg["buildDem"]["resolution"],
                 )
 
-                time_taken = self.diff_time(time.time(), start_time)
+                time_taken = diff_time(time.time(), start_time)
 
                 # record results to file
                 with open(self.log_file, "a") as file:
@@ -1054,7 +1054,7 @@ class MetashapeWorkflow:
         timer6b = time.time()
 
         # calculate difference between end and start time to 1 decimal place
-        time6 = self.diff_time(timer6b, timer6a)
+        time6 = diff_time(timer6b, timer6a)
 
         # record results to file
         with open(self.log_file, "a") as file:
@@ -1116,7 +1116,7 @@ class MetashapeWorkflow:
         timer2b = time.time()
 
         # calculate difference between end and start time to 1 decimal place
-        time2 = self.diff_time(timer2b, timer2a)
+        time2 = diff_time(timer2b, timer2a)
 
         # record results to file
         with open(self.log_file, "a") as file:
@@ -1156,7 +1156,7 @@ class MetashapeWorkflow:
         # finish local results log and close it for the last time
         with open(self.log_file, "a") as file:
             file.write(
-                MetashapeWorkflow.sep.join(["Run Completed", self.stamp_time()]) + "\n"
+                MetashapeWorkflow.sep.join(["Run Completed", stamp_time()]) + "\n"
             )
 
         # open run configuration again. We can't just use the existing self.cfg file because its objects had already been converted to Metashape objects (they don't write well)

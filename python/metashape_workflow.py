@@ -25,6 +25,7 @@ if sys.stdin.isatty():
 else:
     config_file = manual_config_file
 
+# Initialize the workflow instance with the configuration file
 meta = MetashapeWorkflow(config_file)
 
 ### Run the Metashape workflow
