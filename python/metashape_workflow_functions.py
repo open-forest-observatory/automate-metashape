@@ -99,6 +99,59 @@ class MetashapeWorkflow:
 
     #### Functions for each major step in Metashape
 
+    def run(self):
+        self.project_setup()
+
+        self.enable_and_log_gpu()
+
+        if (self.cfg["photo_path"] != "") and (
+            self.cfg["addPhotos"]["enabled"]
+        ):  # only add photos if there is a photo directory listed
+            self.add_photos()
+
+        if self.cfg["calibrateReflectance"]["enabled"]:
+            self.calibrate_reflectance()
+
+        if self.cfg["alignPhotos"]["enabled"]:
+            self.align_photos()
+            self.reset_region()
+
+        if self.cfg["filterPointsUSGS"]["enabled"]:
+            self.filter_points_usgs_part1()
+            self.reset_region()
+
+        if self.cfg["addGCPs"]["enabled"]:
+            self.add_gcps()
+            self.reset_region()
+
+        if self.cfg["optimizeCameras"]["enabled"]:
+            self.optimize_cameras()
+            self.reset_region()
+
+        if self.cfg["filterPointsUSGS"]["enabled"]:
+            self.filter_points_usgs_part2()
+            self.reset_region()
+
+        if self.cfg["buildDepthMaps"]["enabled"]:
+            self.build_depth_maps()
+
+        if self.cfg["buildPointCloud"]["enabled"]:
+            self.build_point_cloud()
+
+        if self.cfg["buildModel"]["enabled"]:
+            self.build_model()
+
+        # For this step, the check for whether it is enabled in the config happens inside the function, because there are two steps (DEM and ortho), each of which can be enabled independently
+        self.build_dem_orthomosaic()
+
+        if self.cfg["photo_path_secondary"] != "":
+            self.add_align_secondary_photos()
+
+        self.export_report()
+
+        self.finish_run()
+
+
     def project_setup(self):
         """
         Create output and project paths, if they don't exist
