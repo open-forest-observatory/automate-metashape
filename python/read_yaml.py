@@ -6,7 +6,6 @@ Created on Mon Oct 21 13:45:15 2019
 
 import Metashape
 import yaml
-
 from metashape_workflow_functions import MetashapeWorkflow
 
 # For debugging when running this script directly:
