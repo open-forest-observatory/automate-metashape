@@ -100,6 +100,9 @@ class MetashapeWorkflow:
     #### Functions for each major step in Metashape
 
     def run(self):
+        """
+        Execute metashape workflow steps based on config file
+        """
         self.project_setup()
 
         self.enable_and_log_gpu()
