@@ -8,6 +8,7 @@ import glob
 import os
 import platform
 import re
+
 # Import the fuctionality we need to make time stamps to measure performance
 import time
 
@@ -43,12 +44,14 @@ def convert_objects(a_dict):
         else:
             convert_objects(v)
 
+
 def stamp_time():
     """
     Format the timestamps as needed
     """
     stamp = datetime.datetime.now().strftime("%Y%m%dT%H%M")
     return stamp
+
 
 def diff_time(t2, t1):
     """
@@ -57,12 +60,14 @@ def diff_time(t2, t1):
     total = str(round(t2 - t1, 1))
     return total
 
+
 # Used by add_gcps function
 def get_marker(chunk, label):
     for marker in chunk.markers:
         if marker.label == label:
             return marker
     return None
+
 
 # Used by add_gcps function
 def get_camera(chunk, label):
@@ -71,9 +76,11 @@ def get_camera(chunk, label):
             return camera
     return None
 
+
 # Set the log file name-value separator
 # Chose ; as : is in timestamps
 # TODO: Consider moving log to json/yaml formatting using a dict
+
 
 class MetashapeWorkflow:
 
@@ -153,7 +160,6 @@ class MetashapeWorkflow:
         self.export_report()
 
         self.finish_run()
-
 
     def project_setup(self):
         """
@@ -236,8 +242,7 @@ class MetashapeWorkflow:
             )
             # write a line with the date and time
             file.write(
-                MetashapeWorkflow.sep.join(["Processing started", stamp_time()])
-                + "\n"
+                MetashapeWorkflow.sep.join(["Processing started", stamp_time()]) + "\n"
             )
             # write a line with CPU info - if possible, improve the way the CPU info is found / recorded
             file.write(MetashapeWorkflow.sep.join(["Node", platform.node()]) + "\n")
