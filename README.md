@@ -14,11 +14,15 @@ A tool to make it easy to run reproducible, automated, documented Metashape phot
 
 ### Internal Users
 
-Run `conda activate meta` 
+For internal users working on a JS2 VM created using the OFO Dev CACAO template, run:
 
-**Reproducible workflow scripts:** Simply clone this repository to your machine!
+`conda activate meta`
+
+to switch to a conda environment with a current Metashape python package preinstalled and configured.
 
 ## Usage
+
+**Reproducible workflow scripts:** Simply clone this repository to your machine!
 
 The general command line call to run the worflow has three components:
 1. Call to Python
