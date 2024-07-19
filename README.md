@@ -4,15 +4,25 @@ A tool to make it easy to run reproducible, automated, documented Metashape phot
 
 ## Setup
 
+### External Users
+
 **Python:** You need Python 3.6-3.8. We recommend the [Anaconda distribution](https://www.anaconda.com/distribution/) because it includes all the required libraries. When installing, if asked whether the installer should initialize Anaconda3, say "yes". Anaconda must be initialized upon install such that `python` can be called from the command line. A way to check is to simply enter `python` at your command prompt and see if the resulting header info includes Anaconda and Python 3. If it doesn't, you may still need to initialize your Conda install. **Alternative option:** If you want a minimal python installation (such as if you're installing on a computing cluster), you can install [miniconda](https://docs.conda.io/en/latest/miniconda.html) instead. After intalling miniconda, you will need to install additional packages required by our scripts (currently only `PyYAML`) using `pip install {package_name}`.
 
 **Metashape:** You must install the Metashape Python 3 module (Metashape version 2.0). Download the [current .whl file](https://www.agisoft.com/downloads/installer/) and install it following [these instructions](https://agisoft.freshdesk.com/support/solutions/articles/31000148930-how-to-install-metashape-stand-alone-python-module) (using the name of the .whl file that you downloaded). NOTE: If you wish to use an older version of Metashape (v1.6-1.8), the primary scripts here (for v2.0) are not backwards-compatible, but scripts for older versions (with somewhat more limited configuration options) are archived in `prior-versions/`. For the Metashape v1.6-1.8-compatible scripts, you need Python 3.5-3.7.
 
 **Metashape license:** You need a license (and associated license file) for Metashape. The easiest way to get the license file (assuming you own a license) is by installing the [Metashape Professional Edition GUI software](https://www.agisoft.com/downloads/installer/) (distinct from the Python module) and registering it following the prompts in the software (note you need to purchase a license first). UC Davis users, inquire over the geospatial listserv or the #spatial Slack channel for information on joining a floating license pool. Once you have a license file (whether a node-locked or floating license), you need to set the `agisoft_LICENSE` environment variable (search onilne for instructions for your OS; look for how to *permanently* set it) to the path to the folder containing the license file (`metashape.lic`). On many Linux systems, assuming the Metashape GUI is installed in `/opt/metashape-pro/`, you can set the environment variable with `export agisoft_LICENSE=/opt/metashape-pro/`, though if run directly in a bash terminal it will only be effective during that bash session.
 
-**Reproducible workflow scripts:** Simply clone this repository to your machine!
+### Internal Users
+
+For internal users working on a JS2 VM created using the OFO Dev CACAO template, run:
+
+`conda activate meta`
+
+to switch to a conda environment with a current Metashape python package preinstalled and configured.
 
 ## Usage
+
+**Reproducible workflow scripts:** Simply clone this repository to your machine!
 
 The general command line call to run the worflow has three components:
 1. Call to Python
