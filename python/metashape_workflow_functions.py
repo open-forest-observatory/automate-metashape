@@ -4,6 +4,7 @@ import glob
 import os
 import platform
 import re
+
 # Import the fuctionality we need to make time stamps to measure performance
 import time
 
@@ -120,7 +121,7 @@ class MetashapeWorkflow:
         if self.cfg["alignPhotos"]["enabled"]:
             self.align_photos()
             self.reset_region()
-        
+
         if self.cfg["filterPointsUSGS"]["enabled"]:
             self.filter_points_usgs_part1()
             self.reset_region()
