@@ -969,6 +969,8 @@ class MetashapeWorkflow:
 
                 time_taken = diff_time(time.time(), start_time)
 
+                self.doc.chunk.elevation.label = "DSM-ptcloud"
+
                 # record results to file
                 with open(self.log_file, "a") as file:
                     file.write(
@@ -987,11 +989,7 @@ class MetashapeWorkflow:
                         source_data=Metashape.ElevationData,
                         image_compression=compression,
                     )
-                    if (
-                        self.cfg["buildOrthomosaic"]["enabled"]
-                        and "DSM-ptcloud" in self.cfg["buildOrthomosaic"]["surface"]
-                    ):
-                        self.build_export_orthomosaic(file_ending="dsm-ptcloud")
+                    
             if "DTM-ptcloud" in self.cfg["buildDem"]["surface"]:
 
                 start_time = time.time()
@@ -1006,6 +1004,8 @@ class MetashapeWorkflow:
                 )
 
                 time_taken = diff_time(time.time(), start_time)
+
+                self.doc.chunk.elevation.label = "DTM-ptcloud"
 
                 # record results to file
                 with open(self.log_file, "a") as file:
@@ -1025,11 +1025,6 @@ class MetashapeWorkflow:
                         source_data=Metashape.ElevationData,
                         image_compression=compression,
                     )
-                    if (
-                        self.cfg["buildOrthomosaic"]["enabled"]
-                        and "DTM-ptcloud" in self.cfg["buildOrthomosaic"]["surface"]
-                    ):
-                        self.build_export_orthomosaic(file_ending="dtm-ptcloud")
 
             if "DSM-mesh" in self.cfg["buildDem"]["surface"]:
 
@@ -1043,6 +1038,8 @@ class MetashapeWorkflow:
                 )
 
                 time_taken = diff_time(time.time(), start_time)
+
+                self.doc.chunk.elevation.label = "DSM-mesh"
 
                 # record results to file
                 with open(self.log_file, "a") as file:
@@ -1062,18 +1059,24 @@ class MetashapeWorkflow:
                         source_data=Metashape.ElevationData,
                         image_compression=compression,
                     )
-                    if (
-                        self.cfg["buildOrthomosaic"]["enabled"]
-                        and "DSM-mesh" in self.cfg["buildOrthomosaic"]["surface"]
-                    ):
-                        self.build_export_orthomosaic(file_ending="dsm-mesh")
 
-        # Building an orthomosaic from the mesh does not require a DEM, so this is done separately, independent of any DEM building
-        if (
-            self.cfg["buildOrthomosaic"]["enabled"]
-            and "Mesh" in self.cfg["buildOrthomosaic"]["surface"]
-        ):
-            self.build_export_orthomosaic(from_mesh=True, file_ending="mesh")
+        if self.cfg["buildOrthomosaic"]["enabled"]:
+            for surface in self.cfg["buildOrthomosaic"]["surface"]:
+                if surface == "Mesh":
+                    self.build_export_orthomosaic(from_mesh=True, file_ending="mesh")
+                else:
+                    dem_found = False
+                    for elevation in self.doc.chunk.elevations:
+                        if elevation.label == surface:
+                            # Activate the appropriate DEM
+                            self.doc.chunk.elevation = elevation
+                            dem_found = True
+                            break
+
+                    if not dem_found:
+                        raise ValueError(f"Error: DEM for {surface} is not available.")
+                    
+                    self.build_export_orthomosaic(file_ending=surface.lower())
 
         if self.cfg["buildPointCloud"]["remove_after_export"]:
             self.doc.chunk.remove(self.doc.chunk.point_clouds)
