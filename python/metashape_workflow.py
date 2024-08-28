@@ -21,6 +21,9 @@ except:  # running from command line (in linux) or interactively (windows)
     from metashape_workflow_functions import MetashapeWorkflow
 
 if sys.stdin.isatty():
+    if len(sys.argv) < 2:
+        print("Usage: python <metashape_workflow.py> <config_file.yml>")
+        sys.exit(1)
     config_file = sys.argv[1]
 else:
     config_file = manual_config_file
