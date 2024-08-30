@@ -22,7 +22,7 @@ except:  # running from command line (in linux) or interactively (windows)
 
 if sys.stdin.isatty():
     if len(sys.argv) < 2:
-        print("Usage: python <metashape_workflow.py> <config_file.yml>")
+        print("Usage: python <path/to/metashape_workflow.py> <path/to/config_file.yml>")
         sys.exit(1)
     config_file = sys.argv[1]
 else:
