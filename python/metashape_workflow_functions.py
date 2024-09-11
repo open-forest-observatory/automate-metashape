@@ -1060,21 +1060,29 @@ class MetashapeWorkflow:
                         image_compression=compression,
                     )
 
+        # Each DEM has a label associated with it which is used to identify and activate the correct DEM for orthomosaic generation
         if self.cfg["buildOrthomosaic"]["enabled"]:
+            # Iterate through each specified surface in the configuration
             for surface in self.cfg["buildOrthomosaic"]["surface"]:
                 if surface == "Mesh":
+                    # If the surface type is "Mesh", we do not need to activate an elevation model so we can go straight to building the orthomosaic
                     self.build_export_orthomosaic(from_mesh=True, file_ending="mesh")
                 else:
+                    # Otherwise, we need to activate the appropriate DEM based on the DEM labels assigned when the DEMs were generated
                     dem_found = False
+                    # Iterate through all the available DEMs
                     for elevation in self.doc.chunk.elevations:
                         if elevation.label == surface:
-                            # Activate the appropriate DEM
+                            # If the DEM label matches the surface, activate the appropriate DEM
                             self.doc.chunk.elevation = elevation
                             dem_found = True
                             break
 
                     if not dem_found:
-                        raise ValueError(f"Error: DEM for {surface} is not available.")
+                        raise ValueError(
+                            f"Error: DEM for {surface} is not available.\n"
+                            "Ensure the DEM for the specified surface has been generated because it is needed for orthomosaic generation."
+                            )
                     
                     self.build_export_orthomosaic(file_ending=surface.lower())
 
