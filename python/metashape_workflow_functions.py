@@ -1,7 +1,3 @@
-# Derek Young and Alex Mandel
-# University of California, Davis
-# 2021
-
 #### Import libraries
 import datetime
 import glob
@@ -142,6 +138,9 @@ class MetashapeWorkflow:
             self.filter_points_usgs_part2()
             self.reset_region()
 
+        if self.cfg["exportCameras"]["enabled"]:
+            self.export_cameras()
+
         if self.cfg["buildDepthMaps"]["enabled"]:
             self.build_depth_maps()
 
@@ -156,6 +155,9 @@ class MetashapeWorkflow:
 
         if self.cfg["photo_path_secondary"] != "":
             self.add_align_secondary_photos()
+
+            if self.cfg["exportCameras"]["enabled"]:
+                self.export_cameras()
 
         self.export_report()
 
@@ -573,11 +575,7 @@ class MetashapeWorkflow:
         # calculate difference between end and start time to 1 decimal place
         time1 = diff_time(timer1b, timer1a)
 
-        # optionally export
-        if self.cfg["alignPhotos"]["export"]:
-            self.export_cameras()
-
-        # record results to file
+        # record processing time to file
         with open(self.log_file, "a") as file:
             file.write(MetashapeWorkflow.sep.join(["Align Photos", time1]) + "\n")
 
@@ -628,10 +626,6 @@ class MetashapeWorkflow:
             file.write(MetashapeWorkflow.sep.join(["Optimize cameras", time1]) + "\n")
 
         self.doc.save()
-
-        # optionally export, note this would override the export from align_cameras
-        if self.cfg["optimizeCameras"]["export"]:
-            self.export_cameras()
 
         return True
 
