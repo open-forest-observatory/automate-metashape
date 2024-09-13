@@ -4,6 +4,7 @@ import glob
 import os
 import platform
 import re
+
 # Import the fuctionality we need to make time stamps to measure performance
 import time
 
@@ -982,7 +983,7 @@ class MetashapeWorkflow:
                         source_data=Metashape.ElevationData,
                         image_compression=compression,
                     )
-                    
+
             if "DTM-ptcloud" in self.cfg["buildDem"]["surface"]:
 
                 start_time = time.time()
@@ -1075,8 +1076,8 @@ class MetashapeWorkflow:
                         raise ValueError(
                             f"Error: DEM for {surface} is not available.\n"
                             "Ensure the DEM for the specified surface has been generated because it is needed for orthomosaic generation."
-                            )
-                    
+                        )
+
                     self.build_export_orthomosaic(file_ending=surface.lower())
 
         if self.cfg["buildPointCloud"]["remove_after_export"]:
