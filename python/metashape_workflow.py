@@ -6,6 +6,7 @@
 # 2021
 
 import sys
+import argparse
 
 # ---- If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
 
@@ -20,16 +21,17 @@ try:  # running interactively (in linux) or command line (windows)
 except:  # running from command line (in linux) or interactively (windows)
     from metashape_workflow_functions import MetashapeWorkflow
 
-if sys.stdin.isatty():
-    if len(sys.argv) < 2:
-        print("Usage: python <path/to/metashape_workflow.py> <path/to/config_file.yml>")
-        sys.exit(1)
-    config_file = sys.argv[1]
-else:
-    config_file = manual_config_file
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config_file", default=manual_config_file)
+
+    args = parser.parse_args()
+    return args
+
+args = parse_args()
 
 # Initialize the workflow instance with the configuration file
-meta = MetashapeWorkflow(config_file)
+meta = MetashapeWorkflow(args.config_file)
 
 ### Run the Metashape workflow
 meta.run()
