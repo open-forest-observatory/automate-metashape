@@ -27,10 +27,11 @@ RUN cd /opt && wget https://s3-eu-west-1.amazonaws.com/download.agisoft.com/Meta
       pip3 install Metashape-2.1.1-cp37.cp38.cp39.cp310.cp311-abi3-linux_x86_64.whl && pip3 install PyYAML && \
       rm -rf *.whl
 
-# TODO see if this is actually needed
-CMD chmod -R 755 /opt/
-
 # Set the container workdir
 WORKDIR /app
 # Copy files from current directory into /app
 COPY . /app
+
+# Set the default command and default arguments
+ENTRYPOINT ["python3", "/app/python/metashape_workflow.py"]
+CMD ["/data/config.yml"]
