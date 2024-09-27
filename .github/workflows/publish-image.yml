@@ -1,7 +1,9 @@
 name: Publish image to Github Packages
 
 on:
-  push # This is temporary, for testing, so every push updates the image
+  push:
+    branches:
+      - main
 
 env:
   REGISTRY: ghcr.io
