@@ -41,7 +41,7 @@ docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr
 ```
 Note that the owner of the output data will be the `root` user. To set the ownership to your user account, you can run `sudo chown <username>:<username> <file name>` or `sudo chown <username>:<username> -R <folder name>`.
 
-You can run a different config by adding `-c </path/to/config/file.yml>` to the end of the command above. This can be helpful if you have multiple configs you would like to try. Note that this path is local to the container, so it will begin with `/data/` if you follow the previous configuration steps.
+You can run a different config by adding `</path/to/config/file.yml>` to the end of the command above. This can be helpful if you have multiple configs you would like to try. Note that this path is local to the container, so it will begin with `/data/` if you follow the previous configuration steps.
 
 ## Usage
 
