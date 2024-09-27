@@ -21,9 +21,7 @@ For internal users working on a JS2 VM created using the OFO Dev CACAO template,
 to switch to a conda environment with a current Metashape python package preinstalled and configured.
 
 ### Docker
-Docker is a way to run software encapsulated with all the dependencies. You must install `docker`
-(instuctions [here](https://docs.docker.com/engine/install/)), and if you want to use GPUs for processing,
-also install the `nvidia-container-toolkit` (instructions [here](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)).
+Docker is a way to run software encapsulated with all the dependencies. You must install `docker` (instuctions [here](https://docs.docker.com/engine/install/)), and if you want to use GPUs for processing, also install the `nvidia-container-toolkit` (instructions [here](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)).
 
 
 A docker image is available from the github container registry. It can be pulled with the following command.
@@ -31,28 +29,19 @@ A docker image is available from the github container registry. It can be pulled
 docker pull ghcr.io/open-forest-observatory/automate-metashape:latest
 ```
 
-Before you run it, you must set up several things.
+To use the docker container, you must have a directory which contains your input data and a config file, and will have output data written to it. This will be mounted inside the container in the `/data` folder. The config file should be named `config.yml` and be at the top level of this folder. When creating this config file, all paths will be relative to the file structure of the docker container. So any paths to your data folder should be replaced with `/data`. The `-v <host path>:<container path>` flag mounts a folder from the host machine into the container.
 
-The first is a data directory which contains your input data and a config file, and will have output
-data written to it. This will be mounted inside the container in the `/data` folder. The config file
-should be named `config.yml`. When creating this config file, all paths will be relative to the file
-structure of the docker container. So any paths to your data folder should be replaced with `/data`.
-The `-v <host path>:<container path>` flag mounts a folder from the host machine into the container.
+Metashape requires a license to run. Currently, this container only supports using a floating license server, which is specified as an `<IP address>:<port number>`. Internal users can find the credentials [here](https://docs.google.com/document/d/155AP0P3jkVa-yT53a-QLp7vBAfjRa78gdST1Dfb4fls/edit?usp=sharing). On your host machine, set the `AGISOFT_FLS=<IP address>:<port number>` and then set the same environment variable in the container using `-e AGISOFT_FLS=$AGISOFT_FLS`.
 
-Metashape requires a license to run. Currently, this container only supports using a floating license
-server, which is specified as an `<IP address>:<port number>`. Internal users can find the credentials
-(here)[https://docs.google.com/document/d/155AP0P3jkVa-yT53a-QLp7vBAfjRa78gdST1Dfb4fls/edit?usp=sharing].
-On your host machine, set the `AGISOFT_FLS=<IP address>:<port number>` and then set the same environment
-variable in the container using `-e AGISOFT_FLS=$AGISOFT_FLS`.
+Finally, Metashape is accelerated by using GPUs. If your platform has GPUs and you've installed `nvidia-container-toolkit` you can make GPUs available within the container using `--gpus all`.
 
-Finally, Metashape is accelerated by using GPUs. If your platform has GPUs and you've installed
-`nvidia-container-toolkit` you can make GPUs available within the container using `--gpus all`.
-
-The following command puts it all together. This runs `automate_metashape` on the config file named `config.yml`
-within the mounted `/data` directory.
+The following command puts it all together. This runs `automate_metashape` on the config file named `config.yml` within the mounted `/data` directory and writes the results back out to the same folder
 ```
-docker run -v </my/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape
+docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape
 ```
+Note that the owner of the output data will be the `root` user. To set the ownership to your user account, you can run `sudo chown <username>:<username> <file name>` or `sudo chown <username>:<username> -R <folder name>`.
+
+You can run a different config by adding `-c </path/to/config/file.yml>` to the end of the command above. This can be helpful if you have multiple configs you would like to try. Note that this path is local to the container, so it will begin with `/data/` if you follow the previous configuration steps.
 
 ## Usage
 
