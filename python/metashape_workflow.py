@@ -5,8 +5,8 @@
 # University of California, Davis
 # 2021
 
-import sys
 import argparse
+import sys
 
 # ---- If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
 
