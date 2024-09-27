@@ -21,12 +21,14 @@ try:  # running interactively (in linux) or command line (windows)
 except:  # running from command line (in linux) or interactively (windows)
     from metashape_workflow_functions import MetashapeWorkflow
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("config_file", default=manual_config_file)
 
     args = parser.parse_args()
     return args
+
 
 args = parse_args()
 
