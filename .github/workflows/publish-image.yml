@@ -6,7 +6,7 @@ on:
       # Do not run on pushes to main, because this is separately triggred on pushes to main by the
       # isort workflow, and we want to make sure it runs after isort, and not twice
       - main 
-  workflow_call
+  workflow_call:
 
 env:
   REGISTRY: ghcr.io
