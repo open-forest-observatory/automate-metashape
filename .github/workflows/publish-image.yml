@@ -1,7 +1,12 @@
 name: Publish image to Github Packages
 
 on:
-  push
+  push:
+    branches-ignore:
+      # Do not run on pushes to main, because this is separately triggred on pushes to main by the
+      # isort workflow, and we want to make sure it runs after isort, and not twice
+      - main 
+  workflow_call:
 
 env:
   REGISTRY: ghcr.io
@@ -51,9 +56,12 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+      # Diabling attestation for now because it is creating two images in the registry for every
+      # push and making it look messy
+      
+      # - name: Generate artifact attestation
+      #   uses: actions/attest-build-provenance@v1
+      #   with:
+      #     subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+      #     subject-digest: ${{ steps.push.outputs.digest }}
+      #     push-to-registry: true
