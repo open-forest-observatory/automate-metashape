@@ -1,10 +1,7 @@
 name: Publish image to Github Packages
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  push
 
 env:
   REGISTRY: ghcr.io
@@ -36,6 +33,14 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # The first 4 lines are default; have to include them in order to specify the
+            # 5th one (apply latest tag to main branch)
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         id: push
