@@ -56,6 +56,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      # Diabling attestation for now because it is creating two images in the registry for every
+      # push and making it look messy
+      
       # - name: Generate artifact attestation
       #   uses: actions/attest-build-provenance@v1
       #   with:
