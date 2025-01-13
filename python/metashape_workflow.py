@@ -37,5 +37,3 @@ meta = MetashapeWorkflow(args.config_file)
 
 ### Run the Metashape workflow
 meta.run()
-
-# Dummy line to trigger docker image build
