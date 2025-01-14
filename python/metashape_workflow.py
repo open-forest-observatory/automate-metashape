@@ -24,7 +24,22 @@ except:  # running from command line (in linux) or interactively (windows)
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("config_file", default=manual_config_file)
+    parser.add_argument(
+        "config_file", default=manual_config_file, help="A path to a yaml config file."
+    )
+    parser.add_argument(
+        "--photo-path",
+        nargs="+",
+        help="One or more absolute paths to load photos from. If specified, this will override the 'photo_path' field in the config",
+    )
+    parser.add_argument(
+        "--project-path",
+        help="A path to write the metashape project to. If specified, this will override the 'project_path' field in the config",
+    )
+    parser.add_argument(
+        "--output-path",
+        help="A path to write the results from metashape to. If specified, this will override the 'output_path' field in the config",
+    )
 
     args = parser.parse_args()
     return args
@@ -33,7 +48,9 @@ def parse_args():
 args = parse_args()
 
 # Initialize the workflow instance with the configuration file
-meta = MetashapeWorkflow(args.config_file)
+meta = MetashapeWorkflow(
+    args.config_file, args.photo_path, args.project_path, args.output_path
+)
 
 ### Run the Metashape workflow
 meta.run()
