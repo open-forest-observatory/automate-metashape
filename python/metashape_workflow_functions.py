@@ -82,7 +82,11 @@ class MetashapeWorkflow:
 
     sep = "; "
 
-    def __init__(self, config_file):
+    def __init__(
+        self,
+        config_file,
+        override_dict,
+    ):
         """
         Initializes an instance of the MetashapeWorkflow class based on the config file given
         """
@@ -91,14 +95,29 @@ class MetashapeWorkflow:
         self.log_file = None
         self.run_id = None
         self.cfg = None
+        # Parse the yaml confif
         self.read_yaml()
+        # Apply any manual overrides
+        self.override_config(override_dict)
+        # Convert the objects in the config to metashape objects
+        convert_objects(self.cfg)
 
     def read_yaml(self):
         with open(self.config_file, "r") as ymlfile:
             self.cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
 
-        # TODO: wrap in a Try to catch errors
-        convert_objects(self.cfg)
+    def override_config(self, override_dict):
+        # Remove any override options that are None
+        override_dict = {k: v for k, v in override_dict.items() if v is not None}
+
+        # Since the CLI parser has nargs="+" for the photo_path, it will always be a list of values
+        # even if only one is provided. To match the format of the yaml parser, if only one value
+        # is provided, transform from a list of length one to just the value in that list
+        if "photo_path" in override_dict and len(override_dict["photo_path"]) == 1:
+            override_dict["photo_path"] = override_dict["photo_path"][0]
+
+        # Update any of the fields in the override dict to that value
+        self.cfg.update(override_dict)
 
     #### Functions for each major step in Metashape
 
