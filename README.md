@@ -21,7 +21,17 @@ For internal users working on a JS2 VM created using the OFO Dev CACAO template,
 to switch to a conda environment with a current Metashape python package preinstalled and configured.
 
 ### Docker
-Docker is a way to run software encapsulated with all the dependencies. You must install `docker` (instuctions [here](https://docs.docker.com/engine/install/)), and if you want to use GPUs for processing, also install the `nvidia-container-toolkit` (instructions [here](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)).
+Docker, a type of software containerization, is an alternative way to run software where you don't need to install software in the traditional sense. Docker packages up the code and all its environment dependencies so the application runs reliably from one computer to another. Background information on docker and software containers can be found [here](https://foss.cyverse.org/07_reproducibility_II/).
+
+To run a docker container on your local machine, you do need to install `docker`. You can install and run docker as a command line only tool for [linux distributions](https://docs.docker.com/engine/install/) or as a graphical program (i.e, Docker Desktop) for [windows](https://docs.docker.com/desktop/setup/install/windows-install/), [macOS](https://docs.docker.com/desktop/setup/install/mac-install/), or [linux](https://docs.docker.com/desktop/setup/install/linux/). We recommend running docker commands at the terminal. If you are using Docker Desktop, you can still write commands at the terminal while Docker Desktop is open and running.
+
+
+
+
+
+
+
+and if you want to use GPUs for processing, also install the `nvidia-container-toolkit` (instructions [here](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)).
 
 If running Docker on Linux without `sudo` (as in this example), your user will need to be in the `docker` group. This can be achieved with `sudo usermod -a -G docker $USER` and then logging out and in, as explained [here](https://docs.docker.com/engine/install/linux-postinstall/).
 
