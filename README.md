@@ -23,10 +23,15 @@ to switch to a conda environment with a current Metashape python package preinst
 ### Docker
 Docker, a type of software containerization, is an alternative way to run software where you don't need to install software in the traditional sense. Docker packages up the code and all its environment dependencies so the application runs reliably from one computer to another. Background information on docker and software containers can be found [here](https://foss.cyverse.org/07_reproducibility_II/).
 
-To run a docker container on your local machine, you do need to install `docker`. You can install and run docker as a command line only tool for [linux distributions](https://docs.docker.com/engine/install/) or as a graphical program (i.e, Docker Desktop) for [windows](https://docs.docker.com/desktop/setup/install/windows-install/), [macOS](https://docs.docker.com/desktop/setup/install/mac-install/), or [linux](https://docs.docker.com/desktop/setup/install/linux/). We recommend running docker commands at the terminal. If you are using Docker Desktop, you can still write commands at the terminal while Docker Desktop is open and running.
+To run a docker container on your local machine, you do need to install `docker`. You can install and run docker as a command line tool for [linux distributions](https://docs.docker.com/engine/install/) or as a graphical program (i.e, Docker Desktop) for [windows](https://docs.docker.com/desktop/setup/install/windows-install/), [macOS](https://docs.docker.com/desktop/setup/install/mac-install/), or [linux](https://docs.docker.com/desktop/setup/install/linux/). We recommend running docker commands at the terminal. If you are using Docker Desktop, you can still write commands at the terminal while Docker Desktop is open and running.
 
+The `automate-metashape` docker image contains the python libraries needed to run the script, while you (the user) need to provide at minimum the **1.** aerial images; **2** a configuration file specifying your choices for processing; and optionally **3** ground control points (GCPs).   
 
+#### Image Directory
+On your local machine please create a directory that includes all of the aerial images (e.g., `/home/aerial_images`). 
 
+#### Config File
+Please include the configuration file within the same directory as the images. An example configuration file is provided in this repository at `config/config-example.yml`. Please download this file to your local machine and rename it `config.yml`. Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Please edit the `photo_path` to read "/data", the `output_path` to read "/data/output", and the `project_path` to read "/data/project". You have flexibility to change these paths as long as the begin with "/data/". 
 
 
 
