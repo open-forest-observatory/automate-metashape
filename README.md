@@ -38,6 +38,9 @@ Users need to provide a license to use Metashape. Currently, this docker method 
 
 `export AGISOFT_FLS=<IP_address>:<port_number>`
 
+#### Enable GPUs for Accelerated Processing
+
+The use of graphical processing units (GPUs) can greatly increase the speed of photogrammetry processing. If your machine has GPU hardware, you will need to extra software so docker can find and use your GPUs. For linux users please see [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). For Windows users
 
 #### Run the Docker Container
 
