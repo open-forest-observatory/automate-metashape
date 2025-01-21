@@ -57,7 +57,9 @@ Here is a breakdown of the command:
 
 `-e AGISOFT_FLS=$AGISOFT_FLS` is declaring your floating license to use Metashape. We set the license info as an environmental variable earlier in these instructions (i.e., `export AGISOFT_FLS=<IP_address>:<port_number>`)
 
---gpus
+`--gpus all` If the container has access to your local GPUs, use this flag to enable it.
+
+`ghcr.io/open-forest-observatory/automate-metashape` This is the docker image that has the software to run the `automate-metashape` script. It is located in the Github container registry. When you execute the `docker run...` command, it will download the container image to your local machine and start the script to process imagery using Metashape. 
 
 
 
