@@ -35,14 +35,12 @@ On your local machine please create a directory that includes all of the aerial 
 **????The input data, config file, and output data can each be any number of levels below the data directory (meaning you do not need a separate data directory for each project to be run).????**
 
 <br/>
-<br/>
 
 #### Configuration File
 Please include the configuration file within the same directory as the images. An example configuration file is provided in this repository at `config/config-example.yml`. Please download this file to your local machine and rename it `config.yml`. Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Within this config file, all paths will be relative to the file structure of the docker container. Please edit the `photo_path` to read "/data", the `output_path` to read "/data/output", and the `project_path` to read "/data/project". You have flexibility to change these paths as long as they begin with "/data/". 
 
 By default, the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`, but this can be overridden by passing a different location as a final (optional) command line argument to the `docker run` command. This would be useful if you have multiple imagery datasets/projects (and config files) nested below your mounted `/data` directory and/or if you are taking advantage of the `automate-metashape` feature to name output files based on the name of the config file.
 
-<br/>
 <br/>
 
 #### Metashape license
@@ -53,13 +51,11 @@ Users need to provide a license to use Metashape. Currently, this docker method 
 Keep in mind that environmental variables will not persist across different terminal sessions. 
 
 <br/>
-<br/>
 
 #### Enable GPUs for Accelerated Processing
 
 The use of graphical processing units (GPUs) can greatly increase the speed of photogrammetry processing. If your machine has GPU hardware, you will need extra software so docker can find and use your GPUs. For linux users please see [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). For Windows users please see [this documentation](https://docs.docker.com/desktop/features/gpu/). For macOS user, it may not be possible to use your local GPU (Apple Silicon) through Docker. 
 
-<br/>
 <br/>
 
 #### Run the Docker Container
@@ -81,12 +77,12 @@ Here is a breakdown of the command:
 
 **???How do I change the location of config.yml or run multiple configs???** 
 
+<br/>
+
 #### Outputs
 When the script is done running, the completed imagery products will be deposited within the same directory on your local machine that contains the images and config file (e.g., '/home/aerial_images').  
 
 <br/>
-<br/>
-
 
 #### Permissions on Linux
 
@@ -94,7 +90,8 @@ If running Docker on Linux without `sudo` (as in this example), your user will n
 
 Note that the owner of the output data will be the `root` user. To set the ownership to your user account, you can run `sudo chown <username>:<username> <file name>` or `sudo chown <username>:<username> -R <folder name>`.
 
-
+<br/>
+<br/>
 
 ## Usage
 
