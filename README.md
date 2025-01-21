@@ -30,8 +30,14 @@ The `automate-metashape` docker image contains the python libraries needed to ru
 #### Image Directory
 On your local machine please create a directory that includes all of the aerial images (e.g., `/home/aerial_images`). This directory can be called anything you want and be located anywhere on your computer. 
 
+**????The input data, config file, and output data can each be any number of levels below the data directory (meaning you do not need a separate data directory for each project to be run).????**
+
+
 #### Configuration File
-Please include the configuration file within the same directory as the images. An example configuration file is provided in this repository at `config/config-example.yml`. Please download this file to your local machine and rename it `config.yml`. Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Please edit the `photo_path` to read "/data", the `output_path` to read "/data/output", and the `project_path` to read "/data/project". You have flexibility to change these paths as long as they begin with "/data/". 
+Please include the configuration file within the same directory as the images. An example configuration file is provided in this repository at `config/config-example.yml`. Please download this file to your local machine and rename it `config.yml`. Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Within this config file, all paths will be relative to the file structure of the docker container. Please edit the `photo_path` to read "/data", the `output_path` to read "/data/output", and the `project_path` to read "/data/project". You have flexibility to change these paths as long as they begin with "/data/". 
+
+By default, the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`, but this can be overridden by passing a different location as a final (optional) command line argument to the `docker run` command. This would be useful if you have multiple imagery datasets/projects (and config files) nested below your mounted `/data` directory and/or if you are taking advantage of the `automate-metashape` feature to name output files based on the name of the config file.
+
 
 #### Metashape license
 Users need to provide a license to use Metashape. Currently, this docker method only supports a floating license server using the format `<IP address>:<port number>`. Within a terminal, users can declare the floating license as an environmental variable using the command:
@@ -39,6 +45,7 @@ Users need to provide a license to use Metashape. Currently, this docker method 
 `export AGISOFT_FLS=<IP_address>:<port_number>`
 
 Keep in mind that environmental variables will not persist across different terminal sessions. 
+
 
 #### Enable GPUs for Accelerated Processing
 
@@ -61,27 +68,20 @@ Here is a breakdown of the command:
 
 `ghcr.io/open-forest-observatory/automate-metashape` This is the docker image that has the software to run the `automate-metashape` script. It is located in the Github container registry. When you execute the `docker run...` command, it will download the container image to your local machine and start the script to process imagery using Metashape. 
 
+**???How do I change the location of config.yml or run multiple configs???** 
+
+#### Outputs
+When the script is done running, the completed imagery products will be deposited within the same directory on your local machine that contains the images and config file (e.g., '/home/aerial_images').  
+
+<br/>
+<br/>
+<br/>
 
 
 If running Docker on Linux without `sudo` (as in this example), your user will need to be in the `docker` group. This can be achieved with `sudo usermod -a -G docker $USER` and then logging out and in, as explained [here](https://docs.docker.com/engine/install/linux-postinstall/).
 
-A docker image is available from the github container registry. It can be pulled with the following command.
-```
-docker pull ghcr.io/open-forest-observatory/automate-metashape:latest
-```
 
-To use the docker container, you must have a directory which contains your input data and a config file, and will have output data written to it. The input data, config file, and output data can each be any number of levels below the data directory (meaning you do not need a separate data directory for each project to be run). This folder will be mounted inside the container as the `/data` folder. When creating this config file, all paths will be relative to the file structure of the docker container. So any paths to your data folder should be replaced with `/data`. The `-v <host path>:<container path>` flag mounts a folder from the host machine into the container.
 
-By default, the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`, but this can be overridden by passing a different location as a final (optional) command line argument to the `docker run` command. This would be useful if you have multiple imagery datasets/projects (and config files) nested below your mounted `/data` directory and/or if you are taking advantage of the `automate-metashape` feature to name output files based on the name of the config file.
-
-Metashape requires a license to run. Currently, this container only supports using a floating license server, which is specified as an `<IP address>:<port number>`. Internal users can find the credentials [here](https://docs.google.com/document/d/155AP0P3jkVa-yT53a-QLp7vBAfjRa78gdST1Dfb4fls/edit?usp=sharing). On your host machine, set the `AGISOFT_FLS=<IP address>:<port number>` and then set the same environment variable in the container using `-e AGISOFT_FLS=$AGISOFT_FLS`.
-
-Finally, Metashape is accelerated by using GPUs. If your platform has GPUs and you've installed `nvidia-container-toolkit` you can make GPUs available within the container using `--gpus all`.
-
-The following command puts it all together. This runs `automate_metashape` on the config file named `config.yml` within the mounted `/data` directory and writes the results back out to the same folder
-```
-docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape
-```
 Note that the owner of the output data will be the `root` user. To set the ownership to your user account, you can run `sudo chown <username>:<username> <file name>` or `sudo chown <username>:<username> -R <folder name>`.
 
 You can run a different config by adding `</path/to/config/file.yml>` to the end of the command above. This can be helpful if you have multiple configs you would like to try. Note that this path is local to the container, so it will begin with `/data/` if you follow the previous configuration steps.
