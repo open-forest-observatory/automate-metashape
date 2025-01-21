@@ -77,14 +77,13 @@ When the script is done running, the completed imagery products will be deposite
 <br/>
 <br/>
 
+#### Permissions on Linux
 
 If running Docker on Linux without `sudo` (as in this example), your user will need to be in the `docker` group. This can be achieved with `sudo usermod -a -G docker $USER` and then logging out and in, as explained [here](https://docs.docker.com/engine/install/linux-postinstall/).
 
-
-
 Note that the owner of the output data will be the `root` user. To set the ownership to your user account, you can run `sudo chown <username>:<username> <file name>` or `sudo chown <username>:<username> -R <folder name>`.
 
-You can run a different config by adding `</path/to/config/file.yml>` to the end of the command above. This can be helpful if you have multiple configs you would like to try. Note that this path is local to the container, so it will begin with `/data/` if you follow the previous configuration steps.
+
 
 ## Usage
 
