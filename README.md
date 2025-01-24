@@ -2,9 +2,9 @@
 
 A tool to make it easy to run reproducible, automated, documented Metashape photogrammetry workflows in batches on an individual computer (in serial) or as parallel jobs on a compute cluster. No coding knowledge required.
 
-## Setup
+## Setup (native install)
 
-### External Users
+### External users
 
 **Python:** You need Python 3.6-3.8. We recommend the [Anaconda distribution](https://www.anaconda.com/distribution/) because it includes all the required libraries. When installing, if asked whether the installer should initialize Anaconda3, say "yes". Anaconda must be initialized upon install such that `python` can be called from the command line. A way to check is to simply enter `python` at your command prompt and see if the resulting header info includes Anaconda and Python 3. If it doesn't, you may still need to initialize your Conda install. **Alternative option:** If you want a minimal python installation (such as if you're installing on a computing cluster), you can install [miniconda](https://docs.conda.io/en/latest/miniconda.html) instead. After intalling miniconda, you will need to install additional packages required by our scripts (currently only `PyYAML`) using `pip install {package_name}`.
 
@@ -12,7 +12,7 @@ A tool to make it easy to run reproducible, automated, documented Metashape phot
 
 **Metashape license:** You need a license (and associated license file) for Metashape. The easiest way to get the license file (assuming you own a license) is by installing the [Metashape Professional Edition GUI software](https://www.agisoft.com/downloads/installer/) (distinct from the Python module) and registering it following the prompts in the software (note you need to purchase a license first). UC Davis users, inquire over the geospatial listserv or the #spatial Slack channel for information on joining a floating license pool. Once you have a license file (whether a node-locked or floating license), you need to set the `agisoft_LICENSE` environment variable (search onilne for instructions for your OS; look for how to *permanently* set it) to the path to the folder containing the license file (`metashape.lic`). On many Linux systems, assuming the Metashape GUI is installed in `/opt/metashape-pro/`, you can set the environment variable with `export agisoft_LICENSE=/opt/metashape-pro/`, though if run directly in a bash terminal it will only be effective during that bash session.
 
-### Internal Users
+### Internal users
 
 For internal users working on a JS2 VM created using the OFO Dev CACAO template, run:
 
@@ -20,45 +20,44 @@ For internal users working on a JS2 VM created using the OFO Dev CACAO template,
 
 to switch to a conda environment with a current Metashape python package preinstalled and configured.
 
-## Docker
+## Setup (Docker container)
+
 Docker, a type of software containerization, is an alternative way to run software where you don't need to install software in the traditional sense. Docker packages up the code and all its environment dependencies so the application runs reliably from one computer to another. Background information on docker and software containers can be found [here](https://foss.cyverse.org/07_reproducibility_II/).
 
 To run a docker container on your local machine, you do need to install `docker`. You can install and run docker as a command line tool for [linux distributions](https://docs.docker.com/engine/install/) or as a graphical program (i.e, Docker Desktop) for [windows](https://docs.docker.com/desktop/setup/install/windows-install/), [macOS](https://docs.docker.com/desktop/setup/install/mac-install/), or [linux](https://docs.docker.com/desktop/setup/install/linux/). We recommend running docker commands at the terminal. If you are using Docker Desktop, you can still write commands at the terminal while Docker Desktop is open and running.
 
-The `automate-metashape` docker image contains the python libraries needed to run the script, while you (the user) need to provide at minimum the **1.** aerial images; **2** a configuration file specifying your choices for processing; **3.** a license to use Metashape; and optionally **4.** [ground control points (GCPs)](https://github.com/jeffgillan/automate-metashape/tree/main?tab=readme-ov-file#preparing-ground-control-points-gcps).   
+The `automate-metashape` docker image contains the python libraries needed to run the workflow, while you (the user) need to provide at minimum the **1.** aerial images; **2** a configuration file specifying your choices for processing; **3.** a license to use Metashape; and optionally **4.** [ground control points (GCPs)](https://github.com/jeffgillan/automate-metashape/tree/main?tab=readme-ov-file#preparing-ground-control-points-gcps](https://github.com/open-forest-observatory/automate-metashape?tab=readme-ov-file#preparing-ground-control-points-gcps).   
 
-<br/>
+### User inputs to the workflow
 
-#### Image Directory
-On your local machine please create a directory that includes all of the aerial images (e.g., `/home/aerial_images`). This directory can be called anything you want and be located anywhere on your computer. 
+To provide the input data to Metashape, you need to specify a folder from your computer to be mirrored ("mounted") within the Docker container. The files needed to run Metashape (the folder of aerial images, the configuration file, and optionally the GCPs file) must all be in the folder that you mount. The files can be located in any arbitrary directory beneath this folder. For example, if the folder you mount is `~/drone_data` on your local computer, the images could be located at `~/drone_data/projects/project_10/images/` and the config file could be located at `~/drone_data/configs/project_10/config.yml` The folder from your local machine is mounted into the Docker container at the path /data/, so for the example above, the images would be found inside the docker container at the path /data/projects/project_10/images/.
 
-**????The input data, config file, and output data can each be any number of levels below the data directory (meaning you do not need a separate data directory for each project to be run).????**
+#### Image directory
 
-<br/>
+The images to be processed should all be in one folder (and optionally organized into subfolders beneath this folder) somewhere within the data folder you will be mounting. In the example above, the folder of images is at `~/drone_data/projects/project_10/images/`.
 
-#### Configuration File
-Please include the configuration file within the same directory as the images. An example configuration file is provided in this repository at `config/config-example.yml`. Please download this file to your local machine and rename it `config.yml`. Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Within this config file, all paths will be relative to the file structure of the docker container. Please edit the `photo_path` to read "/data", the `output_path` to read "/data/output", and the `project_path` to read "/data/project". You have flexibility to change these paths as long as they begin with "/data/". 
+#### Workflow configuration file
 
-By default, the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`, but this can be overridden by passing a different location as a final (optional) command line argument to the `docker run` command. This would be useful if you have multiple imagery datasets/projects (and config files) nested below your mounted `/data` directory and/or if you are taking advantage of the `automate-metashape` feature to name output files based on the name of the config file.
+An example configuration file is provided in this repository at `config/config-example.yml`. Please download this file to your local machine and rename it `config.yml`. By default, the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`, but this can be overridden by passing a different location as a final (optional) command line argument to the `docker run` command (see below). In a case where the local folder to be mounted is `~/drone_data/`, then for the config file to be mounted in the Docker container at `/data/config.yaml`, it must be located on the local computer at `~/drone_data/config.yaml`.
 
-<br/>
+Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Within this config file, all paths will be relative to the file structure of the docker container (beginning with `/data/`). In the config.yml, at a minimum the following entries should be updated:
 
-#### Metashape license
+* The value for photo_path should be updated to /data/{path_to_images_folder_within_mounted_folder}
+* The value for output_path should be updated to /data/{path_to_desired_ouputs_folder_within_mounted_folder} (can be any location you want; will be created if it does not exist)
+* The value for project_path should be updated similarly as for output_path.
+
+### Metashape license
 Users need to provide a license to use Metashape. Currently, this docker method only supports a floating license server using the format `<IP address>:<port number>`. Within a terminal, users can declare the floating license as an environmental variable using the command:
 
 `export AGISOFT_FLS=<IP_address>:<port_number>`
 
 Keep in mind that environmental variables will not persist across different terminal sessions. 
 
-<br/>
+### Enable GPUs for accelerated processing
 
-#### Enable GPUs for Accelerated Processing
+The use of graphical processing units (GPUs) can greatly increase the speed of photogrammetry processing. If your machine has GPU hardware, you will need extra software so docker can find and use your GPUs. Linux users simply need to install nvidia-container-toolkit via `sudo apt install nvidia-container-toolkit`. For Windows users please see [this documentation](https://docs.docker.com/desktop/features/gpu/). For macOS user, it may not be possible to use your local GPU (Apple Silicon) through Docker. 
 
-The use of graphical processing units (GPUs) can greatly increase the speed of photogrammetry processing. If your machine has GPU hardware, you will need extra software so docker can find and use your GPUs. For linux users please see [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). For Windows users please see [this documentation](https://docs.docker.com/desktop/features/gpu/). For macOS user, it may not be possible to use your local GPU (Apple Silicon) through Docker. 
-
-<br/>
-
-#### Run the Docker Container
+### Run the docker container
 From a terminal, run this command: 
 
 `docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape`
@@ -75,25 +74,25 @@ Here is a breakdown of the command:
 
 `ghcr.io/open-forest-observatory/automate-metashape` This is the docker image that has the software to run the `automate-metashape` script. It is located in the Github container registry. When you execute the `docker run...` command, it will download the container image to your local machine and start the script to process imagery using Metashape. 
 
-**???How do I change the location of config.yml or run multiple configs???** 
+#### Custom location of the Metashape configuration file
 
-<br/>
+If your config.yaml is located anywhere other than `/data/config.yaml` (or the file is named differently), you can specify its location as one additional command line argument at the end of the `docker run` command. For example, if it is located at `/data/configs/project_10/config.yml` (meanining, in the example above, it is located on your local computer at `~/drone_data/configs/project_10/config.yml`), just append `/data/configs/project_10/config.yml` to the `docker run` command above. So the command above would look like:
 
-#### Outputs
-When the script is done running, the completed imagery products will be deposited within the same directory on your local machine that contains the images and config file (e.g., '/home/aerial_images').  
+`docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape /data/configs/project_10/config.yml`
 
-<br/>
+### Outputs
 
-#### Permissions on Linux
+As the processing runs, the completed imagery products will be saved into the folder you specified for the `output_path` parameter in the config.yaml. In the example above, if your config.yaml specifies the `output_path` as `/data/{path_to_desired_ouputs_folder_within_mounted_folder}`, the outputs will be saved on your local computer at `~/drone_data/{path_to_desired_ouputs_folder_within_mounted_folder}`.
+
+### Permissions on Linux
 
 If running Docker on Linux without `sudo` (as in this example), your user will need to be in the `docker` group. This can be achieved with `sudo usermod -a -G docker $USER` and then logging out and in, as explained [here](https://docs.docker.com/engine/install/linux-postinstall/).
 
 Note that the owner of the output data will be the `root` user. To set the ownership to your user account, you can run `sudo chown <username>:<username> <file name>` or `sudo chown <username>:<username> -R <folder name>`.
 
-<br/>
-<br/>
-
 ## Usage
+
+### Native install
 
 **Reproducible workflow scripts:** Simply clone this repository to your machine!
 
@@ -107,6 +106,10 @@ For example:
 `python {repo_path}/python/metashape_workflow.py {config_path}/{config_file}.yml`
 
 All processing parameters are specified in the .yml config file. There is an example config file in the repo at `config/example.yml`. Details on the config file are below.
+
+### Docker install
+
+See Docker section above.
 
 ### Organizing raw imagery (and associated files) for processing
 
