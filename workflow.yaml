@@ -6,107 +6,49 @@ spec:
   serviceAccountName: argo
   entrypoint: main
   volumes:
-  - name: ofo-share-argo
+  - name: data
     persistentVolumeClaim:
-      claimName: ofo-argo-nfs-pvc
+      claimName: ofo-share-nfs-pvc
+  - name: results
+    persistentVolumeClaim:
+      claimName: argo-output-pvc
 
   templates:
     - name: main
       steps:
         - - name: determine-datasets
             template: determine-datasets
-        - - name: process-items
-            template: process-item
-            arguments:
-              parameters:
-              - name: dataset-name
-                value: "{{item}}" # Why is this called "item"?
-            withParam: "{{steps.determine-datasets.outputs.result}}"
+        - - name: run-automate-metashape
+            template: run-automate-metashape
 
     - name: determine-datasets
       container:
-        image: ghcr.io/open-forest-observatory/argo-toy-workflow
+        image: ghcr.io/arnavakula/hello-world-ghcr
         volumeMounts:
-        - name: ofo-share-argo
-          mountPath: /workdir
-        command: ["python"]
+        - name: data
+          mountPath: /data
+          subPath: "{{workflow.parameters.DATA_ROOT}}"
+        - name: results
+          mountPath: /results
+          subPath: "{{workflow.parameters.RUN_FOLDER}}"
+        command: ["python3"]
         args: ["./step1.py"]
+        env:
+          - name: AGISOFT_FLS
+            value: "{{workflow.parameters.AGISOFT_FLS}}"
 
-    - name: process-item
-      inputs:
-        parameters:
-        - name: dataset-name
-      dag:
-        tasks:
-          - name: double-number
-            template: double-number
-            arguments:
-              parameters:
-                - name: dataset-name-to-double # Being verbose with parameter name to clarify its purpose and origin
-                  value: "{{inputs.parameters.dataset-name}}"
-          - name: subtract-number
-            dependencies: [double-number]
-            template: subtract-number
-            arguments:
-              parameters:
-                - name: dataset-name-to-subtract # Being verbose with parameter name to clarify its purpose and origin
-                  value: "{{tasks.double-number.outputs.result}}"
-          - name: divide-number
-            dependencies: [subtract-number]
-            template: divide-number
-            arguments:
-              parameters:
-                - name: dataset-name-to-divide # Being verbose with parameter name to clarify its purpose and origin
-                  value: "{{tasks.subtract-number.outputs.result}}"
-
-    - name: double-number
-      inputs:
-        parameters:
-        - name: dataset-name-to-double
+    - name: run-automate-metashape
       container:
-        image: ghcr.io/open-forest-observatory/argo-toy-workflow
+        image: ghcr.io/arnavakula/hello-world-ghcr
         volumeMounts:
-        - name: ofo-share-argo
-          mountPath: /workdir
-        command: ["python"]
-        args: ["./step2.py", "{{inputs.parameters.dataset-name-to-double}}"]
-        resources:
-          limits:
-            cpu: "1000m"
-          requests:
-            cpu: "1000m"
-
-    - name: subtract-number
-      inputs:
-        parameters:
-        - name: dataset-name-to-subtract
-      container:
-        image: ghcr.io/open-forest-observatory/argo-toy-workflow
-        volumeMounts:
-        - name: ofo-share-argo
-          mountPath: /workdir
-        command: ["python"]
-        args: ["./step3.py", "{{inputs.parameters.dataset-name-to-subtract}}"]
-        resources:
-          limits:
-            cpu: "1000m"
-          requests:
-            cpu: "1000m"
-    
-    - name: divide-number
-      inputs:
-        parameters:
-        - name: dataset-name-to-divide
-      container:
-        image: ghcr.io/open-forest-observatory/argo-toy-workflow:aa_test
-        volumeMounts:
-        - name: ofo-share-argo
-          mountPath: /workdir
-        command: ["python"]
-        args: ["./step4.py", "{{inputs.parameters.dataset-name-to-divide}}"]
-        resources:
-          limits:
-            cpu: "1000m"
-          requests:
-            cpu: "1000m"
-
+        - name: data
+          mountPath: /data
+          subPath: "{{workflow.parameters.DATA_ROOT}}"
+        - name: results
+          mountPath: /results
+          subPath: "{{workflow.parameters.RUN_FOLDER}}"
+        command: ["python3", "/app/python/metashape_workflow.py"]
+        args: ["/results/config.yml"]
+        env:
+          - name: AGISOFT_FLS
+            value: "{{workflow.parameters.AGISOFT_FLS}}"

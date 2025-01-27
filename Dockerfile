@@ -32,6 +32,7 @@ WORKDIR /app
 # Copy files from current directory into /app
 COPY . /app
 
-# Set the default command and default arguments
-ENTRYPOINT ["python3", "/app/python/metashape_workflow.py"]
-CMD ["/data/config.yml"]
+# # Set the default command and default arguments
+# ENTRYPOINT ["python3", "/app/python/metashape_workflow.py"]
+# CMD ["/app/config.yml"]
+# pass names of data/output dirs, not config file --> change .py file to make updated version of config.yml file

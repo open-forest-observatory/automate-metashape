@@ -2,9 +2,9 @@ import json
 import sys
 import os
 
-DATASETS_TO_PROCESS_FILEPATH = '/workdir/raw-images'
 
 def detemineDatasetsToRun():
-        json.dump(os.listdir('workdir'), sys.stdout)
+        json.dump(os.listdir('/data') + os.listdir('/results'), sys.stdout)
+        json.dump(os.environ['AGISOFT_FLS'], sys.stdout)
 
 detemineDatasetsToRun()

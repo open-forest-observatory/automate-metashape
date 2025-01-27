@@ -1,16 +1,21 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nfs-client-pod4
+  name: nfs-client-pod
   namespace: argo
 spec:
   containers:
   - name: my-container
     image: nginx
     volumeMounts:
-    - name: nfs-volume
-      mountPath: /workdir
+    - name: ofo-share-nfs-pv
+      mountPath: /data
+    - name: argo-output-pv
+      mountPath: /results
   volumes:
-  - name: nfs-volume
+  - name: ofo-share-nfs-pv
     persistentVolumeClaim:
-      claimName: ofo-argo-nfs-pvc
+      claimName: ofo-share-nfs-pvc
+  - name: argo-output-pv
+    persistentVolumeClaim:
+      claimName: argo-output-pvc
