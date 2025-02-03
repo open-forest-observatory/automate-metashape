@@ -23,7 +23,7 @@ spec:
 
     - name: determine-datasets
       container:
-        image: ghcr.io/arnavakula/hello-world-ghcr
+        image: ghcr.io/open-forest-observatory/automate-metashape:aa_test_argo
         volumeMounts:
         - name: data
           mountPath: /data
@@ -39,7 +39,7 @@ spec:
 
     - name: run-automate-metashape
       container:
-        image: ghcr.io/arnavakula/hello-world-ghcr
+        image: ghcr.io/open-forest-observatory/automate-metashape:aa_test_argo
         volumeMounts:
         - name: data
           mountPath: /data

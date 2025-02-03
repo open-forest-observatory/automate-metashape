@@ -7,6 +7,11 @@ spec:
   containers:
   - name: my-container
     image: nginx
+    resources:
+      requests:
+        nvidia.com/gpu: 1
+      limits:
+        nvidia.com/gpu: 1
     volumeMounts:
     - name: ofo-share-nfs-pv
       mountPath: /data
