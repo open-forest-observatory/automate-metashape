@@ -34,4 +34,3 @@ COPY . /app
 
 # Set the default command and default arguments
 ENTRYPOINT ["python3", "/app/python/metashape_workflow.py"]
-CMD ["/app/config/config-example.yml"]
