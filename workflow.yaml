@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: automate-metashape-workflow-
+spec:
+  serviceAccountName: argo
+  entrypoint: main
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: ofo-share-nfs-pvc
+  - name: results
+    persistentVolumeClaim:
+      claimName: argo-output-pvc
+
+  templates:
+    - name: main
+      steps:
+        - - name: determine-datasets
+            template: determine-datasets
+        - - name: run-automate-metashape
+            template: run-automate-metashape
+
+    - name: determine-datasets
+      container:
+        image: ghcr.io/open-forest-observatory/automate-metashape:aa_modulate_argo
+        volumeMounts:
+        - name: data
+          mountPath: /data
+          # subPath: "{{workflow.parameters.DATA_ROOT}}"
+        - name: results
+          mountPath: /results
+          # subPath: "{{workflow.parameters.RUN_FOLDER}}"
+        command: ["python3"]
+        # args: ["./step1.py"]
+        env:
+          - name: AGISOFT_FLS
+            value: "{{workflow.parameters.AGISOFT_FLS}}"
+
+    - name: run-automate-metashape
+      container:
+        image: ghcr.io/open-forest-observatory/automate-metashape:aa_modulate_argo
+        volumeMounts:
+        - name: data
+          mountPath: /data
+          subPath: "{{workflow.parameters.DATA_ROOT}}"
+        - name: results
+          mountPath: /results
+          subPath: "{{workflow.parameters.RUN_FOLDER}}"
+        command: ["python3", "/app/python/metashape_workflow.py"]
+        args: ["/app/config/config-example.yml", "--photo-path", "/data", "--project-path", "/results/project", "--output-path", "/results/output", "--run-name", "test-run"]
+        env:
+          - name: AGISOFT_FLS
+            value: "{{workflow.parameters.AGISOFT_FLS}}"
