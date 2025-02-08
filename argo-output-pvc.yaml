@@ -9,5 +9,5 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  volumeName: argo-output--nfs-pv
+  volumeName: argo-output-nfs-pv
   storageClassName: ""

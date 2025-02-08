@@ -7,20 +7,15 @@ spec:
   containers:
   - name: my-container
     image: nginx
-    resources:
-      requests:
-        nvidia.com/gpu: 1
-      limits:
-        nvidia.com/gpu: 1
     volumeMounts:
-    - name: ofo-share-nfs-pv
+    - name: ofo-share-nfs-volume
       mountPath: /data
-    - name: argo-output-pv
+    - name: argo-output-nfs-volume
       mountPath: /results
   volumes:
-  - name: ofo-share-nfs-pv
+  - name: ofo-share-nfs-volume
     persistentVolumeClaim:
       claimName: ofo-share-nfs-pvc
-  - name: argo-output-pv
+  - name: argo-output-nfs-volume
     persistentVolumeClaim:
-      claimName: argo-output-pvc
+      claimName: argo-output-nfs-pvc

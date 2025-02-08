@@ -9,4 +9,4 @@ spec:
     - ReadWriteMany
   nfs:
     server: 10.0.205.254
-    path: /ofo-share-serve/
+    path: /ofo-share-serve
