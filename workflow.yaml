@@ -11,31 +11,57 @@ spec:
       claimName: ofo-share-nfs-pvc
   - name: results
     persistentVolumeClaim:
-      claimName: argo-output-pvc
+      claimName: argo-output-nfs-pvc
 
   templates:
     - name: main
       steps:
         - - name: determine-datasets
             template: determine-datasets
+        - - name: process-items
+            template: process-item
+            arguments:
+              parameters:
+              - name: dataset-name
+                value: "{{item}}" # each dataset we pass through
+            withParam: "{{steps.determine-datasets.outputs.result}}"
         - - name: run-automate-metashape
             template: run-automate-metashape
 
+            # for item in determine-datasets.outputs.result:
+            #   dataset-name = item
+            #   process_items(dataset-name)
+
     - name: determine-datasets
-      container:
-        image: ghcr.io/open-forest-observatory/automate-metashape:aa_modulate_argo
+      script:
+        image: python:3.9
         volumeMounts:
         - name: data
           mountPath: /data
-          # subPath: "{{workflow.parameters.DATA_ROOT}}"
         - name: results
           mountPath: /results
-          # subPath: "{{workflow.parameters.RUN_FOLDER}}"
         command: ["python3"]
-        # args: ["./step1.py"]
+        source: |
+          import json
+          import sys
+          datasets = json.loads('{{workflow.parameters.DATASETS}}')
+          json.dump(datasets, sys.stdout)
         env:
           - name: AGISOFT_FLS
             value: "{{workflow.parameters.AGISOFT_FLS}}"
+
+    - name: process-item
+      inputs:
+        parameters:
+        - name: dataset-name
+      dag:
+        tasks:
+          - name: run-automate-metashape
+            template: run-automate-metashape
+            arguments:
+              parameters:
+                - name: dataset-name
+                  value: "{{inputs.parameters.dataset-name}}"
 
     - name: run-automate-metashape
       container:
@@ -43,7 +69,7 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /data
-          subPath: "{{workflow.parameters.DATA_ROOT}}"
+          subPath: "{{input.parameters.dataset-name}}"
         - name: results
           mountPath: /results
           subPath: "{{workflow.parameters.RUN_FOLDER}}"
