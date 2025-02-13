@@ -7,11 +7,13 @@
 
 import argparse
 import sys
+from pathlib import Path
 
 # ---- If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
 
 ## Define where to get the config file (only used if running interactively)
-manual_config_file = "config/example_dev.yml"
+# manual_config_file = "config/config-base.yml"
+manual_config_file = Path(Path(__file__).parent, "..", "config", "config-base.yml").resolve()
 # ---- If not running interactively, the config file should be supplied as the command-line argument after the python script, e.g.: python metashape_workflow.py config.yml
 
 
@@ -28,7 +30,7 @@ def parse_args():
         + "All other arguments are optional overrides to the corresponding entry in that config"
     )
     parser.add_argument(
-        "config_file", default=manual_config_file, help="A path to a yaml config file."
+        "--config_file", default=manual_config_file, help="A path to a yaml config file."
     )
     parser.add_argument(
         "--photo-path",
