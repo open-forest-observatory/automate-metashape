@@ -902,7 +902,7 @@ class MetashapeWorkflow:
             output_file = os.path.join(
                 self.cfg["output_path"],
                 self.run_id
-                + "_model_georeferenced."
+                + "_model-georeferenced."
                 + self.cfg["buildModel"]["export_extension"],
             )
             self.doc.chunk.exportModel(path=output_file)
@@ -920,7 +920,7 @@ class MetashapeWorkflow:
             if self.cfg["buildModel"]["export_transform"]:
                 output_file = os.path.join(
                     self.cfg["output_path"],
-                    self.run_id + "_local_model_transform.csv",
+                    self.run_id + "_local-model-transform.csv",
                 )
 
                 with open(output_file, "w") as fileh:
@@ -936,7 +936,7 @@ class MetashapeWorkflow:
             output_file = os.path.join(
                 self.cfg["output_path"],
                 self.run_id
-                + "_model_local."
+                + "_model-local."
                 + self.cfg["buildModel"]["export_extension"],
             )
             self.doc.chunk.exportModel(path=output_file)
@@ -1150,7 +1150,7 @@ class MetashapeWorkflow:
         ## Export orthomosaic
         if self.cfg["buildOrthomosaic"]["export"]:
             output_file = os.path.join(
-                self.cfg["output_path"], self.run_id + "_ortho_" + file_ending + ".tif"
+                self.cfg["output_path"], self.run_id + "_ortho-" + file_ending + ".tif"
             )
 
             compression = Metashape.ImageCompression()
