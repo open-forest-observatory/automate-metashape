@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 # File for running a metashape workflow
 
-# Derek Young and Alex Mandel
-# University of California, Davis
-# 2021
-
 import argparse
 import sys
 from pathlib import Path
