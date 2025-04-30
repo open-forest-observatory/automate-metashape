@@ -14,9 +14,10 @@ RUN echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install libraries/dependencies
+# Install libraries/dependencies.
+# For GUI probably also need libglx-mesa0
 RUN apt-get update &&            \
-      apt-get install libglib2.0-dev libglib2.0-0 libgl1 -y \
+      apt-get install libglib2.0-dev libglib2.0-0 libgl1 libglu1-mesa -y \
       libcurl4 \
       wget && \
       rm -rf /var/lib/apt/lists/*
