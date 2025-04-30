@@ -16,7 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install libraries/dependencies
 RUN apt-get update &&            \
-      apt-get install libglib2.0-dev libglib2.0-0 -y \
+      apt-get install libglib2.0-dev libglib2.0-0 glu -y \
       libcurl4 \
       wget && \
       rm -rf /var/lib/apt/lists/*
