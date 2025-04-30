@@ -1,5 +1,5 @@
 # Use a GPU-enabled base image
-FROM nvcr.io/nvidia/cudagl:11.4.1-runtime-ubuntu20.04
+FROM nvcr.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04
 
 USER root
 
