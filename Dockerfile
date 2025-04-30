@@ -16,7 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install libraries/dependencies
 RUN apt-get update &&            \
-      apt-get install -y libgl1-mesa-glx libglu1 \
+      apt-get install -y \
       libcurl4 \
       wget && \
       rm -rf /var/lib/apt/lists/*
