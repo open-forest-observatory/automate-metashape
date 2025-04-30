@@ -1,16 +1,16 @@
 # Use a GPU-enabled base image
 FROM nvcr.io/nvidia/cudagl:11.4.1-runtime-ubuntu20.04
 
-# USER root
+USER root
 
 # Adapted from https://github.com/jeffgillan/agisoft_metashape/blob/main/Dockerfile
 LABEL authors="David Russell"
 LABEL maintainer="djrussell@ucdavis"
 
-# # Create user account with password-less sudo abilities
-# RUN useradd -s /bin/bash -g 100 -G sudo -m user
-# RUN /usr/bin/printf '%s\n%s\n' 'password' 'password'| passwd user
-# RUN echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# Create user account with password-less sudo abilities
+RUN useradd -s /bin/bash -g 100 -G sudo -m user
+RUN /usr/bin/printf '%s\n%s\n' 'password' 'password'| passwd user
+RUN echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 ENV DEBIAN_FRONTEND=noninteractive
 
