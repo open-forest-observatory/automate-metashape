@@ -23,8 +23,8 @@ RUN apt-get update &&            \
 
 # Install the command line python module. Note that this does not install the GUI
 RUN apt-get update -y && apt-get install -y python3-pip
-RUN cd /opt && wget https://download.agisoft.com/Metashape-2.1.3-cp37.cp38.cp39.cp310.cp311-abi3-linux_x86_64.whl && \
-      pip3 install Metashape-2.1.3-cp37.cp38.cp39.cp310.cp311-abi3-linux_x86_64.whl && pip3 install PyYAML && \
+RUN cd /opt && wget https://download.agisoft.com/Metashape-2.2.0-cp37.cp38.cp39.cp310.cp311-abi3-linux_x86_64.whl && \
+      pip3 install Metashape-2.2.0-cp37.cp38.cp39.cp310.cp311-abi3-linux_x86_64.whl && pip3 install PyYAML && \
       rm -rf *.whl
 
 # Set the container workdir
