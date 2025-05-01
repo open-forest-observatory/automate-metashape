@@ -1,5 +1,5 @@
-# Use a GPU-enabled base image
-FROM nvcr.io/nvidia/cuda:12.8.1-runtime-ubuntu22.04
+# Use a GPU-enabled base image for Ubuntu 24.04
+FROM nvcr.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04
 
 USER root
 
@@ -14,19 +14,24 @@ RUN echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install libraries/dependencies.
-# For GUI probably also need libglx-mesa0
+# Install basic dependencies
 RUN apt-get update &&            \
-      apt-get install libglib2.0-dev libglib2.0-0 libgl1 libglu1-mesa -y \
-      libcurl4 \
-      wget && \
-      rm -rf /var/lib/apt/lists/*
+    apt-get install -y libglib2.0-dev libglib2.0-0 libgl1 libglu1-mesa libcurl4 wget python3-venv python3-full && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install the command line python module. Note that this does not install the GUI
-RUN apt-get update -y && apt-get install -y python3-pip
-RUN cd /opt && wget https://download.agisoft.com/Metashape-2.2.0-cp37.cp38.cp39.cp310.cp311-abi3-linux_x86_64.whl && \
-      pip3 install Metashape-2.2.0-cp37.cp38.cp39.cp310.cp311-abi3-linux_x86_64.whl && pip3 install PyYAML && \
-      rm -rf *.whl
+# Download the Metashape .whl file
+RUN cd /opt && wget https://download.agisoft.com/Metashape-2.2.0-cp37.cp38.cp39.cp310.cp311-abi3-linux_x86_64.whl
+
+# Create a virtual environment for Metashape
+RUN python3 -m venv /opt/venv_metashape
+
+# Activate the virtual environment and install Metashape and PyYAML
+RUN /opt/venv_metashape/bin/pip install --upgrade pip
+RUN /opt/venv_metashape/bin/pip install /opt/Metashape-2.2.0-cp37.cp38.cp39.cp310.cp311-abi3-linux_x86_64.whl
+RUN /opt/venv_metashape/bin/pip install PyYAML
+
+# Remove the downloaded wheel file
+RUN rm /opt/*.whl
 
 # Set the container workdir
 WORKDIR /app
@@ -34,5 +39,6 @@ WORKDIR /app
 COPY . /app
 
 # Set the default command and default arguments
+ENV PATH="/opt/venv_metashape/bin:${PATH}"
 ENTRYPOINT ["python3", "/app/python/metashape_workflow.py"]
 CMD ["/data/config.yml"]
