@@ -16,7 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install basic dependencies
 RUN apt-get update &&            \
-    apt-get install -y libglib2.0-dev libglib2.0-0 libgl1 libglu1-mesa libcurl4 wget python3-venv python3-full && \
+    apt-get install -y libglib2.0-dev libglib2.0-0 libgl1 libglu1-mesa libcurl4 wget python3-venv python3-full libgomp1 && \
     rm -rf /var/lib/apt/lists/*
 
 # Download the Metashape .whl file
