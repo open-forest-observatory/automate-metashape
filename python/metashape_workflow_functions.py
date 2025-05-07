@@ -73,8 +73,6 @@ def get_camera(chunk, label):
     return None
 
 
-# Set the log file name-value separator
-# Chose ; as : is in timestamps
 # TODO: Consider moving log to json/yaml formatting using a dict
 
 
@@ -208,10 +206,7 @@ class MetashapeWorkflow:
             )  # extracts file base name from path
             run_name, _ = os.path.splitext(file_basename)  # removes extension
 
-        ## Project file example to make: "projectID_YYYYMMDDtHHMM-jobID.psx"
-        timestamp = stamp_time()
-        self.run_id = "_".join([run_name, timestamp])
-        # TODO: If there is a slurm JobID, append to time (separated with "-", not "_"). This will keep jobs initiated in the same minute distinct
+        self.run_id = run_name
 
         project_file = os.path.join(
             self.cfg["project_path"], ".".join([self.run_id, "psx"])
