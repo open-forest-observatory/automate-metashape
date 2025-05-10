@@ -4,6 +4,7 @@ import glob
 import os
 import platform
 import re
+
 # Import the fuctionality we need to make time stamps to measure performance
 import time
 
@@ -840,7 +841,10 @@ class MetashapeWorkflow:
 
         if self.cfg["buildPointCloud"]["export"]:
 
-            if self.cfg["buildPointCloud"]["export_format"] == Metashape.PointCloudFormatCOPC:
+            if (
+                self.cfg["buildPointCloud"]["export_format"]
+                == Metashape.PointCloudFormatCOPC
+            ):
                 export_file_ending = "_points-copc.laz"
             else:
                 export_file_ending = "_points.laz"
