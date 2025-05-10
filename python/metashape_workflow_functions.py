@@ -841,8 +841,15 @@ class MetashapeWorkflow:
 
         if self.cfg["buildPointCloud"]["export"]:
 
+            if self.cfg["buildPointCloud"]["export_format"] == Metashape.PointCloudFormatCOPC:
+                export_file_ending = "_points-copc.laz"
+            else:
+                export_file_ending = "_points.laz"
+
+            # Export the point cloud
+
             output_file = os.path.join(
-                self.cfg["output_path"], self.run_id + "_points.laz"
+                self.cfg["output_path"], self.run_id + export_file_ending
             )
 
             if self.cfg["buildPointCloud"]["classes"] == "ALL":
@@ -850,7 +857,7 @@ class MetashapeWorkflow:
                 self.doc.chunk.exportPointCloud(
                     path=output_file,
                     source_data=Metashape.PointCloudData,
-                    format=Metashape.PointCloudFormatLAS,
+                    format=self.cfg["buildPointCloud"]["export_format"],
                     crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
                     subdivide_task=self.cfg["subdivide_task"],
                 )
