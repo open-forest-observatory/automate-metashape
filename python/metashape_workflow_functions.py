@@ -4,6 +4,7 @@ import glob
 import os
 import platform
 import re
+import json
 
 # Import the fuctionality we need to make time stamps to measure performance
 import time
@@ -1266,8 +1267,20 @@ class MetashapeWorkflow:
 
         return True
 
-def get_paths_written(self):
-        """
-        Returns a dictionary of paths written by the workflow
-        """
+    def get_paths_written(self):
         return self.written_paths
+
+    def dump_paths_to_json(self, output_file=None):
+        """
+        Dump the written paths to a JSON file.
+        
+        Args:
+            output_file (str, optional): Path to save the JSON file. If None, will save in output_path with run_id.
+        """
+        if output_file is None:
+            output_file = os.path.join(self.cfg["output_path"], self.run_id + "_paths.json")
+        
+        with open(output_file, 'w') as f:
+            json.dump(self.written_paths, f, indent=4)
+        
+        return output_file

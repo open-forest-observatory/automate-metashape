@@ -78,3 +78,5 @@ meta = MetashapeWorkflow(config_file=args.config_file, override_dict=args.__dict
 
 ### Run the Metashape workflow
 meta.run()
+
+meta.dump_paths_to_json()
