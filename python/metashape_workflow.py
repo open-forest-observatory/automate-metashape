@@ -8,6 +8,7 @@
 import argparse
 import sys
 from pathlib import Path
+import json
 
 # ---- If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
 
