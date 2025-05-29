@@ -78,7 +78,7 @@ Here is a breakdown of the command:
 
 If your config.yaml is located anywhere other than `/data/config.yaml` (or the file is named differently), you can specify its location following one additional command line argument `--config_file` at the end of the `docker run` command. For example, if it is located in the container at `/data/configs/project_10/config.yml` (meanining, in the example above, it is located on your local computer at `~/drone_data/configs/project_10/config.yml`), just append `--config_file /data/configs/project_10/config.yml` to the `docker run` command above. So the command above would look like:
 
-`docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape /data/configs/project_10/config.yml`
+`docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape --config_file /data/configs/project_10/config.yml`
 
 ### Outputs
 
