@@ -72,12 +72,6 @@ if __name__ == "__main__":
     # Get the non-None overrides provided on the command line
     override_dict = {k: v for k, v in args.__dict__.items() if v is not None}
 
-    # Since the CLI parser has nargs="+" for the photo_path, it will always be a list of values
-    # even if only one is provided. To match the format of the yaml parser, if only one value
-    # is provided, transform from a list of length one to just the value in that list
-    if "photo_path" in override_dict and len(override_dict["photo_path"]) == 1:
-        override_dict["photo_path"] = override_dict["photo_path"][0]
-
     # Initialize the workflow instance with the configuration file and the dictionary representation of
     # CLI overrides
     meta = MetashapeWorkflow(config_file=args.config_file, override_dict=override_dict)
