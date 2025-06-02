@@ -66,11 +66,15 @@ def parse_args():
     return args
 
 
-args = parse_args()
+if __name__ == "__main__":
+    args = parse_args()
 
-# Initialize the workflow instance with the configuration file and the dictionary representation of
-# CLI overrides
-meta = MetashapeWorkflow(config_file=args.config_file, override_dict=args.__dict__)
+    # Get the non-None overrides provided on the command line
+    override_dict = {k: v for k, v in args.__dict__.items() if v is not None}
 
-### Run the Metashape workflow
-meta.run()
+    # Initialize the workflow instance with the configuration file and the dictionary representation of
+    # CLI overrides
+    meta = MetashapeWorkflow(config_file=args.config_file, override_dict=override_dict)
+
+    ### Run the Metashape workflow
+    meta.run()
