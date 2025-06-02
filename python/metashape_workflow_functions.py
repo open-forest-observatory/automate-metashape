@@ -5,6 +5,7 @@ import glob
 import os
 import platform
 import re
+
 # Import the fuctionality we need to make time stamps to measure performance
 import time
 from pathlib import Path
@@ -28,6 +29,7 @@ def recursive_update(d, u):
         else:
             d[k] = v
     return d
+
 
 def make_derived_yaml(input_path: str, output_path: str, override_options: dict):
     """Create a new config file by reading one file and updating specific values
@@ -54,6 +56,7 @@ def make_derived_yaml(input_path: str, output_path: str, override_options: dict)
     with open(output_path, "w") as ymlfile:
         # Preserve the initial order of keys for readability
         yaml.dump(updated_config, ymlfile, sort_keys=False)
+
 
 def convert_objects(a_dict):
     """
