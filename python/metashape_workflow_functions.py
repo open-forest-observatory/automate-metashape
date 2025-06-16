@@ -2,11 +2,10 @@
 import collections
 import datetime
 import glob
+import json
 import os
 import platform
 import re
-import json
-
 # Import the fuctionality we need to make time stamps to measure performance
 import time
 from pathlib import Path
