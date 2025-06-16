@@ -1266,49 +1266,10 @@ class MetashapeWorkflow:
 
         return True
 
-    def get_written_paths(self):
+    def get_written_paths(self, as_json: bool = False):
+        # Convert to a json string representation if requested
+        if as_json:
+            json_str = json.dumps(self.written_paths)
+            return json_str
+        # Otherwise just return the dictionary representation
         return self.written_paths
-
-    def log(self, message, to_stderr=True):
-        """
-        Log a message to either stdout or stderr.
-        """
-        import sys
-        if to_stderr:
-            print(message, file=sys.stderr)
-        else:
-            print(message, file=sys.stdout)
-
-    def dump_paths_to_json(self, output_file=None):
-        """
-        Saves the paths dictionary to a JSON file and prints the JSON to stdout for immediate consumption by other workflow steps.
-        Any logging messages are written to stderr.
-        """
-        import sys
-        from contextlib import redirect_stdout, redirect_stderr
-        import io
-
-        # Save the paths dictionary to a JSON file
-        if output_file is None:
-            output_file = os.path.join(self.cfg["output_path"], self.run_id + "_paths.json")
-        
-        # Create a string buffer to capture stdout
-        stdout_buffer = io.StringIO()
-        
-        # Redirect stdout to our buffer while keeping stderr as is
-        with redirect_stdout(stdout_buffer):
-            # Write the JSON to the file
-            with open(output_file, 'w') as f:
-                json.dump(self.written_paths, f, indent=4)
-            
-            # Print the JSON string to stdout for use in subsequent steps
-            json_str = json.dumps(self.written_paths, indent=4)
-            print(json_str)
-        
-        # Log the file path to stderr
-        self.log(f"Paths saved to: {output_file}")
-        
-        # Get the captured stdout content
-        stdout_content = stdout_buffer.getvalue()
-        
-        return stdout_content

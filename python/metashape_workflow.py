@@ -91,4 +91,4 @@ with contextlib.redirect_stdout(sys.stderr):
         )
 
 # Log where the data files were written as json dict
-print(meta.get_written_paths())
+print(meta.get_written_paths(as_json=True))
