@@ -6,6 +6,7 @@ import json
 import os
 import platform
 import re
+
 # Import the fuctionality we need to make time stamps to measure performance
 import time
 from pathlib import Path
@@ -137,7 +138,7 @@ class MetashapeWorkflow:
         self.log_file = None
         self.run_id = None
         self.cfg = None
-        #track the written paths
+        # track the written paths
         self.written_paths = {}
         # Parse the yaml confif
         self.read_yaml()
@@ -595,7 +596,7 @@ class MetashapeWorkflow:
         )
         # Defaults to xml format, which is the only one we've used so far
         self.doc.chunk.exportCameras(path=output_file)
-        self.written_paths["camera_export"] = output_file #export
+        self.written_paths["camera_export"] = output_file  # export
 
     def align_photos(self):
         """
@@ -906,7 +907,7 @@ class MetashapeWorkflow:
                     crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
                     subdivide_task=self.cfg["subdivide_task"],
                 )
-                self.written_paths["point_cloud_all_classes"] = output_file #export
+                self.written_paths["point_cloud_all_classes"] = output_file  # export
             else:
                 # call with classes argument
                 self.doc.chunk.exportPointCloud(
@@ -914,10 +915,10 @@ class MetashapeWorkflow:
                     source_data=Metashape.PointCloudData,
                     format=Metashape.PointCloudFormatLAZ,
                     crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
-                    classes=self.cfg["buildPointCloud"]["classes"], 
+                    classes=self.cfg["buildPointCloud"]["classes"],
                     subdivide_task=self.cfg["subdivide_task"],
                 )
-                self.written_paths["point_cloud_subset_classes"] = output_file #export
+                self.written_paths["point_cloud_subset_classes"] = output_file  # export
 
         return True
 
@@ -955,7 +956,7 @@ class MetashapeWorkflow:
                 + self.cfg["buildModel"]["export_extension"],
             )
             self.doc.chunk.exportModel(path=output_file)
-#export
+        # export
         if self.cfg["buildModel"]["export_local"]:
             # Wipe the CRS and transform so it aligns with the cameras
             # The approach was recommended here: https://www.agisoft.com/forum/index.php?topic=8210.0
@@ -989,7 +990,7 @@ class MetashapeWorkflow:
             )
             self.doc.chunk.exportModel(path=output_file)
 
-            self.written_paths["model_local"] = output_file #export
+            self.written_paths["model_local"] = output_file  # export
 
             # Reset CRS and transform
             self.doc.chunk.crs = old_crs
@@ -1052,8 +1053,10 @@ class MetashapeWorkflow:
                         source_data=Metashape.ElevationData,
                         image_compression=compression,
                     )
-                    self.written_paths[f"DEM_{self.cfg['buildDem']['surface'][0]}"] = output_file #export
-                #log to output file to variable
+                    self.written_paths[f"DEM_{self.cfg['buildDem']['surface'][0]}"] = (
+                        output_file  # export
+                    )
+                # log to output file to variable
             if "DTM-ptcloud" in self.cfg["buildDem"]["surface"]:
 
                 start_time = time.time()
@@ -1219,7 +1222,7 @@ class MetashapeWorkflow:
                 source_data=Metashape.OrthomosaicData,
                 image_compression=compression,
             )
-            self.written_paths["ortho_" +file_ending] = output_file #export
+            self.written_paths["ortho_" + file_ending] = output_file  # export
 
         if self.cfg["buildOrthomosaic"]["remove_after_export"]:
             self.doc.chunk.remove(self.doc.chunk.orthomosaics)
@@ -1282,7 +1285,7 @@ class MetashapeWorkflow:
         output_file = os.path.join(self.cfg["output_path"], self.run_id + "_report.pdf")
 
         self.doc.chunk.exportReport(path=output_file)
-        self.written_paths["report"] = output_file #export
+        self.written_paths["report"] = output_file  # export
 
         return True
 
