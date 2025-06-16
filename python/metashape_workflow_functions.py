@@ -1,4 +1,5 @@
 #### Import libraries
+import collections
 import datetime
 import glob
 import os
@@ -8,6 +9,7 @@ import json
 
 # Import the fuctionality we need to make time stamps to measure performance
 import time
+from pathlib import Path
 
 ### Import the Metashape functionality
 import Metashape
@@ -15,6 +17,48 @@ import yaml
 
 
 #### Helper functions
+def recursive_update(d, u):
+    """ "
+    Recursively update dictionary `d` with any keys from `u`. New keys contained in `u` but not in `d`
+    will be created.
+
+    Taken from: https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
+    """
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = recursive_update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
+
+
+def make_derived_yaml(input_path: str, output_path: str, override_options: dict):
+    """Create a new config file by reading one file and updating specific values
+
+    Args:
+        input_path (str):
+            The path to the yaml config file to load from
+        output_path (str):
+            The path to the yaml config file to write out. Containing folder will be created if needed.
+        override_options (dict):
+            A potentially-nested dictionary
+    """
+    # Read the input config
+    with open(input_path, "r") as ymlfile:
+        base_cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
+
+    # Update the values in the base config
+    updated_config = recursive_update(base_cfg, override_options)
+
+    # Create the output folder if needed
+    Path(output_path).parent.mkdir(exist_ok=True, parents=True)
+
+    # Write out the updated config
+    with open(output_path, "w") as ymlfile:
+        # Preserve the initial order of keys for readability
+        yaml.dump(updated_config, ymlfile, sort_keys=False)
+
+
 def convert_objects(a_dict):
     """
     Convert strings that refer to metashape objects (e.g. "Metashape.MoasicBlending") into metashape objects
@@ -74,8 +118,6 @@ def get_camera(chunk, label):
     return None
 
 
-# Set the log file name-value separator
-# Chose ; as : is in timestamps
 # TODO: Consider moving log to json/yaml formatting using a dict
 
 
@@ -110,17 +152,12 @@ class MetashapeWorkflow:
             self.cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
 
     def override_config(self, override_dict):
-        # Remove any override options that are None
-        override_dict = {k: v for k, v in override_dict.items() if v is not None}
-
-        # Since the CLI parser has nargs="+" for the photo_path, it will always be a list of values
-        # even if only one is provided. To match the format of the yaml parser, if only one value
-        # is provided, transform from a list of length one to just the value in that list
-        if "photo_path" in override_dict and len(override_dict["photo_path"]) == 1:
-            override_dict["photo_path"] = override_dict["photo_path"][0]
-
+        """
+        Update self.cfg using a potentially-nested dictionary of override values, in the same
+        stucture as the yaml config file.
+        """
         # Update any of the fields in the override dict to that value
-        self.cfg.update(override_dict)
+        self.cfg = recursive_update(self.cfg, override_dict)
 
     #### Functions for each major step in Metashape
 
@@ -211,10 +248,7 @@ class MetashapeWorkflow:
             )  # extracts file base name from path
             run_name, _ = os.path.splitext(file_basename)  # removes extension
 
-        ## Project file example to make: "projectID_YYYYMMDDtHHMM-jobID.psx"
-        timestamp = stamp_time()
-        self.run_id = "_".join([run_name, timestamp])
-        # TODO: If there is a slurm JobID, append to time (separated with "-", not "_"). This will keep jobs initiated in the same minute distinct
+        self.run_id = run_name
 
         project_file = os.path.join(
             self.cfg["project_path"], ".".join([self.run_id, "psx"])
@@ -850,8 +884,18 @@ class MetashapeWorkflow:
 
         if self.cfg["buildPointCloud"]["export"]:
 
+            if (
+                self.cfg["buildPointCloud"]["export_format"]
+                == Metashape.PointCloudFormatCOPC
+            ):
+                export_file_ending = "_points-copc.laz"
+            else:
+                export_file_ending = "_points.laz"
+
+            # Export the point cloud
+
             output_file = os.path.join(
-                self.cfg["output_path"], self.run_id + "_points.laz"
+                self.cfg["output_path"], self.run_id + export_file_ending
             )
 
             if self.cfg["buildPointCloud"]["classes"] == "ALL":
@@ -859,7 +903,7 @@ class MetashapeWorkflow:
                 self.doc.chunk.exportPointCloud(
                     path=output_file,
                     source_data=Metashape.PointCloudData,
-                    format=Metashape.PointCloudFormatLAS,
+                    format=self.cfg["buildPointCloud"]["export_format"],
                     crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
                     subdivide_task=self.cfg["subdivide_task"],
                 )
@@ -908,7 +952,7 @@ class MetashapeWorkflow:
             output_file = os.path.join(
                 self.cfg["output_path"],
                 self.run_id
-                + "_model_georeferenced."
+                + "_model-georeferenced."
                 + self.cfg["buildModel"]["export_extension"],
             )
             self.doc.chunk.exportModel(path=output_file)
@@ -926,7 +970,7 @@ class MetashapeWorkflow:
             if self.cfg["buildModel"]["export_transform"]:
                 output_file = os.path.join(
                     self.cfg["output_path"],
-                    self.run_id + "_local_model_transform.csv",
+                    self.run_id + "_local-model-transform.csv",
                 )
 
                 with open(output_file, "w") as fileh:
@@ -941,7 +985,7 @@ class MetashapeWorkflow:
             output_file = os.path.join(
                 self.cfg["output_path"],
                 self.run_id
-                + "_model_local."
+                + "_model-local."
                 + self.cfg["buildModel"]["export_extension"],
             )
             self.doc.chunk.exportModel(path=output_file)
@@ -1158,7 +1202,7 @@ class MetashapeWorkflow:
         ## Export orthomosaic
         if self.cfg["buildOrthomosaic"]["export"]:
             output_file = os.path.join(
-                self.cfg["output_path"], self.run_id + "_ortho_" + file_ending + ".tif"
+                self.cfg["output_path"], self.run_id + "_ortho-" + file_ending + ".tif"
             )
 
             compression = Metashape.ImageCompression()

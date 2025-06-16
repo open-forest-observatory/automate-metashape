@@ -38,9 +38,9 @@ The images to be processed should all be in one folder (and optionally organized
 
 #### Workflow configuration file
 
-An example configuration file is provided in this repository at `config/config-example.yml`. Please download this file to your local machine and rename it `config.yml`. By default, the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`, but this can be overridden by passing a different location as a final (optional) command line argument to the `docker run` command (see below). In a case where the local folder to be mounted is `~/drone_data/`, then for the config file to be mounted in the Docker container at `/data/config.yaml`, it must be located on the local computer at `~/drone_data/config.yaml`.
+An example configuration file is provided in this repository at `config/config-example.yml`. Please download this file to your local machine and rename it `config.yml`. By default (but see below), the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`. So in a case where the local folder to be mounted is `~/drone_data/`, then for the config file to be mounted in the Docker container at `/data/config.yaml`, it must be located on the local computer at `~/drone_data/config.yaml`. However, the config file location can be overridden by passing a different location following an optional command line argument `--config_file` of the `docker run` command (see below).
 
-Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Within this config file, all paths will be relative to the file structure of the docker container (beginning with `/data/`). In the config.yml, at a minimum the following entries should be updated:
+Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Within this config file, all paths will be relative to the file structure of the docker container (beginning with `/data/`). In the config.yaml, at a minimum the following entries should be updated:
 
 * The value for photo_path should be updated to /data/{path_to_images_folder_within_mounted_folder}
 * The value for output_path should be updated to /data/{path_to_desired_ouputs_folder_within_mounted_folder} (can be any location you want; will be created if it does not exist)
@@ -76,9 +76,9 @@ Here is a breakdown of the command:
 
 #### Custom location of the Metashape configuration file
 
-If your config.yaml is located anywhere other than `/data/config.yaml` (or the file is named differently), you can specify its location as one additional command line argument at the end of the `docker run` command. For example, if it is located at `/data/configs/project_10/config.yml` (meanining, in the example above, it is located on your local computer at `~/drone_data/configs/project_10/config.yml`), just append `/data/configs/project_10/config.yml` to the `docker run` command above. So the command above would look like:
+If your config.yaml is located anywhere other than `/data/config.yaml` (or the file is named differently), you can specify its location following one additional command line argument `--config_file` at the end of the `docker run` command. For example, if it is located in the container at `/data/configs/project_10/config.yml` (meanining, in the example above, it is located on your local computer at `~/drone_data/configs/project_10/config.yml`), just append `--config_file /data/configs/project_10/config.yml` to the `docker run` command above. So the command above would look like:
 
-`docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape /data/configs/project_10/config.yml`
+`docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape --config_file /data/configs/project_10/config.yml`
 
 ### Outputs
 

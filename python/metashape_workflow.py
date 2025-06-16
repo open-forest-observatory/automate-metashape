@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 # File for running a metashape workflow
 
-# Derek Young and Alex Mandel
-# University of California, Davis
-# 2021
-
 import argparse
 import sys
 from pathlib import Path
@@ -71,26 +67,27 @@ def parse_args():
     return args
 
 
-args = parse_args()
+if __name__ == "__main__":
+    args = parse_args()
 
-# Initialize the workflow instance with the configuration file and the dictionary representation of
-# CLI overrides
-meta = MetashapeWorkflow(config_file=args.config_file, override_dict=args.__dict__)
+    # Initialize the workflow instance with the configuration file and the dictionary representation of
+    # CLI overrides
+    meta = MetashapeWorkflow(config_file=args.config_file, override_dict=args.__dict__)
 
-### Run the Metashape workflow
-# The argo workflow requires that all stdout is json formatted. Since this isn't the case for the
-# metashape logs, we redirect to standard error.
-with contextlib.redirect_stdout(sys.stderr):
-    # Actually run the processing step
-    try:
-        meta.run()
-    except Exception as e:
-        # TODO make this error message more descriptive
-        print(
-            "Metashape errored while processing, the completed paths will still be reported. "
-            + "The error was: \n"
-            + e.__str__()
-        )
+    ### Run the Metashape workflow
+    # The argo workflow requires that all stdout is json formatted. Since this isn't the case for the
+    # metashape logs, we redirect to standard error.
+    with contextlib.redirect_stdout(sys.stderr):
+        # Actually run the processing step
+        try:
+            meta.run()
+        except Exception as e:
+            # TODO make this error message more descriptive
+            print(
+                "Metashape errored while processing, the completed paths will still be reported. "
+                + "The error was: \n"
+                + e.__str__()
+            )
 
-# Log where the data files were written as json dict
-print(meta.get_written_paths(as_json=True))
+    # Log where the data files were written as json dict
+    print(meta.get_written_paths(as_json=True))
