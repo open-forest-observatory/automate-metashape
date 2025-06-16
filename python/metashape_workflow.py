@@ -4,6 +4,7 @@
 import argparse
 import sys
 from pathlib import Path
+import contextlib
 
 # ---- If this is a first run from the standalone python module, need to copy the license file from the full metashape install: from python import metashape_license_setup
 
@@ -77,4 +78,19 @@ if __name__ == "__main__":
     meta = MetashapeWorkflow(config_file=args.config_file, override_dict=override_dict)
 
     ### Run the Metashape workflow
-    meta.run()
+    # The argo workflow requires that all stdout is json formatted. Since this isn't the case for the
+    # metashape logs, we redirect to standard error.
+    with contextlib.redirect_stdout(sys.stderr):
+        # Actually run the processing step
+        try:
+            meta.run()
+        except Exception as e:
+            # TODO make this error message more descriptive
+            print(
+                "Metashape errored while processing, the completed paths will still be reported. "
+                + "The error was: \n"
+                + e.__str__()
+            )
+
+    # Log where the data files were written as json dict
+    print(meta.get_written_paths(as_json=True))
