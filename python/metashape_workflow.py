@@ -84,10 +84,12 @@ with contextlib.redirect_stdout(sys.stderr):
     # Actually run the processing step
     try:
         meta.run()
-    except Exception:
+    except Exception as e:
         # TODO make this error message more descriptive
         print(
-            "Metashape errored while processing, the completed paths will still be reported"
+            "Metashape errored while processing, the completed paths will still be reported. "
+            + "The error was: \n"
+            + e.__str__()
         )
 
 # Log where the data files were written as json dict
