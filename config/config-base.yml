@@ -129,12 +129,12 @@ classifyGroundPoints: # (Metashape: classifyGroundPoints) # classify points, IF 
     max_distance: 1.0
     cell_size: 50.0
 
-buildModel:
+buildMesh:
     enabled: True
     face_count: "Metashape.MediumFaceCount" # How many faces to use, Metashape.LowFaceCount, MediumFaceCount, HighFaceCount, CustomFaceCount
     face_count_custom: 100000 # Only used if custom number of faces set (above).
-    export: True # Export the georeferenced model.
-    export_extension: "ply" # Can be any supported 3D model extension
+    export: True # Export the georeferenced mesh.
+    export_extension: "ply" # Can be any supported 3D mesh extension
 
 buildDem: # (Metashape: buildDem, (optionally) classifyGroundPoints, exportRaster)
     enabled: True

@@ -206,8 +206,8 @@ class MetashapeWorkflow:
         if self.cfg["buildPointCloud"]["enabled"]:
             self.build_point_cloud()
 
-        if self.cfg["buildModel"]["enabled"]:
-            self.build_model()
+        if self.cfg["buildMesh"]["enabled"]:
+            self.build_mesh()
 
         # For this step, the check for whether it is enabled in the config happens inside the function, because there are two steps (DEM and ortho), each of which can be enabled independently
         self.build_dem_orthomosaic()
@@ -922,9 +922,9 @@ class MetashapeWorkflow:
 
         return True
 
-    def build_model(self):
+    def build_mesh(self):
         """
-        Build and export the model
+        Build and export the mesh
         """
 
         start_time = time.time()
@@ -932,8 +932,8 @@ class MetashapeWorkflow:
         self.doc.chunk.buildModel(
             surface_type=Metashape.Arbitrary,
             interpolation=Metashape.EnabledInterpolation,
-            face_count=self.cfg["buildModel"]["face_count"],
-            face_count_custom=self.cfg["buildModel"][
+            face_count=self.cfg["buildMesh"]["face_count"],
+            face_count_custom=self.cfg["buildMesh"][
                 "face_count_custom"
             ],  # Only used if face_count is custom
             source_data=Metashape.DepthMapsData,
@@ -943,17 +943,15 @@ class MetashapeWorkflow:
 
         # record results to file
         with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Build Model", time_taken]) + "\n")
+            file.write(MetashapeWorkflow.sep.join(["Build Mesh", time_taken]) + "\n")
 
-        # Save the model
+        # Save the mesh
         self.doc.save()
 
-        if self.cfg["buildModel"]["export"]:
+        if self.cfg["buildMesh"]["export"]:
             output_file = os.path.join(
                 self.cfg["output_path"],
-                self.run_id
-                + "_model."
-                + self.cfg["buildModel"]["export_extension"],
+                self.run_id + "_mesh." + self.cfg["buildMesh"]["export_extension"],
             )
             # Export the georeferenced mesh in the project CRS. The metadata file is the only thing
             # that encodes the CRS.
@@ -961,7 +959,7 @@ class MetashapeWorkflow:
             self.doc.chunk.exportModel(
                 path=output_file,
                 crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
-                save_metadata_xml=True
+                save_metadata_xml=True,
             )
 
         return True
@@ -1229,7 +1227,6 @@ class MetashapeWorkflow:
             file.write(
                 MetashapeWorkflow.sep.join(["Add secondary photos", time2]) + "\n"
             )
-
 
         # Align the secondary photos (really, align all photos, but only the secondary photos will be
         # affected because Metashape only matches and aligns photos that were not already
