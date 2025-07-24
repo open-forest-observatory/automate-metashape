@@ -955,7 +955,6 @@ class MetashapeWorkflow:
             )
             # Export the georeferenced mesh in the project CRS. The metadata file is the only thing
             # that encodes the CRS.
-            # TODO This will probably break if there's no georeferencing information in the project
             self.doc.chunk.exportModel(
                 path=output_file,
                 crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
