@@ -206,8 +206,8 @@ class MetashapeWorkflow:
         if self.cfg["buildPointCloud"]["enabled"]:
             self.build_point_cloud()
 
-        if self.cfg["buildModel"]["enabled"]:
-            self.build_model()
+        if self.cfg["buildMesh"]["enabled"]:
+            self.build_mesh()
 
         # For this step, the check for whether it is enabled in the config happens inside the function, because there are two steps (DEM and ortho), each of which can be enabled independently
         self.build_dem_orthomosaic()
@@ -922,9 +922,9 @@ class MetashapeWorkflow:
 
         return True
 
-    def build_model(self):
+    def build_mesh(self):
         """
-        Build and export the model
+        Build and export the mesh
         """
 
         start_time = time.time()
@@ -932,8 +932,8 @@ class MetashapeWorkflow:
         self.doc.chunk.buildModel(
             surface_type=Metashape.Arbitrary,
             interpolation=Metashape.EnabledInterpolation,
-            face_count=self.cfg["buildModel"]["face_count"],
-            face_count_custom=self.cfg["buildModel"][
+            face_count=self.cfg["buildMesh"]["face_count"],
+            face_count_custom=self.cfg["buildMesh"][
                 "face_count_custom"
             ],  # Only used if face_count is custom
             source_data=Metashape.DepthMapsData,
@@ -943,60 +943,23 @@ class MetashapeWorkflow:
 
         # record results to file
         with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Build Model", time_taken]) + "\n")
+            file.write(MetashapeWorkflow.sep.join(["Build Mesh", time_taken]) + "\n")
 
-        # Save the model
+        # Save the mesh
         self.doc.save()
 
-        if self.cfg["buildModel"]["export_georeferenced"]:
+        if self.cfg["buildMesh"]["export"]:
             output_file = os.path.join(
                 self.cfg["output_path"],
-                self.run_id
-                + "_model-georeferenced."
-                + self.cfg["buildModel"]["export_extension"],
+                self.run_id + "_mesh." + self.cfg["buildMesh"]["export_extension"],
             )
-            self.doc.chunk.exportModel(path=output_file)
-        # export
-        if self.cfg["buildModel"]["export_local"]:
-            # Wipe the CRS and transform so it aligns with the cameras
-            # The approach was recommended here: https://www.agisoft.com/forum/index.php?topic=8210.0
-            old_crs = self.doc.chunk.crs
-            old_transform_matrix = self.doc.chunk.transform.matrix
-            # Wipe the transform
-            self.doc.chunk.crs = None
-            self.doc.chunk.transform.matrix = None
-
-            # Export the transform
-            if self.cfg["buildModel"]["export_transform"]:
-                output_file = os.path.join(
-                    self.cfg["output_path"],
-                    self.run_id + "_local-model-transform.csv",
-                )
-
-                with open(output_file, "w") as fileh:
-                    # This is a row-major representation
-                    transform_tuple = tuple(old_transform_matrix)
-                    # Write each row in the the transform
-                    for i in range(4):
-                        fileh.write(
-                            ", ".join(str(transform_tuple[i * 4 : (i + 1) * 4]))
-                        )
-            # Export the model
-            output_file = os.path.join(
-                self.cfg["output_path"],
-                self.run_id
-                + "_model-local."
-                + self.cfg["buildModel"]["export_extension"],
+            # Export the georeferenced mesh in the project CRS. The metadata file is the only thing
+            # that encodes the CRS.
+            self.doc.chunk.exportModel(
+                path=output_file,
+                crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
+                save_metadata_xml=True,
             )
-            self.doc.chunk.exportModel(path=output_file)
-
-            self.written_paths["model_local"] = output_file  # export
-
-            # Reset CRS and transform
-            self.doc.chunk.crs = old_crs
-            self.doc.chunk.transform.matrix = old_transform_matrix
-
-            self.doc.open(self.doc.path)
 
         return True
 
@@ -1264,16 +1227,10 @@ class MetashapeWorkflow:
                 MetashapeWorkflow.sep.join(["Add secondary photos", time2]) + "\n"
             )
 
-        # Save the transform matrix
-        matrix_saved = self.doc.chunk.transform.matrix
-
         # Align the secondary photos (really, align all photos, but only the secondary photos will be
         # affected because Metashape only matches and aligns photos that were not already
         # matched/aligned, assuming keep_keypoints and reset_alignment were set as required).
         self.align_photos()
-
-        # Restore the saved transform matrix
-        self.doc.chunk.transform.matrix = matrix_saved
 
         self.doc.save()
 
