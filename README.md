@@ -56,8 +56,32 @@ All of the parameters defining the Metashape workflow are specified in the confi
 
 An example configuration file is provided in this repo at `config/config-base.yml`. Edit the parameter values to meet your specifications. The file contains comments explaining the purpose of each customizable parameter.  You can directly edit the `config-base.yml` or save a new copy somewhere on the your local computer. You will specify the path of this config.yml in the python run command.(LINK) 
 
-
 Note: Please do not remove or add parameters to the configuration file; adding will have no effect unless the Python code is changed along with the addition, and removing will produce errors.
+
+<br/>
+
+## Native Usage
+
+The general command line call to run the worflow has three components:
+1. Call to Python
+2. Path to metashape workflow Python script (`metashape_workflow.py`)
+3. Path to workflow configuration file (`*.yml`)
+
+For example:
+
+`python {repo_path}/python/metashape_workflow.py {config_path}/{config_file}.yml`
+
+<br/>
+
+#### Workflow outputs
+
+The outputs of the workflow are the following:
+- **Photogrammetry outputs** (e.g., dense point cloud, orthomosaic, digital surface model, and Metashape processing report)
+- **A Metashape project file** (for additional future processing or for inspecting the data via the Metashape GUI)
+- **A processing log** (which records the processing time for each step and the full set of configuration parameters, for reproducibility)
+
+The outputs for a given workflow run are named using the following convention: `{run_name}_{date_and_time}_abc.xyz`. For example: `set14-highQuality_20200118T1022_ortho.tif`. The run name and output directories are specified in the configuration file.
+
 
 
 ## Setup (Docker container)
@@ -130,36 +154,19 @@ If running Docker on Linux without `sudo` (as in this example), your user will n
 
 Note that the owner of the output data will be the `root` user. To set the ownership to your user account, you can run `sudo chown <username>:<username> <file name>` or `sudo chown <username>:<username> -R <folder name>`.
 
-## Usage
-
-### Native install
-
-**Reproducible workflow scripts:** Simply clone this repository to your machine!
-
-The general command line call to run the worflow has three components:
-1. Call to Python
-2. Path to metashape workflow Python script (`metashape_workflow.py`)
-3. Path to workflow configuration file (`*.yml`)
-
-For example:
-
-`python {repo_path}/python/metashape_workflow.py {config_path}/{config_file}.yml`
-
-All processing parameters are specified in the .yml config file. There is an example config file in the repo at `config/example.yml`. Details on the config file are below.
-
-### Docker install
-
-See Docker section above.
 
 
 
-### Workflow configuration ###
 
-All of the parameters defining the Metashape workflow are specified in the configuration file (a [YAML-format](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html) file). This includes directories of input and output files, workflow steps to include, quality settings, and many other parameters.
 
-An example configuration file is provided in this repo at `config/config-example.yml`. The file contains comments explaining the purpose of each customizable parameter. To prepare a customized workflow, copy the `config/config-example.yml` file to a new location, edit the parameter values to meet your specifications, save it, and then run the metashape workflow from the command line as described above, passing it the location of the customized configuration file. Do not remove or add parameters to the configuration file; adding will have no effect unless the Python code is changed along with the addition, and removing will produce errors.
 
-The workflow configuration is saved in a procesing log at the end of a workflow run (see below).
+
+
+
+
+
+
+
 
 #### Batch workflow configuration ####
 
@@ -171,14 +178,7 @@ which takes a data frame of parameter replacements and creates a "derived" confi
 of the data frame, along with a shell script that will call the metashape workflow once for each of
 the resulting config files, in serial.
 
-### Workflow outputs
 
-The outputs of the workflow are the following:
-- **Photogrammetry outputs** (e.g., dense point cloud, orthomosaic, digital surface model, and Metashape processing report)
-- **A Metashape project file** (for additional future processing or for inspecting the data via the Metashape GUI)
-- **A processing log** (which records the processing time for each step and the full set of configuration parameters, for reproducibility)
-
-The outputs for a given workflow run are named using the following convention: `{run_name}_{date_and_time}_abc.xyz`. For example: `set14-highQuality_20200118T1022_ortho.tif`. The run name and output directories are specified in the configuration file.
 
 ### Running workflow batches in serial on a single computer
 
