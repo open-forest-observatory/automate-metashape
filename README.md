@@ -56,7 +56,7 @@ A **sample RGB photo dataset** (which includes GCPs and a USGS DEM) may be [down
 
 All of the parameters defining the Metashape workflow are specified in the configuration file (a [YAML-format](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html) file). This includes directories of input and output files, workflow steps to include, quality settings, and many other parameters.
 
-An example configuration file is provided in this repo at `config/config-base.yml`. Edit the parameter values to meet your specifications. The file contains comments explaining the purpose of each customizable parameter.  You can directly edit the `config-base.yml` or save a new copy somewhere on the your local computer. You will specify the path of this config.yml in the [python run comman](#running-the-workflow) 
+An example configuration file is provided in this repo at `config/config-base.yml`. Edit the parameter values to meet your specifications. The file contains comments explaining the purpose of each customizable parameter.  You can directly edit the `config-base.yml` or save a new copy somewhere on the your local computer. You will specify the path of this config.yml in the [python run command](#running-the-workflow).
 
 Note: Please do not remove or add parameters to the configuration file; adding will have no effect unless the Python code is changed along with the addition, and removing will produce errors.
 
@@ -95,7 +95,7 @@ Docker, a type of software containerization, is an alternative way to run softwa
 
 To run a docker container on your local machine, you do need to install `docker`. You can install and run docker as a command line tool for [linux distributions](https://docs.docker.com/engine/install/) or as a graphical program (i.e, Docker Desktop) for [windows](https://docs.docker.com/desktop/setup/install/windows-install/), [macOS](https://docs.docker.com/desktop/setup/install/mac-install/), or [linux](https://docs.docker.com/desktop/setup/install/linux/). We recommend running docker commands at the terminal. If you are using Docker Desktop, you can still write commands at the terminal while Docker Desktop is open and running.
 
-The `automate-metashape` docker image contains the python libraries needed to run the workflow, while you (the user) need to provide at minimum the **1.** aerial images; **2** a configuration file specifying your choices for processing; **3.** a license to use Metashape; and optionally **4.** [ground control points (GCPs)](https://github.com/open-forest-observatory/automate-metashape?tab=readme-ov-file#preparing-ground-control-points-gcps).   
+The `automate-metashape` docker image contains the python libraries needed to run the workflow, while you (the user) need to provide at minimum the **1.** aerial images; **2** a configuration file specifying your choices for processing; **3.** a license to use Metashape; and optionally **4.** [ground control points (GCPs)](#preparing-ground-control-points-gcps).   
 
 ### User inputs to docker workflow
 
