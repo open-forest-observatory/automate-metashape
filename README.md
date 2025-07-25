@@ -22,7 +22,7 @@ We show you how to run serial batches (on you local machine) and as parallel job
 
 ### Organizing raw imagery (and associated files) for processing
 
-Images should be organized such that there is one root level that contains all the photos from the flight mission to be processed (these photos may optionally be organized within sub-folders), and no other missions. If your workflow is to include the **optional** inputs of _spectral calibration_, _ground control points (GCPs)_, and/or a _USGS DEM_, this root-level folder *must* also contain a corresponding folder for each. For example:
+Images should be organized such that there is one root level that contains all the photos from the flight mission to be processed (these photos may optionally be organized within sub-folders), and no other missions. If your workflow is to include the **optional** inputs of _spectral calibration_, [ground control points (GCPs)](#preparing-ground-control-points-gcps), and/or a _USGS DEM_, this root-level folder *must* also contain a corresponding folder for each. For example:
 
 ```
 mission001_photos
