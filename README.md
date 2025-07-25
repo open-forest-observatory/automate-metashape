@@ -1,12 +1,12 @@
 # Easy, reproducible Metashape workflows
 
-This tool makes it easy to run python-based scripting of full workflows using [Agisoft Metashape](https://www.agisoft.com/) which is a proprietary structure-from-motion photogrammetry software program. It is an industry leader in creating orthomosaics, digital elevation models, and 3D point clouds from overlapping imagery (aerial, drone, or ground-based). Scripting increases the speed of image product creation and makes your workflows fully reproducible and documented. We demonstrate [native installation](#native-installation--setup) as well as a [docker workflow](#docker-container-setup). We show you how to run serial batches (on you local machine) and as parallel jobs on a compute cluster. All of the python code has been written for you. You need to provide **1.** a Metashape license, **2.** your images, and optionally **3.** ground control points.
+This tool makes it easy to run python-based scripting of full workflows using [Agisoft Metashape](https://www.agisoft.com/) which is a proprietary structure-from-motion photogrammetry software program. It is an industry leader in creating orthomosaics, digital elevation models, and 3D point clouds from overlapping imagery (aerial, drone, or ground-based). Scripting increases the speed of image product creation and makes your workflows fully reproducible and documented. We demonstrate [native installation](#native-installation--workflow) as well as a [docker workflow](#docker-container-setup). We show you how to run serial batches (on you local machine) and as parallel jobs on a compute cluster. All of the python code has been written for you. You need to provide **1.** a Metashape license, **2.** your images, and optionally **3.** ground control points.
 
 <br/>
 <br/>
 
 
-## Native Installation & Setup
+## Native Installation Workflow
 
 **Python:** You need Python 3.7-3.11. We recommend the [Anaconda distribution](https://www.anaconda.com/distribution/) because it includes all the required libraries. When installing, if asked whether the installer should initialize Anaconda3, say "yes". Anaconda must be initialized upon install such that `python` can be called from the command line. A way to check is to simply enter `python` at your command prompt and see if the resulting header info includes Anaconda and Python 3. If it doesn't, you may still need to initialize your Conda install. **Alternative option:** If you want a minimal python installation (such as if you're installing on a computing cluster), you can install [miniconda](https://docs.conda.io/en/latest/miniconda.html) instead. After intalling miniconda, you will need to install additional packages required by our scripts (currently only `PyYAML`) using `pip install {package_name}`.
 
@@ -60,7 +60,7 @@ Note: Please do not remove or add parameters to the configuration file; adding w
 
 <br/>
 
-## Native Usage
+### Running the Workflow
 
 The general command line call to run the worflow has three components:
 1. Call to Python
@@ -73,7 +73,7 @@ For example:
 
 <br/>
 
-#### Workflow outputs
+### Workflow outputs
 
 The outputs of the workflow are the following:
 - **Photogrammetry outputs** (e.g., dense point cloud, orthomosaic, digital surface model, and Metashape processing report)
@@ -82,9 +82,12 @@ The outputs of the workflow are the following:
 
 The outputs for a given workflow run are named using the following convention: `{run_name}_{date_and_time}_abc.xyz`. For example: `set14-highQuality_20200118T1022_ortho.tif`. The run name and output directories are specified in the configuration file.
 
+<br/>
+<br/>
+<br/>
+<br/>
 
-
-## Setup (Docker container)
+## Docker Workflow
 
 Docker, a type of software containerization, is an alternative way to run software where you don't need to install software in the traditional sense. Docker packages up the code and all its environment dependencies so the application runs reliably from one computer to another. Background information on docker and software containers can be found [here](https://foss.cyverse.org/07_reproducibility_II/).
 
@@ -92,7 +95,7 @@ To run a docker container on your local machine, you do need to install `docker`
 
 The `automate-metashape` docker image contains the python libraries needed to run the workflow, while you (the user) need to provide at minimum the **1.** aerial images; **2** a configuration file specifying your choices for processing; **3.** a license to use Metashape; and optionally **4.** [ground control points (GCPs)](https://github.com/open-forest-observatory/automate-metashape?tab=readme-ov-file#preparing-ground-control-points-gcps).   
 
-### User inputs to the workflow
+### User inputs to docker workflow
 
 To provide the input data to Metashape, you need to specify a folder from your computer to be mirrored ("mounted") within the Docker container. The files needed to run Metashape (the folder of aerial images, the configuration file, and optionally the GCPs file) must all be in the folder that you mount. The files can be located in any arbitrary directory beneath this folder. For example, if the folder you mount is `~/drone_data` on your local computer, the images could be located at `~/drone_data/projects/project_10/images/` and the config file could be located at `~/drone_data/configs/project_10/config.yml` The folder from your local machine is mounted into the Docker container at the path /data/, so for the example above, the images would be found inside the docker container at the path /data/projects/project_10/images/.
 
