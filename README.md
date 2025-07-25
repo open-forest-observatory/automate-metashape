@@ -2,7 +2,6 @@
 
 This tool makes it easy to run python-based scripting of full workflows using [Agisoft Metashape](https://www.agisoft.com/) which is a proprietary structure-from-motion photogrammetry software program. It is an industry leader in creating orthomosaics, digital elevation models, and 3D point clouds from overlapping imagery (aerial, drone, or ground-based). Scripting increases the speed of image product creation and makes your workflows fully reproducible and documented. We demonstrate [native installation](#native-installation--workflow) as well as a [docker workflow](#docker-container-setup). All of the python code has been written for you. You need to provide **1.** a Metashape license, **2.** your aerial images, and optionally **3.** [ground control points](#preparing-ground-control-points-gcps).
 
-
 We show you how to run serial batches (on you local machine) and as parallel jobs on a compute cluster. 
 <br/>
 <br/>
@@ -57,7 +56,7 @@ A **sample RGB photo dataset** (which includes GCPs and a USGS DEM) may be [down
 
 All of the parameters defining the Metashape workflow are specified in the configuration file (a [YAML-format](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html) file). This includes directories of input and output files, workflow steps to include, quality settings, and many other parameters.
 
-An example configuration file is provided in this repo at `config/config-base.yml`. Edit the parameter values to meet your specifications. The file contains comments explaining the purpose of each customizable parameter.  You can directly edit the `config-base.yml` or save a new copy somewhere on the your local computer. You will specify the path of this config.yml in the python run command.(LINK) 
+An example configuration file is provided in this repo at `config/config-base.yml`. Edit the parameter values to meet your specifications. The file contains comments explaining the purpose of each customizable parameter.  You can directly edit the `config-base.yml` or save a new copy somewhere on the your local computer. You will specify the path of this config.yml in the [python run comman](#running-the-workflow) 
 
 Note: Please do not remove or add parameters to the configuration file; adding will have no effect unless the Python code is changed along with the addition, and removing will produce errors.
 
