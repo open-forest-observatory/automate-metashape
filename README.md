@@ -102,6 +102,9 @@ The outputs for a given workflow run are named using the following convention: `
 <br/>
 <br/>
 <br/>
+
+---
+
 <br/>
 
 ## Docker Workflow
@@ -195,6 +198,9 @@ Note that the owner of the output data will be the `root` user. To set the owner
 
 <br/>
 <br/>
+
+--- 
+
 <br/>
 
 ## Preparing ground-control points (GCPs)
@@ -222,59 +228,6 @@ Rscript --vanilla {path_to_repo}/R/prep_gcps.R {path_to_imagery_storage}/sample_
 **Outputs.** The script will create a `prepared` directory within the `gcps` folder containing the two files used by Metashape: `gcp_table.csv`, which contains the geospatial coordinates of the GCPs on the earth, and `gcp_imagecoords_table.csv`, which contains the pixel coordinates of the GCPs within each image. It also outputs a PDF called `gcp_qaqc.pdf`, which shows the specified location of each GCP in each image in order to quality-control the location data. If left in this folder structure (`gcps/prepared`), the Metashape workflow script will be able to find and incorporate the GCP data if GCPs are enabled in the configuration file.
 
 <br/>
-<br/>
-<br/>
-<br/>
 
 
-#### Batch workflow configuration ####
-
-If you wish to run multiple iterations of a processing workflow with small differences between each,
-you can specify a "base" configuration YAML file that specifies the processing parameters that all
-runs will have in common, and then using the `ofo-r` function
-[make_derived_configs](https://github.com/open-forest-observatory/ofo-r/blob/main/R/photogrammetry-prep.R),
-which takes a data frame of parameter replacements and creates a "derived" config file for each row
-of the data frame, along with a shell script that will call the metashape workflow once for each of
-the resulting config files, in serial.
-
-
-
-
-
-
-### Running workflow batches in parallel on a compute cluster
-
-Running Metashape workflow batches in parallel on a cluster is as simple as submitting multiple jobs to the cluster. Submitting a job simply involves instructing the cluster to run the `metashape_workflow.py` script with the specified configuration file.
-
-#### Example for the `farm` cluster (UC Davis College of Agricultural and Environmental Sciences)
-
-- [Basic farm overview and account creation information](https://wiki.cse.ucdavis.edu/support/systems/farm)
-- [Basic instructions for running jobs on farm](https://bitbucket.org/hijmans-lab/computing/wiki/getting-started-farm)
-- [Additional resources for getting set up and running jobs on farm](https://github.com/RILAB/lab-docs/wiki/Using-Farm)
-
-You will need to install the Metashape python module into your user account on farm following the [Setup](https://github.com/ucdavis/metashape/blob/master/README.md#setup) instructions above (including the isntructions related to the Metashape license). This is easiest if you first install Miniconda and install Metashape (along with PyYAML) there.
-
-Next you need to create a shell script that will set up the appropriate environment variables and then call python to execute the metashape_workflow.py file with a provided config file (save as `farm_python.sh`):
-```
-#!/bin/bash -l
-source ~/.bashrc
-
-# Write the hostname to the processing log
-hostname -f
-
-# Set ENV variable to a specific font so reports work
-export QT_QPA_FONTDIR='/usr/share/fonts/truetype/dejavu/'
-
-# Run the workflow
-# First arg is the Metashape python workflow script,
-# Second arg is the config file
-python ${1} ${2}
-```
-
-Finally, to submit a Metashape job, you would run something like the following line:
-```
-sbatch -p bigmemh --time=24:00:00 --job-name=MetaDemo -c 64 --mem=128G shell/farm_python.sh python/metashape_workflow.py config/example.yml
-```
-
-The meanings of the sbatch parameters are explained in the linked resources above. Once you have submitted one job using the sbatch command, you can submit another so that they run in parallel (assuming your user group has sufficient resource allocation on farm). You can also put multiple sbatch commands into a shell script so that you only have to run the shell script.
 
