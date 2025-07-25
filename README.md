@@ -48,9 +48,16 @@ The namings for the ancillary data folders (`gcps`, `dem_usgs`, and `calibration
 
 A **sample RGB photo dataset** (which includes GCPs and a USGS DEM) may be [downloaded here](https://ucdavis.box.com/s/hv8m8fibe164pjj0mssdx1mj8qb996k8) (1.5 GB). Note this dataset has sparse photos (low overlap), so photogrammetry results are unimpressive.
 
+<br/>
+
+### Workflow configuration
+
+All of the parameters defining the Metashape workflow are specified in the configuration file (a [YAML-format](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html) file). This includes directories of input and output files, workflow steps to include, quality settings, and many other parameters.
+
+An example configuration file is provided in this repo at `config/config-base.yml`. Edit the parameter values to meet your specifications. The file contains comments explaining the purpose of each customizable parameter.  You can directly edit the `config-base.yml` or save a new copy somewhere on the your local computer. You will specify the path of this config.yml in the python run command.(LINK) 
 
 
-
+Note: Please do not remove or add parameters to the configuration file; adding will have no effect unless the Python code is changed along with the addition, and removing will produce errors.
 
 
 ## Setup (Docker container)
