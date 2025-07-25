@@ -14,6 +14,8 @@ This tool makes it easy to run python-based scripting of full workflows using [A
 
 **Metashape license:** You need a license (and associated license file) for Metashape. The easiest way to get the license file (assuming you own a license) is by installing the [Metashape Professional Edition GUI software](https://www.agisoft.com/downloads/installer/) (distinct from the Python module) and registering it following the prompts in the software (note you need to purchase a license first). UC Davis users, inquire over the geospatial listserv or the #spatial Slack channel for information on joining a floating license pool. Once you have a license file (whether a node-locked or floating license), you need to set the `agisoft_LICENSE` environment variable (search onilne for instructions for your OS; look for how to *permanently* set it) to the path to the folder containing the license file (`metashape.lic`). On many Linux systems, assuming the Metashape GUI is installed in `/opt/metashape-pro/`, you can set the environment variable with `export agisoft_LICENSE=/opt/metashape-pro/`, though if run directly in a bash terminal it will only be effective during that bash session.
 
+**Reproducible workflow scripts (python):** Simply clone this repository to your machine! `git clone https://github.com/open-forest-observatory/automate-metashape.git`
+
 <br/>
 
 ### Organizing raw imagery (and associated files) for processing
@@ -44,7 +46,7 @@ mission001_photos
 
 The namings for the ancillary data folders (`gcps`, `dem_usgs`, and `calibration`) must exactly match these if they are to be a part of the workflow.
 
-
+A **sample RGB photo dataset** (which includes GCPs and a USGS DEM) may be [downloaded here](https://ucdavis.box.com/s/hv8m8fibe164pjj0mssdx1mj8qb996k8) (1.5 GB). Note this dataset has sparse photos (low overlap), so photogrammetry results are unimpressive.
 
 
 
@@ -142,37 +144,7 @@ All processing parameters are specified in the .yml config file. There is an exa
 
 See Docker section above.
 
-### Organizing raw imagery (and associated files) for processing
 
-Images should be organized such that there is one root level that contains all the photos from the flight mission to be processed (these photos may optionally be organized within sub-folders), and no other missions. If the workflow is to include spectral calibration, ground control points (GCPs), and/or a USGS DEM, this root-level folder *must* also contain a corresponding folder for each. For example:
-
-```
-mission001_photos
-├───100MEDIA
-|       DJI_0001.JPG
-|       DJI_0002.JPG
-|       ...
-├───101MEDIA
-|       DJI_0001.JPG
-|       DJI_0002.JPG
-|       ...
-├───102MEDIA
-|       DJI_0001.JPG
-|       DJI_0002.JPG
-|       ...
-├───gcps
-|       ...
-├───dem_usgs
-|       dem_usgs.tif
-└───calibration
-        RP04-1923118-OB.csv
-```
-
-The namings for the ancillary data folders (`gcps`, `dem_usgs`, and `calibration`) must exactly match these if they are to be a part of the workflow.
-
-A **sample RGB photo dataset** (which includes GCPs and a USGS DEM) may be [downloaded here](https://ucdavis.box.com/s/hv8m8fibe164pjj0mssdx1mj8qb996k8) (1.5 GB). Note this dataset has sparse photos (low overlap), so photogrammetry results are unimpressive.
-
-The location of the raw imagery folder is specified in the configuration file passed to the metashape workflow script (see next section).
 
 ### Workflow configuration ###
 
