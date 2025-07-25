@@ -18,7 +18,7 @@ This tool makes it easy to run python-based scripting of full workflows using [A
 
 ### Organizing raw imagery (and associated files) for processing
 
-Images should be organized such that there is one root level that contains all the photos from the flight mission to be processed (these photos may optionally be organized within sub-folders), and no other missions. If the workflow is to include spectral calibration, ground control points (GCPs), and/or a USGS DEM, this root-level folder *must* also contain a corresponding folder for each. For example:
+Images should be organized such that there is one root level that contains all the photos from the flight mission to be processed (these photos may optionally be organized within sub-folders), and no other missions. If your workflow is to include the **optional** inputs of _spectral calibration_, _ground control points (GCPs)_, and/or a _USGS DEM_, this root-level folder *must* also contain a corresponding folder for each. For example:
 
 ```
 mission001_photos
