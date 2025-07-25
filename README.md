@@ -122,13 +122,13 @@ To provide the input data to Metashape, you need to specify a folder from your c
 
 #### Image directory
 
-The images to be processed should all be in one folder (and optionally organized into subfolders beneath this folder) somewhere within the data folder you will be mounting. Follow the organization shown [here](#
+The images to be processed should all be in one parent folder (and optionally organized into subfolders beneath this folder) somewhere within the data folder you will be mounting. If including GCPs, spectral calibratation, and/or the USGS DEM, follow the organization shown [here](#organizing-raw-imagery-and-associated-files-for-processing).
 
 <br/>
 
 #### Workflow configuration file
 
-An example configuration file is provided in this repository at `config/config-example.yml`. Please download this file to your local machine and rename it `config.yml`. By default (but see below), the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`. So in a case where the local folder to be mounted is `~/drone_data/`, then for the config file to be mounted in the Docker container at `/data/config.yaml`, it must be located on the local computer at `~/drone_data/config.yaml`. However, the config file location can be overridden by passing a different location following an optional command line argument `--config_file` of the `docker run` command (see below).
+An example configuration file is provided in this repository at `config/config-base.yml`. Please download this file to your local machine and rename it `config.yml`. By default (but see below), the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`. So in a case where the local folder to be mounted is `~/drone_data/`, then for the config file to be mounted in the Docker container at `/data/config.yaml`, it must be located on the local computer at `~/drone_data/config.yaml`. However, the config file location can be overridden by passing a different location following an optional command line argument `--config_file` of the `docker run` command. For more information click [here](.
 
 Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Within this config file, all paths will be relative to the file structure of the docker container (beginning with `/data/`). In the config.yaml, at a minimum the following entries should be updated:
 
