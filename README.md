@@ -116,13 +116,13 @@ The `automate-metashape` docker image contains the python libraries needed to ru
 
 ### User inputs to docker workflow
 
-To provide the input data to Metashape, you need to specify a folder from your computer to be mirrored ("mounted") within the Docker container. The files needed to run Metashape (the folder of aerial images, the configuration file, and optionally the GCPs file) must all be in the folder that you mount. The files can be located in any arbitrary directory beneath this folder. For example, if the folder you mount is `~/drone_data` on your local computer, the images could be located at `~/drone_data/projects/project_10/images/` and the config file could be located at `~/drone_data/configs/project_10/config.yml` The folder from your local machine is mounted into the Docker container at the path /data/, so for the example above, the images would be found inside the docker container at the path /data/projects/project_10/images/.
+To provide the input data to Metashape, you need to specify a folder from your computer to be mirrored ("mounted") within the Docker container. The files needed to run Metashape (the folder of aerial images, the configuration file, and optionally the GCPs file) must all be in the folder that you mount. The files can be located in any arbitrary directory beneath this folder. For example, if the folder you mount is `~/drone_data` on your local computer, the images could be located at `~/drone_data/images/` and the config file could be located at `~/drone_data/config.yml` The folder from your local machine is mounted into the Docker container at the path `/data/`, so for the example above, the images would be found inside the docker container at the path `/data/images/`.
 
 <br/>
 
 #### Image directory
 
-The images to be processed should all be in one folder (and optionally organized into subfolders beneath this folder) somewhere within the data folder you will be mounting. In the example above, the folder of images is at `~/drone_data/projects/project_10/images/`.
+The images to be processed should all be in one folder (and optionally organized into subfolders beneath this folder) somewhere within the data folder you will be mounting. Follow the organization shown [here](#
 
 <br/>
 
