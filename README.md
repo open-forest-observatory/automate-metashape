@@ -132,9 +132,9 @@ An example configuration file is provided in this repository at `config/config-b
 
 Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Within this config file, all paths will be relative to the file structure of the docker container (beginning with `/data/`). In the config.yaml, at a minimum the following entries should be updated:
 
-* The value for photo_path should be updated to /data/{path_to_images_folder_within_mounted_folder}
-* The value for output_path should be updated to /data/{path_to_desired_ouputs_folder_within_mounted_folder} (can be any location you want; will be created if it does not exist)
-* The value for project_path should be updated similarly as for output_path.
+* The value for 'photo_path' should be updated to `/data/{path_to_images_folder_within_mounted_folder}`
+* The value for 'output_path' should be updated to `/data/{path_to_desired_ouputs_folder_within_mounted_folder}` (can be any location you want; will be created if it does not exist)
+* The value for 'project_path' should be updated similarly as for 'output_path'.
 
 <br/>
 
