@@ -144,11 +144,11 @@ Within the `config.yml` you will need to edit some of the project level paramete
 <br/>
 
 ### Metashape license
-Users need to provide a license to use Metashape. Currently, this docker method only supports a floating license server using the format `<IP address>:<port number>`. Within a terminal, users can declare the floating license as an environmental variable using the command:
+Users need to provide a license to use Metashape. Currently, this docker method only supports a floating license server using the format `<IP address>:<port number>`. Within a terminal, users can declare the floating license as an environment variable using the command:
 
 `export AGISOFT_FLS=<IP_address>:<port_number>`
 
-Keep in mind that environmental variables will not persist across different terminal sessions. 
+Keep in mind that environment variables will not persist across different terminal sessions. 
 
 <br/>
 
