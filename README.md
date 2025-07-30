@@ -80,15 +80,20 @@ For example:
 
 #### Running workflow batches 
 
-Running workflows in batch (i.e., multiple workflows in series) on a single computer is as simple as creating configuration file for each workflow run and calling the Python workflow script once for each. The calls can be combined into a shell script. The shell script might look like the following (note the only thing that changes is the name of the config file):
+Running workflows in batch (i.e., multiple workflows in series) on a single computer is as simple as creating configuration file for each workflow run and calling the Python workflow script once for each. The calls can be combined into a shell script. Here is a quick workflow of how to do this:
+
+1. Create an empty shell script `touch metashape.sh`
+2. Populate the script with run commands on different lines. Note: the only thing that changes is the name of the config file.
+
 
 ```
 python ~/repos/automate-metashape/python/metashape_workflow.py --config_file ~/projects/forest_structure/metashape_configs/config001.yml
 python ~/repos/automate-metashape/python/metashape_workflow.py --config_file ~/projects/forest_structure/metashape_configs/config002.yml
 python ~/repos/automate-metashape/python/metashape_workflow.py --config_file ~/projects/forest_structure/metashape_configs/config003.yml
 ```
+3. Give the shell script file executable permissions ` chmod +x metashape.sh`
+4. Make sure you are located in the directory that contains the shell script. Run the shell script `./metashape.sh`
 
-Then it's just a matter of running the shell script. 
 
 <br/>
 
