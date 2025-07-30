@@ -20,7 +20,7 @@ A simple command line tool to automate end-to-end photogrammetry workflows using
 
 <br/>
 
-** Internal OFO developers only: Python and the Metashape python module are pre-installed and ready for use on 'ofo-dev' instances launched from Exosphere and as well as 'Open-Forest-Observatory' template launched from CACAO. The software is installed in a conda environment. `conda activate meta`.
+** Internal OFO developers only: Python and the Metashape python module are pre-installed and ready for use on 'ofo-dev' instances launched from Exosphere and as well as 'Open-Forest-Observatory' template launched from CACAO. The software is installed in a conda environment. `conda activate meta`
 
 <br/>
 
@@ -71,11 +71,11 @@ Note: Please do not remove or add parameters to the configuration file; adding w
 The general command line call to run the worflow has three components:
 1. Call to Python
 2. Path to metashape workflow Python script (`metashape_workflow.py`)
-3. Path to workflow configuration file (`*.yml`)
+3. A `--config_file` flag where you specify the path to workflow configuration file (`*.yml`)
 
 For example:
 
-`python {repo_path}/python/metashape_workflow.py {config_path}/{config_file}.yml`
+`python {repo_path}/python/metashape_workflow.py --config_file {config_path}/{config_file}.yml`
 
 <br/>
 
