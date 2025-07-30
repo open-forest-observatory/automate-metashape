@@ -18,7 +18,9 @@ A simple command line tool to automate end-to-end photogrammetry workflows using
 
 **Metashape license:** You need a license (and associated license file) for Metashape. The easiest way to get the license file (assuming you own a license) is by installing the [Metashape Professional Edition GUI software](https://www.agisoft.com/downloads/installer/) (distinct from the Python module) and registering it following the prompts in the software (note you need to purchase a license first). UC Davis users, inquire over the geospatial listserv or the #spatial Slack channel for information on joining a floating license pool. Once you have a license file (whether a node-locked or floating license), you need to set the `agisoft_LICENSE` environment variable (search onilne for instructions for your OS; look for how to *permanently* set it) to the path to the folder containing the license file (`metashape.lic`). On many Linux systems, assuming the Metashape GUI is installed in `/opt/metashape-pro/`, you can set the environment variable with `export agisoft_LICENSE=/opt/metashape-pro/`, though if run directly in a bash terminal it will only be effective during that bash session.
 
+<br/>
 
+** Internal OFO developers only: Python and the Metashape python module are pre-installed and ready for use on 'ofo-dev' instances launched from Exosphere and as well as 'Open-Forest-Observatory' template launched from CACAO. The software is installed in a conda environment. `conda activate meta`.
 
 <br/>
 
