@@ -83,9 +83,9 @@ For example:
 Running workflows in batch (i.e., multiple workflows in series) on a single computer is as simple as creating configuration file for each workflow run and calling the Python workflow script once for each. The calls can be combined into a shell script. The shell script might look like the following (note the only thing that changes is the name of the config file):
 
 ```
-python ~/repos/metashape/python/metashape_workflow.py ~/projects/forest_structure/metashape_configs/config001.yml
-python ~/repos/metashape/python/metashape_workflow.py ~/projects/forest_structure/metashape_configs/config002.yml
-python ~/repos/metashape/python/metashape_workflow.py ~/projects/forest_structure/metashape_configs/config003.yml
+python ~/repos/automate-metashape/python/metashape_workflow.py --config_file ~/projects/forest_structure/metashape_configs/config001.yml
+python ~/repos/automate-metashape/python/metashape_workflow.py --config_file ~/projects/forest_structure/metashape_configs/config002.yml
+python ~/repos/automate-metashape/python/metashape_workflow.py --config_file ~/projects/forest_structure/metashape_configs/config003.yml
 ```
 
 Then it's just a matter of running the shell script. 
