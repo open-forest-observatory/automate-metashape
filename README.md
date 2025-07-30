@@ -60,7 +60,7 @@ A **sample RGB photo dataset** (which includes GCPs and a USGS DEM) may be [down
 
 All of the parameters defining the Metashape workflow are specified in the configuration file (a [YAML-format](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html) file). This includes directories of input and output files, workflow steps to include, quality settings, and many other parameters.
 
-An example configuration file is provided in this repo at `config/config-base.yml`. Edit the parameter values to meet your specifications. The file contains comments explaining the purpose of each customizable parameter.  You can directly edit the `config-base.yml` or save a new copy somewhere on the your local computer. You will specify the path of this config.yml in the [python run command](#running-the-workflow).
+An example configuration file is provided in this repo at [`config/config-base.yml`](/config/config-base.yml). Edit the parameter values to meet your specifications. The file contains comments explaining the purpose of each customizable parameter.  You can directly edit the `config-base.yml` or save a new copy somewhere on the your local computer. You will specify the path of this config.yml in the [python run command](#running-the-workflow).
 
 Note: Please do not remove or add parameters to the configuration file; adding will have no effect unless the Python code is changed along with the addition, and removing will produce errors.
 
