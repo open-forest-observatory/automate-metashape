@@ -68,7 +68,7 @@ Note: Please do not remove or add parameters to the configuration file; adding w
 
 ### Running the Workflow
 
-The general command line call to run the worflow has two required components:
+The general command line call to run the workflow has two required components:
 1. Call to Python
 2. Path to metashape workflow Python script (`metashape_workflow.py`)
 
