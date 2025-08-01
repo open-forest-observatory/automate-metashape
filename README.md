@@ -86,12 +86,12 @@ If your config file is located in a different directory, use the optional flag `
 
 For example: 
 
-`python {repo_path}/python/metashape_workflow.py --config_file {config_path}/{config_file}.yml
+`python {repo_path}/python/metashape_workflow.py --config_file {config_path}/{config_file}.yml`
 
 
 <br/>
 
-Additional run command flags. Using these flags will override parameters specified in the config.yml file. 
+**Additional run command flags**. Using these flags will override parameters specified in the config.yml file. 
 
 `--photo-path`    Path to the directory that contains the aerial images (usually jpegs) to be processed
 
