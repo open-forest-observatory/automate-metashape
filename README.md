@@ -74,31 +74,37 @@ The general command line call to run the worflow has two required components:
 
 For example:
 
-`python {repo_path}/python/metashape_workflow.py
+`python {repo_path}/python/metashape_workflow.py`
 
 <br/>
 
 With this minimalist run command, the script assumes your config.yml file is located in the repo at `{repo_path}/config/config-base.yml`
 
-Additional run command flags include:
+If your config file is located in a different directory, use the optional flag
 
-`--config_file`   path to workflow configuration file (`*.yml`) if it's not in the default location
+`--config_file`   Path to workflow configuration file (`*.yml`) if it's not in the default location
 
-`--photo-path`
+<br/>
 
-`--photo-path-secondary`
+Additional run command flags. Using these flags will override parameters specified in the config.yml file. 
 
-`--project-path`
+`--photo-path`    Path to the directory that contains the aerial images (usually jpegs) to be processed
 
-`--output-path`
+`--photo-path-secondary`   Path to the directory that contains aerial images which are aligned only after all other processing is done. Not commonly used. 
 
-`--run-name`
+`--project-path` Path where the metashape project file (.psx) will be written
 
-`--project-crs`
+`--output-path` Path where all imagery products (orthomosaic, point cloud, DEMs, mesh model, reports) will be written 
 
-For example:
+`--run-name`    The identifier for the run. Will be used in naming output files
 
-`python {repo_path}/python/metashape_workflow.py --config_file {config_path}/{config_file}.yml`
+`--project-crs` Coordinate reference system EPSG code for outputs. Eg. _EPSG:26910_
+
+<br/>
+
+Example run command with optional flags:
+
+`python {repo_path}/python/metashape_workflow.py --config_file {config_path}/{config_file}.yml --output-path {output_path} --run-name drone_project_1`
 
 <br/>
 
