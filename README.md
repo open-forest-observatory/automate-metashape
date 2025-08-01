@@ -68,10 +68,33 @@ Note: Please do not remove or add parameters to the configuration file; adding w
 
 ### Running the Workflow
 
-The general command line call to run the worflow has three components:
+The general command line call to run the worflow has two required components:
 1. Call to Python
 2. Path to metashape workflow Python script (`metashape_workflow.py`)
-3. A `--config_file` flag where you specify the path to workflow configuration file (`*.yml`)
+
+For example:
+
+`python {repo_path}/python/metashape_workflow.py
+
+<br/>
+
+With this minimalist run command, the script assumes your config.yml file is located in the repo at `{repo_path}/config/config-base.yml`
+
+Additional run command flags include:
+
+`--config_file`   path to workflow configuration file (`*.yml`) if it's not in the default location
+
+`--photo-path`
+
+`--photo-path-secondary`
+
+`--project-path`
+
+`--output-path`
+
+`--run-name`
+
+`--project-crs`
 
 For example:
 
