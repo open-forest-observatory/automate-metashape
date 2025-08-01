@@ -82,12 +82,9 @@ With this minimalist run command, the script assumes your config.yml file is loc
 
 <br/>
 
-If your config file is located in a different directory, use the optional flag
+If your config file is located in a different directory, use the optional flag `--config_file`   
 
-`--config_file`   Path to workflow configuration file (`*.yml`) if it's not in the default location
-
-
-Example run command with optional flags:
+For example: 
 
 `python {repo_path}/python/metashape_workflow.py --config_file {config_path}/{config_file}.yml
 
