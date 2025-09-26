@@ -174,9 +174,6 @@ class MetashapeWorkflow:
         ):  # only add photos if there is a photo directory listed
             self.add_photos()
 
-        if self.cfg["setSensorType"]["enabled"]:
-            self.set_sensor_type()
-
         if self.cfg["calibrateReflectance"]["enabled"]:
             self.calibrate_reflectance()
 
@@ -466,18 +463,20 @@ class MetashapeWorkflow:
                         ]
                     )
 
+        # Set the sensor type (e.g. Frame camera, Spherical camera)
+        self.set_sensor_type(self.cfg["addPhotos"]["sensor_type"])
+
         self.doc.save()
 
         return True
 
-    def set_sensor_type(self):
+    def set_sensor_type(self, sensor_type):
         """
         Sets the type of sensor used for data collection. Tested choices so far:
-        Metashape.Sensor.Type.Frame, Metashape.Sensor.Type.Spherical. Default is Frame
-        if no sensor type is set.
+        Metashape.Sensor.Type.Frame, Metashape.Sensor.Type.Spherical.
         """
         for sensor in self.doc.chunk.sensors:
-            sensor.type = self.cfg["setSensorType"]["type"]
+            sensor.type = sensor_type
         self.doc.save()
         return True
 
@@ -910,7 +909,7 @@ class MetashapeWorkflow:
             if self.cfg["shift_crs_to_cameras"] is True:
                 shift = self.get_cameraset_origin()
             else:
-                shift = None
+                shift = Metashape.Vector([0, 0, 0])
 
             # Export the point cloud
             output_file = os.path.join(
@@ -993,7 +992,7 @@ class MetashapeWorkflow:
 
     def build_dem_orthomosaic(self):
         """
-        Build end export DEM
+        Build and export DEM
         """
 
         # classify ground points if specified
@@ -1336,7 +1335,7 @@ class MetashapeWorkflow:
         for camera in self.doc.chunk.cameras:
             # Get the camera location in the project CRS
             location = Metashape.CoordinateSystem.transform(
-                cam.reference.location,
+                camera.reference.location,
                 source=camera_crs,
                 target=Metashape.CoordinateSystem(self.cfg["project_crs"]),
             )

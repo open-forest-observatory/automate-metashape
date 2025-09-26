@@ -65,13 +65,10 @@ addPhotos: # (Metashape: addPhotos)
   use_rtk: False # Whether to use image EXIF RTK flags to make image geospatial accuracy more precise. If enabled but photos don't have RTK data, will treat them as regular photos and use the nofix accuracy.
   fix_accuracy: 3 # Accuracy to set for photos that have a RTK fix, in units of the CRS
   nofix_accuracy: 25 # Accuracy to set for photos that have no fix, in units of the CRS
-
-# Choose what type of camera you are using:
-#   Frame: default, uses radial distortion to handle lens distortion
-#   Spherical: expects image data to come in in the equirectangular format
-setSensorType:
-  enabled: True
-  type: Metashape.Sensor.Type.Frame # Sets the camera type. Tested choices: Metashape.Sensor.Type.Frame, Metashape.Sensor.Type.Spherical
+  # Choose what type of camera you are using:
+  #   Frame: default, uses radial distortion to handle lens distortion
+  #   Spherical: expects image data to come in in the equirectangular format
+  sensor_type: Metashape.Sensor.Type.Frame # Sets the camera type. Tested choices: Metashape.Sensor.Type.Frame, Metashape.Sensor.Type.Spherical
 
 calibrateReflectance: # (Metahsape: calibrateReflectance)
     enabled: False
