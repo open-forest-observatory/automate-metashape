@@ -174,6 +174,9 @@ class MetashapeWorkflow:
         ):  # only add photos if there is a photo directory listed
             self.add_photos()
 
+        if self.cfg["setSensorType"]["enabled"]:
+            self.set_sensor_type()
+
         if self.cfg["calibrateReflectance"]["enabled"]:
             self.calibrate_reflectance()
 
@@ -465,6 +468,17 @@ class MetashapeWorkflow:
 
         self.doc.save()
 
+        return True
+
+    def set_sensor_type(self):
+        """
+        Sets the type of sensor used for data collection. Tested choices so far:
+        Metashape.Sensor.Type.Frame, Metashape.Sensor.Type.Spherical. Default is Frame
+        if no sensor type is set.
+        """
+        for sensor in self.doc.chunk.sensors:
+            sensor.type = self.cfg["setSensorType"]["type"]
+        self.doc.save()
         return True
 
     def calibrate_reflectance(self):
@@ -892,12 +906,16 @@ class MetashapeWorkflow:
             else:
                 export_file_ending = "_points.laz"
 
-            # Export the point cloud
+            # Check for whether shifting the coordinate frame is desired
+            if self.cfg["shift_crs_to_cameras"] is True:
+                shift = self.get_cameraset_origin()
+            else:
+                shift = None
 
+            # Export the point cloud
             output_file = os.path.join(
                 self.cfg["output_path"], self.run_id + export_file_ending
             )
-
             if self.cfg["buildPointCloud"]["classes"] == "ALL":
                 # call without classes argument (Metashape then defaults to all classes)
                 self.doc.chunk.exportPointCloud(
@@ -906,6 +924,7 @@ class MetashapeWorkflow:
                     format=self.cfg["buildPointCloud"]["export_format"],
                     crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
                     subdivide_task=self.cfg["subdivide_task"],
+                    shift=shift,
                 )
                 self.written_paths["point_cloud_all_classes"] = output_file  # export
             else:
@@ -917,6 +936,7 @@ class MetashapeWorkflow:
                     crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
                     classes=self.cfg["buildPointCloud"]["classes"],
                     subdivide_task=self.cfg["subdivide_task"],
+                    shift=shift,
                 )
                 self.written_paths["point_cloud_subset_classes"] = output_file  # export
 
@@ -949,6 +969,13 @@ class MetashapeWorkflow:
         self.doc.save()
 
         if self.cfg["buildMesh"]["export"]:
+
+            # Check for whether shifting the coordinate frame is desired
+            if self.cfg["shift_crs_to_cameras"] is True:
+                shift = self.get_cameraset_origin()
+            else:
+                shift = None
+
             output_file = os.path.join(
                 self.cfg["output_path"],
                 self.run_id + "_mesh." + self.cfg["buildMesh"]["export_extension"],
@@ -959,6 +986,7 @@ class MetashapeWorkflow:
                 path=output_file,
                 crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
                 save_metadata_xml=True,
+                shift=shift,
             )
 
         return True
@@ -1276,3 +1304,50 @@ class MetashapeWorkflow:
             return json_str
         # Otherwise just return the dictionary representation
         return self.written_paths
+
+    def get_cameraset_origin(self, round: int = 100) -> Metashape.Vector:
+        """
+        Goes through the EXIF lat/lon data from the cameras, converts it into
+        the project CRS, and then reports the (rounded) camera mean as the
+        project origin. The purpose is to get around the accuracy limitations
+        of float32 values (the default for point clouds and meshes) by having
+        a fixed origin offset per project.
+
+        NOTE: The shifted origin is reported by exportModel via the
+        save_metadata_xml mechanism.
+
+        Arguments:
+            round (int): The value to round (really floor) the origin to. The
+                purpose of this is to make the origin more human readable,
+                while still getting the accuracy benefits that come when your
+                float32 data points are values in the 100s-1000s instead of in
+                the millions
+
+        Returns: Metashape.Vector of the camera origin. For now Z is kept at 0
+            and only (X, Y) are calculated from the cameras.
+        """
+
+        # The camera reference location is known to be in lat/lon
+        camera_crs = Metashape.CoordinateSystem("EPSG::4326")
+
+        # Average the camera locations without using libraries like numpy
+        x = 0.0
+        y = 0.0
+        for camera in self.doc.chunk.cameras:
+            # Get the camera location in the project CRS
+            location = Metashape.CoordinateSystem.transform(
+                cam.reference.location,
+                source=camera_crs,
+                target=Metashape.CoordinateSystem(self.cfg["project_crs"]),
+            )
+            x += location[0]
+            y += location[1]
+        # Average over the number of cameras
+        x /= len(self.doc.chunk.cameras)
+        y /= len(self.doc.chunk.cameras)
+
+        # Round the values for easier readability
+        x = int(x / round) * round
+        y = int(y / round) * round
+
+        return Metashape.Vector([x, y, 0])
