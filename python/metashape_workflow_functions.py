@@ -973,7 +973,7 @@ class MetashapeWorkflow:
             if self.cfg["shift_crs_to_cameras"] is True:
                 shift = self.get_cameraset_origin()
             else:
-                shift = None
+                shift = Metashape.Vector([0, 0, 0])
 
             output_file = os.path.join(
                 self.cfg["output_path"],
