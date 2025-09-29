@@ -1332,7 +1332,14 @@ class MetashapeWorkflow:
         # Average the camera locations without using libraries like numpy
         x = 0.0
         y = 0.0
+        invalid = 0
         for camera in self.doc.chunk.cameras:
+
+            # Check for missing GPS EXIF data
+            if camera.reference.location is None:
+                invalid += 1
+                continue
+
             # Get the camera location in the project CRS
             location = Metashape.CoordinateSystem.transform(
                 camera.reference.location,
@@ -1341,9 +1348,12 @@ class MetashapeWorkflow:
             )
             x += location[0]
             y += location[1]
-        # Average over the number of cameras
-        x /= len(self.doc.chunk.cameras)
-        y /= len(self.doc.chunk.cameras)
+
+        # Average over the number of valid images
+        n_valid = len(self.doc.chunk.cameras) - invalid
+        if n_valid > 0:
+            x /= n_valid
+            y /= n_valid
 
         # Round the values for easier readability
         x = int(x / round) * round
