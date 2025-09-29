@@ -905,12 +905,6 @@ class MetashapeWorkflow:
             else:
                 export_file_ending = "_points.laz"
 
-            # Check for whether shifting the coordinate frame is desired
-            if self.cfg["shift_crs_to_cameras"] is True:
-                shift = self.get_cameraset_origin()
-            else:
-                shift = Metashape.Vector([0, 0, 0])
-
             # Export the point cloud
             output_file = os.path.join(
                 self.cfg["output_path"], self.run_id + export_file_ending
@@ -923,7 +917,6 @@ class MetashapeWorkflow:
                     format=self.cfg["buildPointCloud"]["export_format"],
                     crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
                     subdivide_task=self.cfg["subdivide_task"],
-                    shift=shift,
                 )
                 self.written_paths["point_cloud_all_classes"] = output_file  # export
             else:
@@ -935,7 +928,6 @@ class MetashapeWorkflow:
                     crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
                     classes=self.cfg["buildPointCloud"]["classes"],
                     subdivide_task=self.cfg["subdivide_task"],
-                    shift=shift,
                 )
                 self.written_paths["point_cloud_subset_classes"] = output_file  # export
 
