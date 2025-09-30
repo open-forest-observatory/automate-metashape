@@ -34,12 +34,6 @@ run_name: ""
 # CRS EPSG code that project outputs should be in (projection should be in meter units and intended for the project area)
 project_crs: "EPSG::26910" # 26910 is UTM 10N
 
-# If True, add in a shift to the CRS so the mesh origin is at the camera EXIF average location and points are reported in a local frame - shifted from the normal CRS origin.
-# This is necessary when fine mesh detail is needed, since the natural export format of Metashape is float32 for meshes. In most CRS, that results in point quantization in the 5cm-20cm range
-# In order to save finer detail, set shift_crs_to_cameras to True, and then apply the inverse shift to the mesh model to recreate the true CRS values
-# The shift used is reported using the save_metadata_xml mechanism of exportModel
-shift_crs_to_cameras: False
-
 # Enable metashape "fine-level task subdivision" which reduces memory use by breaking processing into independent chunks that are run in series.
 # Assuming there's enough memory, it seems to run 10-20% faster by disabling subdividing. But large projects can run out memory and fail if subdivide is not enabled.
 subdivide_task: True
@@ -145,6 +139,11 @@ buildMesh:
     face_count_custom: 100000 # Only used if custom number of faces set (above).
     export: True # Export the georeferenced mesh.
     export_extension: "ply" # Can be any supported 3D mesh extension
+    # If True, add in a shift to the CRS so the mesh origin is at the camera EXIF average location and points are reported in a local frame - shifted from the normal CRS origin.
+    # This is necessary when fine mesh detail is needed, since the natural export format of Metashape is float32 for meshes. In most CRS, that results in point quantization in the 5cm-20cm range
+    # In order to save finer detail, set shift_crs_to_cameras to True, and then apply the inverse shift to the mesh model to recreate the true CRS values
+    # The shift used is reported using the save_metadata_xml mechanism of exportModel
+    shift_crs_to_cameras: False
 
 buildDem: # (Metashape: buildDem, (optionally) classifyGroundPoints, exportRaster)
     enabled: True

@@ -962,7 +962,7 @@ class MetashapeWorkflow:
         if self.cfg["buildMesh"]["export"]:
 
             # Check for whether shifting the coordinate frame is desired
-            if self.cfg["shift_crs_to_cameras"] is True:
+            if self.cfg["buildMesh"]["shift_crs_to_cameras"] is True:
                 shift = self.get_cameraset_origin()
             else:
                 shift = Metashape.Vector([0, 0, 0])
@@ -1324,12 +1324,11 @@ class MetashapeWorkflow:
         # Average the camera locations without using libraries like numpy
         x = 0.0
         y = 0.0
-        invalid = 0
+        n_valid = 0
         for camera in self.doc.chunk.cameras:
 
             # Check for missing GPS EXIF data
             if camera.reference.location is None:
-                invalid += 1
                 continue
 
             # Get the camera location in the project CRS
@@ -1340,9 +1339,9 @@ class MetashapeWorkflow:
             )
             x += location[0]
             y += location[1]
+            n_valid += 1
 
         # Average over the number of valid images
-        n_valid = len(self.doc.chunk.cameras) - invalid
         if n_valid > 0:
             x /= n_valid
             y /= n_valid
