@@ -463,8 +463,21 @@ class MetashapeWorkflow:
                         ]
                     )
 
+        # Set the sensor type (e.g. Frame camera, Spherical camera)
+        self.set_sensor_type(self.cfg["addPhotos"]["sensor_type"])
+
         self.doc.save()
 
+        return True
+
+    def set_sensor_type(self, sensor_type):
+        """
+        Sets the type of sensor used for data collection. Tested choices so far:
+        Metashape.Sensor.Type.Frame, Metashape.Sensor.Type.Spherical.
+        """
+        for sensor in self.doc.chunk.sensors:
+            sensor.type = sensor_type
+        self.doc.save()
         return True
 
     def calibrate_reflectance(self):
@@ -893,11 +906,9 @@ class MetashapeWorkflow:
                 export_file_ending = "_points.laz"
 
             # Export the point cloud
-
             output_file = os.path.join(
                 self.cfg["output_path"], self.run_id + export_file_ending
             )
-
             if self.cfg["buildPointCloud"]["classes"] == "ALL":
                 # call without classes argument (Metashape then defaults to all classes)
                 self.doc.chunk.exportPointCloud(
@@ -949,6 +960,13 @@ class MetashapeWorkflow:
         self.doc.save()
 
         if self.cfg["buildMesh"]["export"]:
+
+            # Check for whether shifting the coordinate frame is desired
+            if self.cfg["buildMesh"]["shift_crs_to_cameras"] is True:
+                shift = self.get_cameraset_origin()
+            else:
+                shift = Metashape.Vector([0, 0, 0])
+
             output_file = os.path.join(
                 self.cfg["output_path"],
                 self.run_id + "_mesh." + self.cfg["buildMesh"]["export_extension"],
@@ -959,13 +977,14 @@ class MetashapeWorkflow:
                 path=output_file,
                 crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
                 save_metadata_xml=True,
+                shift=shift,
             )
 
         return True
 
     def build_dem_orthomosaic(self):
         """
-        Build end export DEM
+        Build and export DEM
         """
 
         # classify ground points if specified
@@ -1276,3 +1295,59 @@ class MetashapeWorkflow:
             return json_str
         # Otherwise just return the dictionary representation
         return self.written_paths
+
+    def get_cameraset_origin(self, round: int = 100) -> Metashape.Vector:
+        """
+        Goes through the EXIF lat/lon data from the cameras, converts it into
+        the project CRS, and then reports the (rounded) camera mean as the
+        project origin. The purpose is to get around the accuracy limitations
+        of float32 values (the default for point clouds and meshes) by having
+        a fixed origin offset per project.
+
+        NOTE: The shifted origin is reported by exportModel via the
+        save_metadata_xml mechanism.
+
+        Arguments:
+            round (int): The value to round (really floor) the origin to. The
+                purpose of this is to make the origin more human readable,
+                while still getting the accuracy benefits that come when your
+                float32 data points are values in the 100s-1000s instead of in
+                the millions
+
+        Returns: Metashape.Vector of the camera origin. For now Z is kept at 0
+            and only (X, Y) are calculated from the cameras.
+        """
+
+        # The camera reference location is known to be in lat/lon
+        camera_crs = Metashape.CoordinateSystem("EPSG::4326")
+
+        # Average the camera locations without using libraries like numpy
+        x = 0.0
+        y = 0.0
+        n_valid = 0
+        for camera in self.doc.chunk.cameras:
+
+            # Check for missing GPS EXIF data
+            if camera.reference.location is None:
+                continue
+
+            # Get the camera location in the project CRS
+            location = Metashape.CoordinateSystem.transform(
+                camera.reference.location,
+                source=camera_crs,
+                target=Metashape.CoordinateSystem(self.cfg["project_crs"]),
+            )
+            x += location[0]
+            y += location[1]
+            n_valid += 1
+
+        # Average over the number of valid images
+        if n_valid > 0:
+            x /= n_valid
+            y /= n_valid
+
+        # Round the values for easier readability
+        x = int(x / round) * round
+        y = int(y / round) * round
+
+        return Metashape.Vector([x, y, 0])

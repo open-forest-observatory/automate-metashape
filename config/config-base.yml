@@ -59,6 +59,10 @@ addPhotos: # (Metashape: addPhotos)
   use_rtk: False # Whether to use image EXIF RTK flags to make image geospatial accuracy more precise. If enabled but photos don't have RTK data, will treat them as regular photos and use the nofix accuracy.
   fix_accuracy: 3 # Accuracy to set for photos that have a RTK fix, in units of the CRS
   nofix_accuracy: 25 # Accuracy to set for photos that have no fix, in units of the CRS
+  # Choose what type of camera you are using:
+  #   Frame: default, uses radial distortion to handle lens distortion
+  #   Spherical: expects image data to come in in the equirectangular format
+  sensor_type: Metashape.Sensor.Type.Frame # Sets the camera type. Tested choices: Metashape.Sensor.Type.Frame, Metashape.Sensor.Type.Spherical
 
 calibrateReflectance: # (Metahsape: calibrateReflectance)
     enabled: False
@@ -135,6 +139,11 @@ buildMesh:
     face_count_custom: 100000 # Only used if custom number of faces set (above).
     export: True # Export the georeferenced mesh.
     export_extension: "ply" # Can be any supported 3D mesh extension
+    # If True, add in a shift to the CRS so the mesh origin is at the camera EXIF average location and points are reported in a local frame - shifted from the normal CRS origin.
+    # This is necessary when fine mesh detail is needed, since the natural export format of Metashape is float32 for meshes. In most CRS, that results in point quantization in the 5cm-20cm range
+    # In order to save finer detail, set shift_crs_to_cameras to True, and then apply the inverse shift to the mesh model to recreate the true CRS values
+    # The shift used is reported using the save_metadata_xml mechanism of exportModel
+    shift_crs_to_cameras: False
 
 buildDem: # (Metashape: buildDem, (optionally) classifyGroundPoints, exportRaster)
     enabled: True
