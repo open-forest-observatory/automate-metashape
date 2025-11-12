@@ -79,12 +79,17 @@ if __name__ == "__main__":
 
     ### Run the Metashape workflow
     # The argo workflow requires that all stdout is json formatted. Since this isn't the case for the
-    # metashape logs, we redirect to standard error.
+    # metashape logs, we redirect to standard error. We also catch any exceptions raised during
+    # processing so that we can still report the completed output paths as JSON to stdout. We keep
+    # track of whether an error occurred with a boolean flag so that we can set the process exit code
+    # appropriately.
+    metashape_error_occurred = False
     with contextlib.redirect_stdout(sys.stderr):
         # Actually run the processing step
         try:
             meta.run()
         except Exception as e:
+            metashape_error_occurred = True
             # TODO make this error message more descriptive
             print(
                 "Metashape errored while processing, the completed paths will still be reported. "
@@ -94,3 +99,7 @@ if __name__ == "__main__":
 
     # Log where the data files were written as json dict
     print(meta.get_written_paths(as_json=True))
+
+    # Exit with non-zero exit code if a metashape error occurred
+    if metashape_error_occurred:
+        sys.exit(1)
