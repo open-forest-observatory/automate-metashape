@@ -125,7 +125,7 @@ def get_camera(chunk, label):
 
 class MetashapeWorkflow:
 
-    sep = "; "
+    sep = ": "
 
     def __init__(
         self,
