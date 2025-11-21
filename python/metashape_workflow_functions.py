@@ -325,7 +325,7 @@ class MetashapeWorkflow:
         # open the results file
         # TODO: records the Slurm values for actual cpus and ram allocated
         # https://slurm.schedmd.com/sbatch.html#lbAI
-        with open(self.log_file, "a") as file:
+        with open(self.log_file, "w") as file:
 
             # write a line with the Metashape version
             file.write(MetashapeWorkflow.sep.join(["Project", self.run_id]) + "\n")

@@ -153,7 +153,7 @@ class BenchmarkMonitor:
 
         with open(self.log_file, "a") as f:
             f.write(
-                f"{api_call:<25} | {duration_str:>12} | {cpu_str:>8} | {gpu_str:>8}\n"
+                f"{api_call:<35} | {duration_str:>12} | {cpu_str:>8} | {gpu_str:>8}\n"
             )
 
     def _write_yaml_log(
