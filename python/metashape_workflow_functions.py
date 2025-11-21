@@ -828,24 +828,11 @@ class MetashapeWorkflow:
 
         self.benchmark.log_step_header("Build Depth Maps")
 
-        # First call: build depth maps without filtering
-        with self.benchmark.monitor("buildDepthMaps (build)"):
-            self.doc.chunk.buildDepthMaps(
-                downscale=self.cfg["buildDepthMaps"]["downscale"],
-                filter_mode=Metashape.FilterMode.NoFiltering,
-                reuse_depth=self.cfg["buildDepthMaps"]["reuse_depth"],
-                max_neighbors=self.cfg["buildDepthMaps"]["max_neighbors"],
-                subdivide_task=self.cfg["subdivide_task"],
-            )
-
-        self.doc.save()
-
-        # Second call: filter existing depth maps (reuse_depth forced to True)
-        with self.benchmark.monitor("buildDepthMaps (filter)"):
+        with self.benchmark.monitor("buildDepthMaps"):
             self.doc.chunk.buildDepthMaps(
                 downscale=self.cfg["buildDepthMaps"]["downscale"],
                 filter_mode=self.cfg["buildDepthMaps"]["filter_mode"],
-                reuse_depth=True,
+                reuse_depth=self.cfg["buildDepthMaps"]["reuse_depth"],
                 max_neighbors=self.cfg["buildDepthMaps"]["max_neighbors"],
                 subdivide_task=self.cfg["subdivide_task"],
             )
