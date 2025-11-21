@@ -28,13 +28,14 @@ except ImportError:
 class BenchmarkMonitor:
     """Monitor and log performance metrics for Metashape API calls."""
 
-    def __init__(self, log_file: str, yaml_log_path: str):
+    def __init__(self, log_file: str, yaml_log_path: str, system_info: dict = None):
         """
         Initialize the benchmark monitor.
 
         Args:
             log_file: Path to existing human-readable log file (appends to it)
             yaml_log_path: Path for machine-readable YAML metrics file
+            system_info: Dictionary with system information (node, cpu, cores, gpu_count, gpu_model)
         """
         self.log_file = log_file
         self.yaml_log_path = yaml_log_path
@@ -49,6 +50,12 @@ class BenchmarkMonitor:
                 self.gpu_available = self.gpu_count > 0
             except pynvml.NVMLError:
                 pass
+
+        # Write YAML header with system info
+        if system_info:
+            with open(self.yaml_log_path, "w") as f:
+                yaml.dump({"system": system_info}, f, default_flow_style=False)
+                f.write("api_calls:\n")
 
     def _format_duration(self, seconds: float) -> str:
         """Format duration as HH:MM:SS."""
@@ -153,21 +160,14 @@ class BenchmarkMonitor:
         self, api_call: str, duration: float, cpu: float, gpu: float | None
     ):
         """Append entry to YAML log."""
-        entry = {
-            "api_call": api_call,
-            "duration_seconds": round(duration, 1),
-            "cpu_percent": round(cpu, 1),
-        }
+        gpu_value = round(gpu, 1) if gpu is not None else "N/A"
 
-        if gpu is not None:
-            entry["gpu_percent"] = round(gpu, 1)
-        else:
-            entry["gpu_percent"] = "N/A"
-
-        # Append to YAML file
+        # Write as indented list item under api_calls
         with open(self.yaml_log_path, "a") as f:
-            yaml.dump([entry], f, default_flow_style=False)
-            f.write("\n")
+            f.write(f"  - api_call: {api_call}\n")
+            f.write(f"    duration_seconds: {round(duration, 1)}\n")
+            f.write(f"    cpu_percent: {round(cpu, 1)}\n")
+            f.write(f"    gpu_percent: {gpu_value}\n")
 
     def close(self):
         """Clean up resources."""

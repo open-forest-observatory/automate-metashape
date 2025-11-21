@@ -166,6 +166,29 @@ class MetashapeWorkflow:
 
     #### Functions for each major step in Metashape
 
+    def _get_system_info(self):
+        """Gather system information for logging."""
+        gpustringraw = str(Metashape.app.enumGPUDevices())
+        gpucount = gpustringraw.count("name': '")
+        gpustring = ""
+        currentgpu = 1
+        while gpucount >= currentgpu:
+            if gpustring != "":
+                gpustring = gpustring + ", "
+            gpustring = (
+                gpustring + gpustringraw.split("name': '")[currentgpu].split("',")[0]
+            )
+            currentgpu = currentgpu + 1
+
+        return {
+            "node": platform.node(),
+            "cpu": platform.processor(),
+            "cpu_cores_available": os.cpu_count(),
+            "gpu_count": gpucount,
+            "gpu_model": gpustring,
+            "gpu_mask": Metashape.app.gpu_mask,
+        }
+
     def run(self):
         """
         Execute metashape workflow steps based on config file
@@ -265,8 +288,11 @@ class MetashapeWorkflow:
             self.cfg["output_path"], f"{self.run_id}_metrics.yaml"
         )
 
+        # Gather system info for logging
+        self.system_info = self._get_system_info()
+
         # Initialize benchmark monitor for performance logging
-        self.benchmark = BenchmarkMonitor(self.log_file, self.yaml_log_file)
+        self.benchmark = BenchmarkMonitor(self.log_file, self.yaml_log_file, self.system_info)
 
         """
         Create a doc and a chunk
@@ -313,30 +339,19 @@ class MetashapeWorkflow:
             file.write(
                 MetashapeWorkflow.sep.join(["Processing started", stamp_time()]) + "\n"
             )
-            # write a line with CPU info - if possible, improve the way the CPU info is found / recorded
-            file.write(MetashapeWorkflow.sep.join(["Node", platform.node()]) + "\n")
-            file.write(MetashapeWorkflow.sep.join(["CPU", platform.processor()]) + "\n")
-            file.write(MetashapeWorkflow.sep.join(["CPU Cores Available", str(os.cpu_count())]) + "\n")
-            # write two lines with GPU info: count and model names - this takes multiple steps to make it look clean in the end
+            # write system info
+            file.write(MetashapeWorkflow.sep.join(["Node", self.system_info["node"]]) + "\n")
+            file.write(MetashapeWorkflow.sep.join(["CPU", self.system_info["cpu"]]) + "\n")
+            file.write(MetashapeWorkflow.sep.join(["CPU Cores Available", str(self.system_info["cpu_cores_available"])]) + "\n")
 
     def enable_and_log_gpu(self):
         """
         Enables GPU and logs GPU specs
         """
 
-        gpustringraw = str(Metashape.app.enumGPUDevices())
-        gpucount = gpustringraw.count("name': '")
-        gpustring = ""
-        currentgpu = 1
-        while gpucount >= currentgpu:
-            if gpustring != "":
-                gpustring = gpustring + ", "
-            gpustring = (
-                gpustring + gpustringraw.split("name': '")[currentgpu].split("',")[0]
-            )
-            currentgpu = currentgpu + 1
-        # gpustring = gpustringraw.split("name': '")[1].split("',")[0]
-        gpu_mask = Metashape.app.gpu_mask
+        gpucount = self.system_info["gpu_count"]
+        gpustring = self.system_info["gpu_model"]
+        gpu_mask = self.system_info["gpu_mask"]
 
         with open(self.log_file, "a") as file:
             file.write(
@@ -354,9 +369,6 @@ class MetashapeWorkflow:
                     MetashapeWorkflow.sep.join(["GPU Mask Enabled", str(gpu_mask)])
                     + "\n"
                 )
-
-            # This writes down all the GPU devices available
-            # file.write('GPU(s): '+str(Metashape.app.enumGPUDevices())+'\n')
 
         # set Metashape to *not* use the CPU during GPU steps (appears to be standard wisdom)
         Metashape.app.cpu_enable = False
