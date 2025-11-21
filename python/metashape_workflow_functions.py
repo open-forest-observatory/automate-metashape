@@ -828,7 +828,7 @@ class MetashapeWorkflow:
         with self.benchmark.monitor("buildDepthMaps (build)"):
             self.doc.chunk.buildDepthMaps(
                 downscale=self.cfg["buildDepthMaps"]["downscale"],
-                filter_mode=Metashape.NoFiltering,
+                filter_mode=Metashape.FilterMode.NoFiltering,
                 reuse_depth=self.cfg["buildDepthMaps"]["reuse_depth"],
                 max_neighbors=self.cfg["buildDepthMaps"]["max_neighbors"],
                 subdivide_task=self.cfg["subdivide_task"],
