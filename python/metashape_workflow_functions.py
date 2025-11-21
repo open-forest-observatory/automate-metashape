@@ -15,6 +15,8 @@ from pathlib import Path
 import Metashape
 import yaml
 
+from benchmark_monitor import BenchmarkMonitor
+
 
 #### Helper functions
 def recursive_update(d, u):
@@ -123,7 +125,7 @@ def get_camera(chunk, label):
 
 class MetashapeWorkflow:
 
-    sep = "; "
+    sep = ": "
 
     def __init__(
         self,
@@ -136,10 +138,13 @@ class MetashapeWorkflow:
         self.config_file = config_file
         self.doc = None
         self.log_file = None
+        self.yaml_log_file = None
         self.run_id = None
         self.cfg = None
         # track the written paths
         self.written_paths = {}
+        # benchmark monitor for performance logging
+        self.benchmark = None
         # Parse the yaml confif
         self.read_yaml()
         # Apply any manual overrides
@@ -160,6 +165,29 @@ class MetashapeWorkflow:
         self.cfg = recursive_update(self.cfg, override_dict)
 
     #### Functions for each major step in Metashape
+
+    def _get_system_info(self):
+        """Gather system information for logging."""
+        gpustringraw = str(Metashape.app.enumGPUDevices())
+        gpucount = gpustringraw.count("name': '")
+        gpustring = ""
+        currentgpu = 1
+        while gpucount >= currentgpu:
+            if gpustring != "":
+                gpustring = gpustring + ", "
+            gpustring = (
+                gpustring + gpustringraw.split("name': '")[currentgpu].split("',")[0]
+            )
+            currentgpu = currentgpu + 1
+
+        return {
+            "node": platform.node(),
+            "cpu": platform.processor(),
+            "cpu_cores_available": os.cpu_count(),
+            "gpu_count": gpucount,
+            "gpu_model": gpustring,
+            "gpu_mask": Metashape.app.gpu_mask,
+        }
 
     def run(self):
         """
@@ -256,6 +284,15 @@ class MetashapeWorkflow:
         self.log_file = os.path.join(
             self.cfg["output_path"], ".".join([self.run_id + "_log", "txt"])
         )
+        self.yaml_log_file = os.path.join(
+            self.cfg["output_path"], f"{self.run_id}_metrics.yaml"
+        )
+
+        # Gather system info for logging
+        self.system_info = self._get_system_info()
+
+        # Initialize benchmark monitor for performance logging
+        self.benchmark = BenchmarkMonitor(self.log_file, self.yaml_log_file, self.system_info)
 
         """
         Create a doc and a chunk
@@ -288,7 +325,7 @@ class MetashapeWorkflow:
         # open the results file
         # TODO: records the Slurm values for actual cpus and ram allocated
         # https://slurm.schedmd.com/sbatch.html#lbAI
-        with open(self.log_file, "a") as file:
+        with open(self.log_file, "w") as file:
 
             # write a line with the Metashape version
             file.write(MetashapeWorkflow.sep.join(["Project", self.run_id]) + "\n")
@@ -302,29 +339,19 @@ class MetashapeWorkflow:
             file.write(
                 MetashapeWorkflow.sep.join(["Processing started", stamp_time()]) + "\n"
             )
-            # write a line with CPU info - if possible, improve the way the CPU info is found / recorded
-            file.write(MetashapeWorkflow.sep.join(["Node", platform.node()]) + "\n")
-            file.write(MetashapeWorkflow.sep.join(["CPU", platform.processor()]) + "\n")
-            # write two lines with GPU info: count and model names - this takes multiple steps to make it look clean in the end
+            # write system info
+            file.write(MetashapeWorkflow.sep.join(["Node", self.system_info["node"]]) + "\n")
+            file.write(MetashapeWorkflow.sep.join(["CPU", self.system_info["cpu"]]) + "\n")
+            file.write(MetashapeWorkflow.sep.join(["CPU Cores Available", str(self.system_info["cpu_cores_available"])]) + "\n")
 
     def enable_and_log_gpu(self):
         """
         Enables GPU and logs GPU specs
         """
 
-        gpustringraw = str(Metashape.app.enumGPUDevices())
-        gpucount = gpustringraw.count("name': '")
-        gpustring = ""
-        currentgpu = 1
-        while gpucount >= currentgpu:
-            if gpustring != "":
-                gpustring = gpustring + ", "
-            gpustring = (
-                gpustring + gpustringraw.split("name': '")[currentgpu].split("',")[0]
-            )
-            currentgpu = currentgpu + 1
-        # gpustring = gpustringraw.split("name': '")[1].split("',")[0]
-        gpu_mask = Metashape.app.gpu_mask
+        gpucount = self.system_info["gpu_count"]
+        gpustring = self.system_info["gpu_model"]
+        gpu_mask = self.system_info["gpu_mask"]
 
         with open(self.log_file, "a") as file:
             file.write(
@@ -343,9 +370,6 @@ class MetashapeWorkflow:
                     + "\n"
                 )
 
-            # This writes down all the GPU devices available
-            # file.write('GPU(s): '+str(Metashape.app.enumGPUDevices())+'\n')
-
         # set Metashape to *not* use the CPU during GPU steps (appears to be standard wisdom)
         Metashape.app.cpu_enable = False
 
@@ -358,14 +382,21 @@ class MetashapeWorkflow:
             "main/depth_max_gpu_multiplier", self.cfg["gpu_multiplier"]
         )
 
+        # Write header for benchmark log
+        with open(self.log_file, "a") as file:
+            file.write(f"\n{'API Call':<35} | {'Run Time':>12} | {'CPU Util':>8} | {'GPU Util':>8}\n")
+
         return True
 
-    def add_photos(self, secondary=False):
+    def add_photos(self, secondary=False, log_header=True):
         """
         Add photos to project and change their labels to include their containing folder. Secondary: if
         True, this is a secondary set of photos to be aligned only, after all photogrammetry products
         have been produced from the primary set of photos.
         """
+
+        if log_header:
+            self.benchmark.log_step_header("Add Photos")
 
         if secondary:
             photo_paths = self.cfg["photo_path_secondary"]
@@ -397,11 +428,13 @@ class MetashapeWorkflow:
 
             ## Add them
             if self.cfg["addPhotos"]["multispectral"]:
-                self.doc.chunk.addPhotos(
-                    photo_files, layout=Metashape.MultiplaneLayout, group=grp
-                )
+                with self.benchmark.monitor("addPhotos"):
+                    self.doc.chunk.addPhotos(
+                        photo_files, layout=Metashape.MultiplaneLayout, group=grp
+                    )
             else:
-                self.doc.chunk.addPhotos(photo_files, group=grp)
+                with self.benchmark.monitor("addPhotos"):
+                    self.doc.chunk.addPhotos(photo_files, group=grp)
 
         ## Need to change the label on each camera so that it includes the containing folder(s)
         for camera in self.doc.chunk.cameras:
@@ -482,21 +515,28 @@ class MetashapeWorkflow:
 
     def calibrate_reflectance(self):
         # TODO: Handle failure to find panels, or mulitple panel images by returning error to user.
-        self.doc.chunk.locateReflectancePanels()
-        self.doc.chunk.loadReflectancePanelCalibration(
-            os.path.join(
-                self.cfg["photo_path"],
-                "calibration",
-                self.cfg["calibrateReflectance"]["panel_filename"],
+        self.benchmark.log_step_header("Calibrate Reflectance")
+
+        with self.benchmark.monitor("locateReflectancePanels"):
+            self.doc.chunk.locateReflectancePanels()
+
+        with self.benchmark.monitor("loadReflectancePanelCalibration"):
+            self.doc.chunk.loadReflectancePanelCalibration(
+                os.path.join(
+                    self.cfg["photo_path"],
+                    "calibration",
+                    self.cfg["calibrateReflectance"]["panel_filename"],
+                )
             )
-        )
-        # self.doc.chunk.calibrateReflectance(use_reflectance_panels=True,use_sun_sensor=True)
-        self.doc.chunk.calibrateReflectance(
-            use_reflectance_panels=self.cfg["calibrateReflectance"][
-                "use_reflectance_panels"
-            ],
-            use_sun_sensor=self.cfg["calibrateReflectance"]["use_sun_sensor"],
-        )
+
+        with self.benchmark.monitor("calibrateReflectance"):
+            self.doc.chunk.calibrateReflectance(
+                use_reflectance_panels=self.cfg["calibrateReflectance"][
+                    "use_reflectance_panels"
+                ],
+                use_sun_sensor=self.cfg["calibrateReflectance"]["use_sun_sensor"],
+            )
+
         self.doc.save()
 
         return True
@@ -506,6 +546,8 @@ class MetashapeWorkflow:
         Add GCPs (GCP coordinates and the locations of GCPs in individual photos.
         See the helper script (and the comments therein) for details on how to prepare the data needed by this function: R/prep_gcps.R
         """
+
+        self.benchmark.log_step_header("Add GCPs")
 
         # Determine the location of the GCPs file, which is also the base path to prepend to the GCP
         # camera label (relative to what's specified in the GCPs file, which is a relative path), to
@@ -604,50 +646,44 @@ class MetashapeWorkflow:
         return True
 
     def export_cameras(self):
+        self.benchmark.log_step_header("Export Cameras")
+
         output_file = os.path.join(
             self.cfg["output_path"], self.run_id + "_cameras.xml"
         )
         # Defaults to xml format, which is the only one we've used so far
-        self.doc.chunk.exportCameras(path=output_file)
+        with self.benchmark.monitor("exportCameras"):
+            self.doc.chunk.exportCameras(path=output_file)
         self.written_paths["camera_export"] = output_file  # export
 
-    def align_photos(self):
+    def align_photos(self, log_header=True):
         """
         Match photos, align cameras, optimize cameras
         """
 
-        #### Align photos
+        if log_header:
+            self.benchmark.log_step_header("Align Photos")
 
-        # get a beginning time stamp
-        timer1a = time.time()
+        with self.benchmark.monitor("matchPhotos"):
+            self.doc.chunk.matchPhotos(
+                downscale=self.cfg["alignPhotos"]["downscale"],
+                subdivide_task=self.cfg["subdivide_task"],
+                keep_keypoints=self.cfg["alignPhotos"]["keep_keypoints"],
+                generic_preselection=self.cfg["alignPhotos"]["generic_preselection"],
+                reference_preselection=self.cfg["alignPhotos"]["reference_preselection"],
+                reference_preselection_mode=self.cfg["alignPhotos"][
+                    "reference_preselection_mode"
+                ],
+            )
 
-        # Align cameras
-        self.doc.chunk.matchPhotos(
-            downscale=self.cfg["alignPhotos"]["downscale"],
-            subdivide_task=self.cfg["subdivide_task"],
-            keep_keypoints=self.cfg["alignPhotos"]["keep_keypoints"],
-            generic_preselection=self.cfg["alignPhotos"]["generic_preselection"],
-            reference_preselection=self.cfg["alignPhotos"]["reference_preselection"],
-            reference_preselection_mode=self.cfg["alignPhotos"][
-                "reference_preselection_mode"
-            ],
-        )
-        self.doc.chunk.alignCameras(
-            adaptive_fitting=self.cfg["alignPhotos"]["adaptive_fitting"],
-            subdivide_task=self.cfg["subdivide_task"],
-            reset_alignment=self.cfg["alignPhotos"]["reset_alignment"],
-        )
+        with self.benchmark.monitor("alignCameras"):
+            self.doc.chunk.alignCameras(
+                adaptive_fitting=self.cfg["alignPhotos"]["adaptive_fitting"],
+                subdivide_task=self.cfg["subdivide_task"],
+                reset_alignment=self.cfg["alignPhotos"]["reset_alignment"],
+            )
+
         self.doc.save()
-
-        # get an ending time stamp
-        timer1b = time.time()
-
-        # calculate difference between end and start time to 1 decimal place
-        time1 = diff_time(timer1b, timer1a)
-
-        # record processing time to file
-        with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Align Photos", time1]) + "\n")
 
         return True
 
@@ -668,8 +704,7 @@ class MetashapeWorkflow:
         Optimize cameras
         """
 
-        # get a beginning time stamp
-        timer1a = time.time()
+        self.benchmark.log_step_header("Optimize Cameras")
 
         # Disable camera locations as reference if specified in YML
         if (
@@ -680,20 +715,10 @@ class MetashapeWorkflow:
             for i in range(0, n_cameras):
                 self.doc.chunk.cameras[i].reference.enabled = False
 
-        # Currently only optimizes the default parameters, which is not all possible parameters
-        self.doc.chunk.optimizeCameras(
-            adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
-        )
-
-        # get an ending time stamp
-        timer1b = time.time()
-
-        # calculate difference between end and start time to 1 decimal place
-        time1 = diff_time(timer1b, timer1a)
-
-        # record results to file
-        with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Optimize cameras", time1]) + "\n")
+        with self.benchmark.monitor("optimizeCameras"):
+            self.doc.chunk.optimizeCameras(
+                adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
+            )
 
         self.doc.save()
 
@@ -701,12 +726,12 @@ class MetashapeWorkflow:
 
     def filter_points_usgs_part1(self):
 
-        # get a beginning time stamp
-        timer1a = time.time()
+        self.benchmark.log_step_header("Filter Points USGS Part 1")
 
-        self.doc.chunk.optimizeCameras(
-            adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
-        )
+        with self.benchmark.monitor("optimizeCameras"):
+            self.doc.chunk.optimizeCameras(
+                adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
+            )
 
         rec_thresh_percent = self.cfg["filterPointsUSGS"]["rec_thresh_percent"]
         rec_thresh_absolute = self.cfg["filterPointsUSGS"]["rec_thresh_absolute"]
@@ -724,9 +749,10 @@ class MetashapeWorkflow:
             thresh = rec_thresh_absolute  # don't throw away too many points if they're all good
         fltr.removePoints(thresh)
 
-        self.doc.chunk.optimizeCameras(
-            adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
-        )
+        with self.benchmark.monitor("optimizeCameras"):
+            self.doc.chunk.optimizeCameras(
+                adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
+            )
 
         fltr = Metashape.TiePoints.Filter()
         fltr.init(self.doc.chunk, Metashape.TiePoints.Filter.ProjectionAccuracy)
@@ -737,9 +763,10 @@ class MetashapeWorkflow:
             thresh = proj_thresh_absolute  # don't throw away too many points if they're all good
         fltr.removePoints(thresh)
 
-        self.doc.chunk.optimizeCameras(
-            adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
-        )
+        with self.benchmark.monitor("optimizeCameras"):
+            self.doc.chunk.optimizeCameras(
+                adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
+            )
 
         fltr = Metashape.TiePoints.Filter()
         fltr.init(self.doc.chunk, Metashape.TiePoints.Filter.ReprojectionError)
@@ -750,32 +777,21 @@ class MetashapeWorkflow:
             thresh = reproj_thresh_absolute  # don't throw away too many points if they're all good
         fltr.removePoints(thresh)
 
-        self.doc.chunk.optimizeCameras(
-            adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
-        )
-
-        # get an ending time stamp
-        timer1b = time.time()
-
-        # calculate difference between end and start time to 1 decimal place
-        time1 = diff_time(timer1b, timer1a)
-
-        # record results to file
-        with open(self.log_file, "a") as file:
-            file.write(
-                MetashapeWorkflow.sep.join(["USGS filter points part 1", time1]) + "\n"
+        with self.benchmark.monitor("optimizeCameras"):
+            self.doc.chunk.optimizeCameras(
+                adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
             )
 
         self.doc.save()
 
     def filter_points_usgs_part2(self):
 
-        # get a beginning time stamp
-        timer1a = time.time()
+        self.benchmark.log_step_header("Filter Points USGS Part 2")
 
-        self.doc.chunk.optimizeCameras(
-            adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
-        )
+        with self.benchmark.monitor("optimizeCameras"):
+            self.doc.chunk.optimizeCameras(
+                adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
+            )
 
         reproj_thresh_percent = self.cfg["filterPointsUSGS"]["reproj_thresh_percent"]
         reproj_thresh_absolute = self.cfg["filterPointsUSGS"]["reproj_thresh_absolute"]
@@ -789,73 +805,37 @@ class MetashapeWorkflow:
             thresh = reproj_thresh_absolute  # don't throw away too many points if they're all good
         fltr.removePoints(thresh)
 
-        self.doc.chunk.optimizeCameras(
-            adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
-        )
-
-        # get an ending time stamp
-        timer1b = time.time()
-
-        # calculate difference between end and start time to 1 decimal place
-        time1 = diff_time(timer1b, timer1a)
-
-        # record results to file
-        with open(self.log_file, "a") as file:
-            file.write(
-                MetashapeWorkflow.sep.join(["USGS filter points part 2", time1]) + "\n"
+        with self.benchmark.monitor("optimizeCameras"):
+            self.doc.chunk.optimizeCameras(
+                adaptive_fitting=self.cfg["optimizeCameras"]["adaptive_fitting"]
             )
 
         self.doc.save()
 
     def classify_ground_points(self):
 
-        # get a beginning time stamp for the next step
-        timer_a = time.time()
-
-        self.doc.chunk.point_cloud.classifyGroundPoints(
-            max_angle=self.cfg["classifyGroundPoints"]["max_angle"],
-            max_distance=self.cfg["classifyGroundPoints"]["max_distance"],
-            cell_size=self.cfg["classifyGroundPoints"]["cell_size"],
-        )
-
-        # get an ending time stamp for the previous step
-        timer_b = time.time()
-
-        # calculate difference between end and start time to 1 decimal place
-        time_tot = diff_time(timer_b, timer_a)
+        with self.benchmark.monitor("classifyGroundPoints"):
+            self.doc.chunk.point_cloud.classifyGroundPoints(
+                max_angle=self.cfg["classifyGroundPoints"]["max_angle"],
+                max_distance=self.cfg["classifyGroundPoints"]["max_distance"],
+                cell_size=self.cfg["classifyGroundPoints"]["cell_size"],
+            )
 
         self.doc.save()
-
-        # record results to file
-        with open(self.log_file, "a") as file:
-            file.write(
-                MetashapeWorkflow.sep.join(["Classify Ground Points", time_tot]) + "\n"
-            )
 
     def build_depth_maps(self):
         ### Build depth maps
 
-        # get a beginning time stamp for the next step
-        timer2a = time.time()
+        self.benchmark.log_step_header("Build Depth Maps")
 
-        # build depth maps only instead of also building the point cloud ##?? what does
-        self.doc.chunk.buildDepthMaps(
-            downscale=self.cfg["buildDepthMaps"]["downscale"],
-            filter_mode=self.cfg["buildDepthMaps"]["filter_mode"],
-            reuse_depth=self.cfg["buildDepthMaps"]["reuse_depth"],
-            max_neighbors=self.cfg["buildDepthMaps"]["max_neighbors"],
-            subdivide_task=self.cfg["subdivide_task"],
-        )
-
-        # get an ending time stamp for the previous step
-        timer2b = time.time()
-
-        # calculate difference between end and start time to 1 decimal place
-        time2 = diff_time(timer2b, timer2a)
-
-        # record results to file
-        with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Build Depth Maps", time2]) + "\n")
+        with self.benchmark.monitor("buildDepthMaps"):
+            self.doc.chunk.buildDepthMaps(
+                downscale=self.cfg["buildDepthMaps"]["downscale"],
+                filter_mode=self.cfg["buildDepthMaps"]["filter_mode"],
+                reuse_depth=self.cfg["buildDepthMaps"]["reuse_depth"],
+                max_neighbors=self.cfg["buildDepthMaps"]["max_neighbors"],
+                subdivide_task=self.cfg["subdivide_task"],
+            )
 
         self.doc.save()
 
@@ -864,28 +844,15 @@ class MetashapeWorkflow:
         Build point cloud
         """
 
-        ### Build point cloud
+        self.benchmark.log_step_header("Build Point Cloud")
 
-        # get a beginning time stamp for the next step
-        timer3a = time.time()
-
-        # build point cloud
-        self.doc.chunk.buildPointCloud(
-            max_neighbors=self.cfg["buildPointCloud"]["max_neighbors"],
-            keep_depth=self.cfg["buildPointCloud"]["keep_depth"],
-            subdivide_task=self.cfg["subdivide_task"],
-            point_colors=True,
-        )
-
-        # get an ending time stamp for the previous step
-        timer3b = time.time()
-
-        # calculate difference between end and start time to 1 decimal place
-        time3 = diff_time(timer3b, timer3a)
-
-        # record results to file
-        with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Build Point Cloud", time3]) + "\n")
+        with self.benchmark.monitor("buildPointCloud"):
+            self.doc.chunk.buildPointCloud(
+                max_neighbors=self.cfg["buildPointCloud"]["max_neighbors"],
+                keep_depth=self.cfg["buildPointCloud"]["keep_depth"],
+                subdivide_task=self.cfg["subdivide_task"],
+                point_colors=True,
+            )
 
         self.doc.save()
 
@@ -911,24 +878,26 @@ class MetashapeWorkflow:
             )
             if self.cfg["buildPointCloud"]["classes"] == "ALL":
                 # call without classes argument (Metashape then defaults to all classes)
-                self.doc.chunk.exportPointCloud(
-                    path=output_file,
-                    source_data=Metashape.PointCloudData,
-                    format=self.cfg["buildPointCloud"]["export_format"],
-                    crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
-                    subdivide_task=self.cfg["subdivide_task"],
-                )
+                with self.benchmark.monitor("exportPointCloud"):
+                    self.doc.chunk.exportPointCloud(
+                        path=output_file,
+                        source_data=Metashape.PointCloudData,
+                        format=self.cfg["buildPointCloud"]["export_format"],
+                        crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
+                        subdivide_task=self.cfg["subdivide_task"],
+                    )
                 self.written_paths["point_cloud_all_classes"] = output_file  # export
             else:
                 # call with classes argument
-                self.doc.chunk.exportPointCloud(
-                    path=output_file,
-                    source_data=Metashape.PointCloudData,
-                    format=Metashape.PointCloudFormatLAZ,
-                    crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
-                    classes=self.cfg["buildPointCloud"]["classes"],
-                    subdivide_task=self.cfg["subdivide_task"],
-                )
+                with self.benchmark.monitor("exportPointCloud"):
+                    self.doc.chunk.exportPointCloud(
+                        path=output_file,
+                        source_data=Metashape.PointCloudData,
+                        format=Metashape.PointCloudFormatLAZ,
+                        crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
+                        classes=self.cfg["buildPointCloud"]["classes"],
+                        subdivide_task=self.cfg["subdivide_task"],
+                    )
                 self.written_paths["point_cloud_subset_classes"] = output_file  # export
 
         return True
@@ -938,23 +907,18 @@ class MetashapeWorkflow:
         Build and export the mesh
         """
 
-        start_time = time.time()
-        # Build the mesh
-        self.doc.chunk.buildModel(
-            surface_type=Metashape.Arbitrary,
-            interpolation=Metashape.EnabledInterpolation,
-            face_count=self.cfg["buildMesh"]["face_count"],
-            face_count_custom=self.cfg["buildMesh"][
-                "face_count_custom"
-            ],  # Only used if face_count is custom
-            source_data=Metashape.DepthMapsData,
-        )
+        self.benchmark.log_step_header("Build Mesh")
 
-        time_taken = diff_time(time.time(), start_time)
-
-        # record results to file
-        with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Build Mesh", time_taken]) + "\n")
+        with self.benchmark.monitor("buildModel"):
+            self.doc.chunk.buildModel(
+                surface_type=Metashape.Arbitrary,
+                interpolation=Metashape.EnabledInterpolation,
+                face_count=self.cfg["buildMesh"]["face_count"],
+                face_count_custom=self.cfg["buildMesh"][
+                    "face_count_custom"
+                ],  # Only used if face_count is custom
+                source_data=Metashape.DepthMapsData,
+            )
 
         # Save the mesh
         self.doc.save()
@@ -973,12 +937,13 @@ class MetashapeWorkflow:
             )
             # Export the georeferenced mesh in the project CRS. The metadata file is the only thing
             # that encodes the CRS.
-            self.doc.chunk.exportModel(
-                path=output_file,
-                crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
-                save_metadata_xml=True,
-                shift=shift,
-            )
+            with self.benchmark.monitor("exportModel"):
+                self.doc.chunk.exportModel(
+                    path=output_file,
+                    crs=Metashape.CoordinateSystem(self.cfg["project_crs"]),
+                    save_metadata_xml=True,
+                    shift=shift,
+                )
 
         return True
 
@@ -992,6 +957,8 @@ class MetashapeWorkflow:
             self.classify_ground_points()
 
         if self.cfg["buildDem"]["enabled"]:
+            self.benchmark.log_step_header("Build DEM")
+
             # prepping params for buildDem
             projection = Metashape.OrthoProjection()
             projection.crs = Metashape.CoordinateSystem(self.cfg["project_crs"])
@@ -1003,114 +970,85 @@ class MetashapeWorkflow:
             compression.tiff_overviews = self.cfg["buildDem"]["tiff_overviews"]
 
             if "DSM-ptcloud" in self.cfg["buildDem"]["surface"]:
-                start_time = time.time()
-
-                # call without point classes argument (Metashape then defaults to all classes)
-                self.doc.chunk.buildDem(
-                    source_data=Metashape.PointCloudData,
-                    subdivide_task=self.cfg["subdivide_task"],
-                    projection=projection,
-                    resolution=self.cfg["buildDem"]["resolution"],
-                )
-
-                time_taken = diff_time(time.time(), start_time)
+                with self.benchmark.monitor("buildDem (DSM-ptcloud)"):
+                    self.doc.chunk.buildDem(
+                        source_data=Metashape.PointCloudData,
+                        subdivide_task=self.cfg["subdivide_task"],
+                        projection=projection,
+                        resolution=self.cfg["buildDem"]["resolution"],
+                    )
 
                 self.doc.chunk.elevation.label = "DSM-ptcloud"
-
-                # record results to file
-                with open(self.log_file, "a") as file:
-                    file.write(
-                        MetashapeWorkflow.sep.join(["Build DSM-ptcloud", time_taken])
-                        + "\n"
-                    )
 
                 output_file = os.path.join(
                     self.cfg["output_path"], self.run_id + "_dsm-ptcloud.tif"
                 )
                 if self.cfg["buildDem"]["export"]:
-                    self.doc.chunk.exportRaster(
-                        path=output_file,
-                        projection=projection,
-                        nodata_value=self.cfg["buildDem"]["nodata"],
-                        source_data=Metashape.ElevationData,
-                        image_compression=compression,
-                    )
+                    with self.benchmark.monitor("exportRaster (DSM-ptcloud)"):
+                        self.doc.chunk.exportRaster(
+                            path=output_file,
+                            projection=projection,
+                            nodata_value=self.cfg["buildDem"]["nodata"],
+                            source_data=Metashape.ElevationData,
+                            image_compression=compression,
+                        )
                     self.written_paths[f"DEM_{self.cfg['buildDem']['surface'][0]}"] = (
                         output_file  # export
                     )
-                # log to output file to variable
+
             if "DTM-ptcloud" in self.cfg["buildDem"]["surface"]:
-
-                start_time = time.time()
-
-                # call with point classes argument to specify ground points only
-                self.doc.chunk.buildDem(
-                    source_data=Metashape.PointCloudData,
-                    classes=Metashape.PointClass.Ground,
-                    subdivide_task=self.cfg["subdivide_task"],
-                    projection=projection,
-                    resolution=self.cfg["buildDem"]["resolution"],
-                )
-
-                time_taken = diff_time(time.time(), start_time)
+                with self.benchmark.monitor("buildDem (DTM-ptcloud)"):
+                    self.doc.chunk.buildDem(
+                        source_data=Metashape.PointCloudData,
+                        classes=Metashape.PointClass.Ground,
+                        subdivide_task=self.cfg["subdivide_task"],
+                        projection=projection,
+                        resolution=self.cfg["buildDem"]["resolution"],
+                    )
 
                 self.doc.chunk.elevation.label = "DTM-ptcloud"
-
-                # record results to file
-                with open(self.log_file, "a") as file:
-                    file.write(
-                        MetashapeWorkflow.sep.join(["Build DTM-ptcloud", time_taken])
-                        + "\n"
-                    )
 
                 output_file = os.path.join(
                     self.cfg["output_path"], self.run_id + "_dtm-ptcloud.tif"
                 )
                 if self.cfg["buildDem"]["export"]:
-                    self.doc.chunk.exportRaster(
-                        path=output_file,
-                        projection=projection,
-                        nodata_value=self.cfg["buildDem"]["nodata"],
-                        source_data=Metashape.ElevationData,
-                        image_compression=compression,
-                    )
+                    with self.benchmark.monitor("exportRaster (DTM-ptcloud)"):
+                        self.doc.chunk.exportRaster(
+                            path=output_file,
+                            projection=projection,
+                            nodata_value=self.cfg["buildDem"]["nodata"],
+                            source_data=Metashape.ElevationData,
+                            image_compression=compression,
+                        )
 
             if "DSM-mesh" in self.cfg["buildDem"]["surface"]:
-
-                start_time = time.time()
-
-                self.doc.chunk.buildDem(
-                    source_data=Metashape.ModelData,
-                    subdivide_task=self.cfg["subdivide_task"],
-                    projection=projection,
-                    resolution=self.cfg["buildDem"]["resolution"],
-                )
-
-                time_taken = diff_time(time.time(), start_time)
+                with self.benchmark.monitor("buildDem (DSM-mesh)"):
+                    self.doc.chunk.buildDem(
+                        source_data=Metashape.ModelData,
+                        subdivide_task=self.cfg["subdivide_task"],
+                        projection=projection,
+                        resolution=self.cfg["buildDem"]["resolution"],
+                    )
 
                 self.doc.chunk.elevation.label = "DSM-mesh"
-
-                # record results to file
-                with open(self.log_file, "a") as file:
-                    file.write(
-                        MetashapeWorkflow.sep.join(["Build DSM-mesh", time_taken])
-                        + "\n"
-                    )
 
                 output_file = os.path.join(
                     self.cfg["output_path"], self.run_id + "_dsm-mesh.tif"
                 )
                 if self.cfg["buildDem"]["export"]:
-                    self.doc.chunk.exportRaster(
-                        path=output_file,
-                        projection=projection,
-                        nodata_value=self.cfg["buildDem"]["nodata"],
-                        source_data=Metashape.ElevationData,
-                        image_compression=compression,
-                    )
+                    with self.benchmark.monitor("exportRaster (DSM-mesh)"):
+                        self.doc.chunk.exportRaster(
+                            path=output_file,
+                            projection=projection,
+                            nodata_value=self.cfg["buildDem"]["nodata"],
+                            source_data=Metashape.ElevationData,
+                            image_compression=compression,
+                        )
 
         # Each DEM has a label associated with it which is used to identify and activate the correct DEM for orthomosaic generation
         if self.cfg["buildOrthomosaic"]["enabled"]:
+            self.benchmark.log_step_header("Build Orthomosaic")
+
             # Iterate through each specified surface in the configuration
             for surface in self.cfg["buildOrthomosaic"]["surface"]:
                 if surface == "Mesh":
@@ -1150,9 +1088,6 @@ class MetashapeWorkflow:
         Note that we have tried using the 'resolution' parameter of buildOrthomosaic, but it does not have any effect. An orthomosaic built onto a DSM always has a reslution of 1/4 the DSM, and one built onto the mesh has a resolution of ~the GSD.
         """
 
-        # get a beginning time stamp for the next step
-        timer6a = time.time()
-
         # prepping params for buildDem
         projection = Metashape.OrthoProjection()
         projection.crs = Metashape.CoordinateSystem(self.cfg["project_crs"])
@@ -1162,24 +1097,15 @@ class MetashapeWorkflow:
         else:
             surface_data = Metashape.ElevationData
 
-        self.doc.chunk.buildOrthomosaic(
-            surface_data=surface_data,
-            blending_mode=self.cfg["buildOrthomosaic"]["blending"],
-            fill_holes=self.cfg["buildOrthomosaic"]["fill_holes"],
-            refine_seamlines=self.cfg["buildOrthomosaic"]["refine_seamlines"],
-            subdivide_task=self.cfg["subdivide_task"],
-            projection=projection,
-        )
-
-        # get an ending time stamp for the previous step
-        timer6b = time.time()
-
-        # calculate difference between end and start time to 1 decimal place
-        time6 = diff_time(timer6b, timer6a)
-
-        # record results to file
-        with open(self.log_file, "a") as file:
-            file.write(MetashapeWorkflow.sep.join(["Build Orthomosaic", time6]) + "\n")
+        with self.benchmark.monitor(f"buildOrthomosaic ({file_ending})"):
+            self.doc.chunk.buildOrthomosaic(
+                surface_data=surface_data,
+                blending_mode=self.cfg["buildOrthomosaic"]["blending"],
+                fill_holes=self.cfg["buildOrthomosaic"]["fill_holes"],
+                refine_seamlines=self.cfg["buildOrthomosaic"]["refine_seamlines"],
+                subdivide_task=self.cfg["subdivide_task"],
+                projection=projection,
+            )
 
         self.doc.save()
 
@@ -1197,13 +1123,14 @@ class MetashapeWorkflow:
             projection = Metashape.OrthoProjection()
             projection.crs = Metashape.CoordinateSystem(self.cfg["project_crs"])
 
-            self.doc.chunk.exportRaster(
-                path=output_file,
-                projection=projection,
-                nodata_value=self.cfg["buildOrthomosaic"]["nodata"],
-                source_data=Metashape.OrthomosaicData,
-                image_compression=compression,
-            )
+            with self.benchmark.monitor(f"exportRaster (ortho-{file_ending})"):
+                self.doc.chunk.exportRaster(
+                    path=output_file,
+                    projection=projection,
+                    nodata_value=self.cfg["buildOrthomosaic"]["nodata"],
+                    source_data=Metashape.OrthomosaicData,
+                    image_compression=compression,
+                )
             self.written_paths["ortho_" + file_ending] = output_file  # export
 
         if self.cfg["buildOrthomosaic"]["remove_after_export"]:
@@ -1228,28 +1155,15 @@ class MetashapeWorkflow:
                 "For aligning secondary photos, keep_keypoints must be True."
             )
 
-        # get a beginning time stamp for the next step
-        timer2a = time.time()
+        self.benchmark.log_step_header("Add/Align Secondary Photos")
 
         # Add the secondary photos
-        self.add_photos(secondary=True)
-
-        # get an ending time stamp for the previous step
-        timer2b = time.time()
-
-        # calculate difference between end and start time to 1 decimal place
-        time2 = diff_time(timer2b, timer2a)
-
-        # record results to file
-        with open(self.log_file, "a") as file:
-            file.write(
-                MetashapeWorkflow.sep.join(["Add secondary photos", time2]) + "\n"
-            )
+        self.add_photos(secondary=True, log_header=False)
 
         # Align the secondary photos (really, align all photos, but only the secondary photos will be
         # affected because Metashape only matches and aligns photos that were not already
         # matched/aligned, assuming keep_keypoints and reset_alignment were set as required).
-        self.align_photos()
+        self.align_photos(log_header=False)
 
         self.doc.save()
 
@@ -1258,9 +1172,12 @@ class MetashapeWorkflow:
         Export report
         """
 
+        self.benchmark.log_step_header("Export Report")
+
         output_file = os.path.join(self.cfg["output_path"], self.run_id + "_report.pdf")
 
-        self.doc.chunk.exportReport(path=output_file)
+        with self.benchmark.monitor("exportReport"):
+            self.doc.chunk.exportReport(path=output_file)
         self.written_paths["report"] = output_file  # export
 
         return True
