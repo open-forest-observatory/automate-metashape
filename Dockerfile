@@ -28,7 +28,7 @@ RUN python3 -m venv /opt/venv_metashape
 # Activate the virtual environment and install Metashape and PyYAML
 RUN /opt/venv_metashape/bin/pip install --upgrade pip
 RUN /opt/venv_metashape/bin/pip install /opt/Metashape-2.2.0-cp37.cp38.cp39.cp310.cp311-abi3-linux_x86_64.whl
-RUN /opt/venv_metashape/bin/pip install PyYAML
+RUN /opt/venv_metashape/bin/pip install PyYAML psutil pynvml
 
 # Remove the downloaded wheel file
 RUN rm /opt/*.whl
