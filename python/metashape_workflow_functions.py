@@ -316,6 +316,7 @@ class MetashapeWorkflow:
             # write a line with CPU info - if possible, improve the way the CPU info is found / recorded
             file.write(MetashapeWorkflow.sep.join(["Node", platform.node()]) + "\n")
             file.write(MetashapeWorkflow.sep.join(["CPU", platform.processor()]) + "\n")
+            file.write(MetashapeWorkflow.sep.join(["CPU Cores Available", str(os.cpu_count())]) + "\n")
             # write two lines with GPU info: count and model names - this takes multiple steps to make it look clean in the end
 
     def enable_and_log_gpu(self):
