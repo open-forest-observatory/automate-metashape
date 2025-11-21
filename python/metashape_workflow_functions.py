@@ -6,6 +6,7 @@ import json
 import os
 import platform
 import re
+
 # Import the fuctionality we need to make time stamps to measure performance
 import time
 from pathlib import Path
@@ -290,7 +291,9 @@ class MetashapeWorkflow:
         self.system_info = self._get_system_info()
 
         # Initialize benchmark monitor for performance logging
-        self.benchmark = BenchmarkMonitor(self.log_file, self.yaml_log_file, self.system_info)
+        self.benchmark = BenchmarkMonitor(
+            self.log_file, self.yaml_log_file, self.system_info
+        )
 
         """
         Create a doc and a chunk
@@ -338,9 +341,21 @@ class MetashapeWorkflow:
                 MetashapeWorkflow.sep.join(["Processing started", stamp_time()]) + "\n"
             )
             # write system info
-            file.write(MetashapeWorkflow.sep.join(["Node", self.system_info["node"]]) + "\n")
-            file.write(MetashapeWorkflow.sep.join(["CPU", self.system_info["cpu"]]) + "\n")
-            file.write(MetashapeWorkflow.sep.join(["CPU Cores Available", str(self.system_info["cpu_cores_available"])]) + "\n")
+            file.write(
+                MetashapeWorkflow.sep.join(["Node", self.system_info["node"]]) + "\n"
+            )
+            file.write(
+                MetashapeWorkflow.sep.join(["CPU", self.system_info["cpu"]]) + "\n"
+            )
+            file.write(
+                MetashapeWorkflow.sep.join(
+                    [
+                        "CPU Cores Available",
+                        str(self.system_info["cpu_cores_available"]),
+                    ]
+                )
+                + "\n"
+            )
 
     def enable_and_log_gpu(self):
         """
@@ -382,7 +397,9 @@ class MetashapeWorkflow:
 
         # Write header for benchmark log
         with open(self.log_file, "a") as file:
-            file.write(f"\n{'API Call':<35} | {'Run Time':>12} | {'CPU Util':>8} | {'GPU Util':>8}\n")
+            file.write(
+                f"\n{'API Call':<35} | {'Run Time':>12} | {'CPU Util':>8} | {'GPU Util':>8}\n"
+            )
 
         return True
 
@@ -668,7 +685,9 @@ class MetashapeWorkflow:
                 subdivide_task=self.cfg["subdivide_task"],
                 keep_keypoints=self.cfg["alignPhotos"]["keep_keypoints"],
                 generic_preselection=self.cfg["alignPhotos"]["generic_preselection"],
-                reference_preselection=self.cfg["alignPhotos"]["reference_preselection"],
+                reference_preselection=self.cfg["alignPhotos"][
+                    "reference_preselection"
+                ],
                 reference_preselection_mode=self.cfg["alignPhotos"][
                     "reference_preselection_mode"
                 ],
