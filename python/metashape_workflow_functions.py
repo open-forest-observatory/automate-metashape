@@ -382,6 +382,10 @@ class MetashapeWorkflow:
             "main/depth_max_gpu_multiplier", self.cfg["gpu_multiplier"]
         )
 
+        # Write header for benchmark log
+        with open(self.log_file, "a") as file:
+            file.write(f"\n{'API Call':<35} | {'Run Time':>12} | {'CPU Util':>8} | {'GPU Util':>8}\n")
+
         return True
 
     def add_photos(self, secondary=False, log_header=True):
