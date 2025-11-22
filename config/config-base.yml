@@ -102,7 +102,6 @@ filterPointsUSGS:
 optimizeCameras: # (Metashape: optimizeCameras)
     enabled: True
     adaptive_fitting: True # Should the camera lens model be fit at the same time as optimizing photos?
-    export: True # Export the camera locations, now updated from the initial alignment
 
 # Should an xml file specifying estimated camera locations (transform matrices) be exported? If
 # enabled, it is exported once after all alignment-related steps (e.g., align, fliter points,

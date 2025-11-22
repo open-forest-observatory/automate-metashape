@@ -673,7 +673,7 @@ class MetashapeWorkflow:
 
     def align_photos(self, log_header=True):
         """
-        Match photos, align cameras, optimize cameras
+        Match photos, align cameras
         """
 
         if log_header:
