@@ -10,7 +10,19 @@ A simple command line tool to automate end-to-end photogrammetry workflows using
 ## Native Installation Workflow
 
 ### Download and Install Software
-**Python:** You need Python 3.7-3.11. We recommend the [Anaconda distribution](https://www.anaconda.com/distribution/) because it includes all the required libraries. When installing, if asked whether the installer should initialize Anaconda3, say "yes". Anaconda must be initialized upon install such that `python` can be called from the command line. A way to check is to simply enter `python` at your command prompt and see if the resulting header info includes Anaconda and Python 3. If it doesn't, you may still need to initialize your Conda install. **Alternative option:** If you want a minimal python installation (such as if you're installing on a computing cluster), you can install [miniconda](https://docs.conda.io/en/latest/miniconda.html) instead. After intalling miniconda, you will need to install additional packages required by our scripts (currently only `PyYAML`) using `pip install {package_name}`.
+**Python:** You need Python 3.7-3.11. We recommend the [Anaconda
+distribution](https://www.anaconda.com/distribution/) because it includes all the required
+libraries. When installing, if asked whether the installer should initialize Anaconda3, say "yes".
+Anaconda must be initialized upon install such that `python` can be called from the command line. A
+way to check is to simply enter `python` at your command prompt and see if the resulting header info
+includes Anaconda and Python 3. If it doesn't, you may still need to initialize your Conda install.
+If you want logging of GPU utilization during workflow runs, you will need to install one additional
+package into your environment that is not inlcluded in Anaconda by running `pip install nvidia-ml-py`.
+**Alternative option:** If you want a minimal python installation (such as if you're installing on a
+computing cluster), you can install [miniconda](https://docs.conda.io/en/latest/miniconda.html)
+instead. After intalling miniconda, you will need to install additional packages required by our
+scripts using `pip install PyYAML psutil nvidia-ml-py`. The final package, `nvidia-ml-py`, is only
+required if you want to enable logging of GPU utilization during workflow runs.
 
 **Reproducible workflow scripts (python):** Simply clone this repository to your machine! `git clone https://github.com/open-forest-observatory/automate-metashape.git`
 
