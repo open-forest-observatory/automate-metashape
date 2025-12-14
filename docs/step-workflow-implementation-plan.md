@@ -120,14 +120,14 @@ Based on Phase 1 benchmarking results, only **matchPhotos, buildDepthMaps, and b
 | Step | Operations | GPU Capable | Node Type Selection |
 |------|------------|-------------|---------------------|
 | `setup` | project_setup, add_photos, calibrate_reflectance | No | CPU only |
-| `match-photos` | matchPhotos | Yes | Config-driven: `matchPhotos.gpu_enabled` |
-| `align-cameras` | alignCameras, filter_points_part1, add_gcps, optimize_cameras, filter_points_part2, export_cameras | No | CPU only |
-| `depth-maps` | buildDepthMaps | Yes | GPU only (always benefits) |
-| `point-cloud` | buildPointCloud, classifyGroundPoints (optional) | No | CPU only |
+| `match_photos` | matchPhotos | Yes | Config-driven: `matchPhotos.gpu_enabled` |
+| `align_cameras` | alignCameras, filter_points_part1, add_gcps, optimize_cameras, filter_points_part2, export_cameras | No | CPU only |
+| `depth_maps` | buildDepthMaps | Yes | GPU only (always benefits) |
+| `point_cloud` | buildPointCloud, classifyGroundPoints (optional) | No | CPU only |
 | `mesh` | buildModel | Yes | Config-driven: `buildMesh.gpu_enabled` |
-| `dem-ortho-finalize` | buildDem, buildOrthomosaic, remove_point_cloud, export_report, finish_run | No | CPU only |
+| `dem_ortho_finalize` | buildDem, buildOrthomosaic, remove_point_cloud, export_report, finish_run | No | CPU only |
 
-**Note:** For steps with optional GPU acceleration (match-photos, mesh), the config parameter determines:
+**Note:** For steps with optional GPU acceleration (match_photos, mesh), the config parameter determines:
 - **In Argo**: Which node type (GPU vs CPU) to schedule the step on
 - **In local execution**: Metashape auto-detects available hardware; the parameter serves as documentation only
 
@@ -138,8 +138,8 @@ Based on Phase 1 benchmarking results, only **matchPhotos, buildDepthMaps, and b
 python metashape_workflow.py config.yml
 
 # New: run single step, load project from previous step
-python metashape_workflow.py config.yml --step match-photos
-python metashape_workflow.py config.yml --step depth-maps
+python metashape_workflow.py config.yml --step match_photos
+python metashape_workflow.py config.yml --step depth_maps
 python metashape_workflow.py config.yml --step mesh
 ```
 
@@ -161,17 +161,9 @@ def run_step(self, step_name):
     self.load_project()
     self.validate_prerequisites(step_name)
 
-    step_methods = {
-        'setup': self.project_setup,
-        'match-photos': self.match_photos,
-        'align-cameras': self.align_cameras,
-        'depth-maps': self.build_depth_maps,
-        'point-cloud': self.build_point_cloud,
-        'mesh': self.build_mesh,
-        'dem-ortho-finalize': self.dem_ortho_finalize,
-    }
-
-    step_methods[step_name]()
+    # Step names match method names directly
+    method = getattr(self, step_name)
+    method()
     self.doc.save()
 ```
 
@@ -211,11 +203,11 @@ Each step validates required prior state:
 ```python
 def validate_prerequisites(self, step_name):
     prereqs = {
-        'align-cameras': lambda: self.doc.chunk.point_cloud is not None,  # needs match results
-        'depth-maps': lambda: len([c for c in self.doc.chunk.cameras if c.transform]) > 0,  # needs alignment
-        'point-cloud': lambda: self.doc.chunk.depth_maps is not None,  # needs depth maps
+        'align_cameras': lambda: self.doc.chunk.point_cloud is not None,  # needs match results
+        'depth_maps': lambda: len([c for c in self.doc.chunk.cameras if c.transform]) > 0,  # needs alignment
+        'point_cloud': lambda: self.doc.chunk.depth_maps is not None,  # needs depth maps
         'mesh': lambda: self.doc.chunk.depth_maps is not None,  # needs depth maps
-        'dem-ortho-finalize': lambda: self.doc.chunk.point_cloud is not None or self.doc.chunk.model is not None,
+        'dem_ortho_finalize': lambda: self.doc.chunk.point_cloud is not None or self.doc.chunk.model is not None,
         # ...
     }
     if step_name in prereqs and not prereqs[step_name]():
@@ -239,7 +231,7 @@ def validate_prerequisites(self, step_name):
 
 The existing config YAML uses per-operation `enabled` flags (e.g., `alignPhotos.enabled`, `buildDem.enabled`). For Argo to skip disabled steps before pod creation, these must be translated to step-level enabled flags.
 
-**Important:** A step being enabled does NOT mean all its component operations run—each operation checks its own config flag. For example, `align-cameras` could be enabled to add GCPs (`addGCPs.enabled: true`) even if alignment itself is disabled (`alignPhotos.enabled: false`), though this would be unusual.
+**Important:** A step being enabled does NOT mean all its component operations run—each operation checks its own config flag. For example, `align_cameras` could be enabled to add GCPs (`addGCPs.enabled: true`) even if alignment itself is disabled (`alignPhotos.enabled: false`), though this would be unusual.
 
 **Config Parameters for GPU Selection:**
 
@@ -262,13 +254,13 @@ These parameters serve dual purposes:
 
 | Step Parameter | Enabled when... | Node Type |
 |----------------|-----------------|-----------|
-| `setup-enabled` | Always `true` | CPU |
-| `match-photos-enabled` | `alignPhotos.enabled == true` | Determined by `alignPhotos.gpu_enabled` |
-| `align-cameras-enabled` | `alignPhotos.enabled == true` OR `addGCPs.enabled == true` OR `filterPointsUSGS.enabled == true` OR `optimizeCameras.enabled == true` | CPU |
-| `depth-maps-enabled` | `buildDepthMaps.enabled == true` | GPU |
-| `point-cloud-enabled` | `buildPointCloud.enabled == true` | CPU |
-| `mesh-enabled` | `buildMesh.enabled == true` | Determined by `buildMesh.gpu_enabled` |
-| `dem-ortho-finalize-enabled` | Always `true` | CPU |
+| `setup_enabled` | Always `true` | CPU |
+| `match_photos_enabled` | `alignPhotos.enabled == true` | Determined by `alignPhotos.gpu_enabled` |
+| `align_cameras_enabled` | `alignPhotos.enabled == true` OR `addGCPs.enabled == true` OR `filterPointsUSGS.enabled == true` OR `optimizeCameras.enabled == true` | CPU |
+| `depth_maps_enabled` | `buildDepthMaps.enabled == true` | GPU |
+| `point_cloud_enabled` | `buildPointCloud.enabled == true` | CPU |
+| `mesh_enabled` | `buildMesh.enabled == true` | Determined by `buildMesh.gpu_enabled` |
+| `dem_ortho_finalize_enabled` | Always `true` | CPU |
 
 **Preprocess Step:**
 
@@ -321,77 +313,77 @@ spec:
     parameters:
       - name: project-path
       - name: config-path
-      - name: setup-enabled
-      - name: match-photos-enabled
-      - name: match-photos-use-gpu
-      - name: align-cameras-enabled
-      - name: depth-maps-enabled
-      - name: point-cloud-enabled
-      - name: mesh-enabled
-      - name: mesh-use-gpu
-      - name: dem-ortho-finalize-enabled
+      - name: setup_enabled
+      - name: match_photos_enabled
+      - name: match_photos_use_gpu
+      - name: align_cameras_enabled
+      - name: depth_maps_enabled
+      - name: point_cloud_enabled
+      - name: mesh_enabled
+      - name: mesh_use_gpu
+      - name: dem_ortho_finalize_enabled
   templates:
     - name: main
       dag:
         tasks:
           - name: setup
-            when: "{{workflow.parameters.setup-enabled}} == 'true'"
+            when: "{{workflow.parameters.setup_enabled}} == 'true'"
             template: cpu-step
             arguments:
               parameters:
                 - name: step
                   value: "setup"
 
-          # match-photos: separate tasks for GPU vs CPU, mutually exclusive via when conditions
+          # match_photos: separate tasks for GPU vs CPU, mutually exclusive via when conditions
           - name: match-photos-gpu
             depends: "setup"
-            when: "{{workflow.parameters.match-photos-enabled}} == 'true' && {{workflow.parameters.match-photos-use-gpu}} == 'true'"
+            when: "{{workflow.parameters.match_photos_enabled}} == 'true' && {{workflow.parameters.match_photos_use_gpu}} == 'true'"
             template: gpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "match-photos"
+                  value: "match_photos"
 
           - name: match-photos-cpu
             depends: "setup"
-            when: "{{workflow.parameters.match-photos-enabled}} == 'true' && {{workflow.parameters.match-photos-use-gpu}} == 'false'"
+            when: "{{workflow.parameters.match_photos_enabled}} == 'true' && {{workflow.parameters.match_photos_use_gpu}} == 'false'"
             template: cpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "match-photos"
+                  value: "match_photos"
 
           - name: align-cameras
             depends: "match-photos-gpu || match-photos-cpu"
-            when: "{{workflow.parameters.align-cameras-enabled}} == 'true'"
+            when: "{{workflow.parameters.align_cameras_enabled}} == 'true'"
             template: cpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "align-cameras"
+                  value: "align_cameras"
 
           - name: depth-maps
             depends: "align-cameras.Succeeded || align-cameras.Skipped"
-            when: "{{workflow.parameters.depth-maps-enabled}} == 'true'"
+            when: "{{workflow.parameters.depth_maps_enabled}} == 'true'"
             template: gpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "depth-maps"
+                  value: "depth_maps"
 
           - name: point-cloud
             depends: "depth-maps"
-            when: "{{workflow.parameters.point-cloud-enabled}} == 'true'"
+            when: "{{workflow.parameters.point_cloud_enabled}} == 'true'"
             template: cpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "point-cloud"
+                  value: "point_cloud"
 
           # mesh: separate tasks for GPU vs CPU, mutually exclusive via when conditions
           - name: mesh-gpu
             depends: "depth-maps"
-            when: "{{workflow.parameters.mesh-enabled}} == 'true' && {{workflow.parameters.mesh-use-gpu}} == 'true'"
+            when: "{{workflow.parameters.mesh_enabled}} == 'true' && {{workflow.parameters.mesh_use_gpu}} == 'true'"
             template: gpu-step
             arguments:
               parameters:
@@ -400,7 +392,7 @@ spec:
 
           - name: mesh-cpu
             depends: "depth-maps"
-            when: "{{workflow.parameters.mesh-enabled}} == 'true' && {{workflow.parameters.mesh-use-gpu}} == 'false'"
+            when: "{{workflow.parameters.mesh_enabled}} == 'true' && {{workflow.parameters.mesh_use_gpu}} == 'false'"
             template: cpu-step
             arguments:
               parameters:
@@ -409,12 +401,12 @@ spec:
 
           - name: dem-ortho-finalize
             depends: "(point-cloud.Succeeded || point-cloud.Skipped) && (mesh-gpu || mesh-cpu)"
-            when: "{{workflow.parameters.dem-ortho-finalize-enabled}} == 'true'"
+            when: "{{workflow.parameters.dem_ortho_finalize_enabled}} == 'true'"
             template: cpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "dem-ortho-finalize"
+                  value: "dem_ortho_finalize"
 
     - name: cpu-step
       inputs:
@@ -456,11 +448,12 @@ spec:
 
 **Key Design Points:**
 
-1. **Clean CLI Interface**: Users run `--step match-photos` or `--step mesh` (no GPU suffix)
+1. **Clean CLI Interface**: Users run `--step match_photos` or `--step mesh` (no GPU suffix)
 2. **Config-Driven GPU Selection**: The `matchPhotos.gpu_enabled` and `buildMesh.gpu_enabled` config parameters control node scheduling
-3. **Argo Task Names are Internal**: The `-gpu` and `-cpu` suffixes appear only in Argo task names (internal orchestration), not in the user-facing CLI
+3. **Argo Task Names are Internal**: The `-gpu` and `-cpu` suffixes appear only in Argo task names (internal orchestration), not in the user-facing CLI or step values
 4. **Mutually Exclusive Execution**: `when` conditions ensure only one variant (GPU or CPU) runs based on the `use_gpu` parameter
 5. **Standard Argo Patterns**: Uses proven conditional execution rather than experimental template selection syntax
+6. **Python Conventions**: Step names use underscores (match_photos) matching Python method naming, simplifying the dispatcher implementation
 
 ### Outer Workflow Integration
 
@@ -480,23 +473,23 @@ spec:
               parameters:
                 - name: config-path
                   value: "{{item.config}}"
-                - name: setup-enabled
+                - name: setup_enabled
                   value: "{{item.setup_enabled}}"
-                - name: match-photos-enabled
+                - name: match_photos_enabled
                   value: "{{item.match_photos_enabled}}"
-                - name: match-photos-use-gpu
+                - name: match_photos_use_gpu
                   value: "{{item.match_photos_use_gpu}}"
-                - name: align-cameras-enabled
+                - name: align_cameras_enabled
                   value: "{{item.align_cameras_enabled}}"
-                - name: depth-maps-enabled
+                - name: depth_maps_enabled
                   value: "{{item.depth_maps_enabled}}"
-                - name: point-cloud-enabled
+                - name: point_cloud_enabled
                   value: "{{item.point_cloud_enabled}}"
-                - name: mesh-enabled
+                - name: mesh_enabled
                   value: "{{item.mesh_enabled}}"
-                - name: mesh-use-gpu
+                - name: mesh_use_gpu
                   value: "{{item.mesh_use_gpu}}"
-                - name: dem-ortho-finalize-enabled
+                - name: dem_ortho_finalize_enabled
                   value: "{{item.dem_ortho_finalize_enabled}}"
             withParam: "{{steps.preprocess.outputs.parameters.missions}}"
 
