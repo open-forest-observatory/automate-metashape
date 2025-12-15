@@ -159,7 +159,7 @@ class BenchmarkMonitor:
         # Extract node info - use "N/A" for missing values in TXT log
         cpu_cores_available = system_info.get("cpu_cores_available", "N/A")
         gpu_count = system_info.get("gpu_count", "N/A")
-        gpu_model = system_info.get("gpu_model", "N/A")
+        gpu_model = system_info.get("gpu_model") or "N/A"
         node_name = system_info.get("node", "N/A")
 
         with open(self.log_file, "a") as f:
