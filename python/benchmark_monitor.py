@@ -138,18 +138,31 @@ class BenchmarkMonitor:
 
             # Calculate and round metrics to 1 decimal place
             duration = round(end_time - start_time, 1)
-            cpu_percent = round(sum(cpu_samples) / len(cpu_samples), 1) if cpu_samples else 0.0
-            gpu_percent = round(sum(gpu_samples) / len(gpu_samples), 1) if gpu_samples else None
+            cpu_percent = (
+                round(sum(cpu_samples) / len(cpu_samples), 1) if cpu_samples else 0.0
+            )
+            gpu_percent = (
+                round(sum(gpu_samples) / len(gpu_samples), 1) if gpu_samples else None
+            )
 
             # Get fresh system info for this API call (may be different node per step)
             system_info = self.get_system_info_fn() if self.get_system_info_fn else {}
 
             # Write to logs
-            self._write_human_log(api_call_name, duration, cpu_percent, gpu_percent, system_info)
-            self._write_yaml_log(api_call_name, duration, cpu_percent, gpu_percent, system_info)
+            self._write_human_log(
+                api_call_name, duration, cpu_percent, gpu_percent, system_info
+            )
+            self._write_yaml_log(
+                api_call_name, duration, cpu_percent, gpu_percent, system_info
+            )
 
     def _write_human_log(
-        self, api_call: str, duration: float, cpu_percent: float, gpu_percent: float | None, system_info: dict
+        self,
+        api_call: str,
+        duration: float,
+        cpu_percent: float,
+        gpu_percent: float | None,
+        system_info: dict,
     ):
         """Append entry to human-readable log."""
         duration_str = self._format_duration(duration)
@@ -169,7 +182,12 @@ class BenchmarkMonitor:
             )
 
     def _write_yaml_log(
-        self, api_call: str, duration: float, cpu_percent: float, gpu_percent: float | None, system_info: dict
+        self,
+        api_call: str,
+        duration: float,
+        cpu_percent: float,
+        gpu_percent: float | None,
+        system_info: dict,
     ):
         """Append entry to YAML log."""
         # Extract node info and convert None to 'null' for proper YAML formatting
@@ -179,11 +197,13 @@ class BenchmarkMonitor:
         node_name = system_info.get("node")
 
         # Convert None to 'null' string for valid YAML
-        cpu_cores_available = cpu_cores_available if cpu_cores_available is not None else 'null'
-        gpu_count = gpu_count if gpu_count is not None else 'null'
-        gpu_model = gpu_model if gpu_model is not None else 'null'
-        node_name = node_name if node_name is not None else 'null'
-        gpu_percent = gpu_percent if gpu_percent is not None else 'null'
+        cpu_cores_available = (
+            cpu_cores_available if cpu_cores_available is not None else "null"
+        )
+        gpu_count = gpu_count if gpu_count is not None else "null"
+        gpu_model = gpu_model if gpu_model is not None else "null"
+        node_name = node_name if node_name is not None else "null"
+        gpu_percent = gpu_percent if gpu_percent is not None else "null"
 
         # Write as indented list item under api_calls
         with open(self.yaml_log_path, "a") as f:
