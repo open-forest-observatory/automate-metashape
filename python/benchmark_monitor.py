@@ -9,6 +9,8 @@ Provides a context manager that wraps API calls and logs:
 Integrates with the existing log file and adds a machine-readable YAML format.
 """
 
+import os
+import platform
 import threading
 import time
 from contextlib import contextmanager
@@ -28,19 +30,22 @@ except ImportError:
 class BenchmarkMonitor:
     """Monitor and log performance metrics for Metashape API calls."""
 
-    def __init__(self, log_file: str, yaml_log_path: str, system_info: dict = None):
+    def __init__(self, log_file: str, yaml_log_path: str, get_system_info_fn=None):
         """
         Initialize the benchmark monitor.
 
         Args:
             log_file: Path to existing human-readable log file (appends to it)
             yaml_log_path: Path for machine-readable YAML metrics file
-            system_info: Dictionary with system information (node, cpu, cores, gpu_count, gpu_model)
+            get_system_info_fn: Callable that returns current system info dict.
+                                Called fresh for each API call to handle different nodes per step.
         """
         self.log_file = log_file
         self.yaml_log_path = yaml_log_path
+        self.get_system_info_fn = get_system_info_fn
+        self.current_step = ""  # Store current step name
 
-        # GPU initialization
+        # GPU initialization for monitoring
         self.gpu_available = False
         self.gpu_count = 0
         if PYNVML_AVAILABLE:
@@ -51,11 +56,9 @@ class BenchmarkMonitor:
             except pynvml.NVMLError:
                 pass
 
-        # Write YAML header with system info
-        if system_info:
-            with open(self.yaml_log_path, "w") as f:
-                yaml.dump({"system": system_info}, f, default_flow_style=False)
-                f.write("api_calls:\n")
+        # Write YAML header - system info will be per-call now
+        with open(self.yaml_log_path, "w") as f:
+            f.write("api_calls:\n")
 
     def _format_duration(self, seconds: float) -> str:
         """Format duration as HH:MM:SS."""
@@ -81,13 +84,12 @@ class BenchmarkMonitor:
 
     def log_step_header(self, step_name: str):
         """
-        Write a step header to the human-readable log.
+        Store the current step name for inclusion in log entries.
 
         Args:
             step_name: Name of the automate-metashape workflow step
         """
-        with open(self.log_file, "a") as f:
-            f.write(f"\n=== {step_name} ===\n")
+        self.current_step = step_name
 
     @contextmanager
     def monitor(self, api_call_name: str):
@@ -134,40 +136,65 @@ class BenchmarkMonitor:
             sampler.join(timeout=2.0)
             end_time = time.time()
 
-            # Calculate metrics
-            duration = end_time - start_time
-            avg_cpu = sum(cpu_samples) / len(cpu_samples) if cpu_samples else 0
-            avg_gpu = sum(gpu_samples) / len(gpu_samples) if gpu_samples else None
+            # Calculate and round metrics to 1 decimal place
+            duration = round(end_time - start_time, 1)
+            cpu_percent = round(sum(cpu_samples) / len(cpu_samples), 1) if cpu_samples else 0.0
+            gpu_percent = round(sum(gpu_samples) / len(gpu_samples), 1) if gpu_samples else None
+
+            # Get fresh system info for this API call (may be different node per step)
+            system_info = self.get_system_info_fn() if self.get_system_info_fn else {}
 
             # Write to logs
-            self._write_human_log(api_call_name, duration, avg_cpu, avg_gpu)
-            self._write_yaml_log(api_call_name, duration, avg_cpu, avg_gpu)
+            self._write_human_log(api_call_name, duration, cpu_percent, gpu_percent, system_info)
+            self._write_yaml_log(api_call_name, duration, cpu_percent, gpu_percent, system_info)
 
     def _write_human_log(
-        self, api_call: str, duration: float, cpu: float, gpu: float | None
+        self, api_call: str, duration: float, cpu_percent: float, gpu_percent: float | None, system_info: dict
     ):
         """Append entry to human-readable log."""
         duration_str = self._format_duration(duration)
-        cpu_str = f"{cpu:.0f}%"
-        gpu_str = f"{gpu:.0f}%" if gpu is not None else "N/A"
+        cpu_str = f"{cpu_percent:>3.0f}"
+        gpu_str = f"{gpu_percent:>3.0f}" if gpu_percent is not None else "N/A"
+
+        # Extract node info - use "N/A" for missing values in TXT log
+        cpu_cores_available = system_info.get("cpu_cores_available", "N/A")
+        gpu_count = system_info.get("gpu_count", "N/A")
+        gpu_model = system_info.get("gpu_model") or "N/A"
+        node_name = system_info.get("node", "N/A")
 
         with open(self.log_file, "a") as f:
             f.write(
-                f"{api_call:<35} | {duration_str:>12} | {cpu_str:>8} | {gpu_str:>8}\n"
+                f"{self.current_step:<18} | {api_call:<24} | {duration_str} | {cpu_str:>5} | {gpu_str:>5} | "
+                f"{cpu_cores_available:>4} | {gpu_count:>4} | {gpu_model:<15} | {node_name:<15}\n"
             )
 
     def _write_yaml_log(
-        self, api_call: str, duration: float, cpu: float, gpu: float | None
+        self, api_call: str, duration: float, cpu_percent: float, gpu_percent: float | None, system_info: dict
     ):
         """Append entry to YAML log."""
-        gpu_value = round(gpu, 1) if gpu is not None else "N/A"
+        # Extract node info and convert None to 'null' for proper YAML formatting
+        cpu_cores_available = system_info.get("cpu_cores_available")
+        gpu_count = system_info.get("gpu_count")
+        gpu_model = system_info.get("gpu_model")
+        node_name = system_info.get("node")
+
+        # Convert None to 'null' string for valid YAML
+        cpu_cores_available = cpu_cores_available if cpu_cores_available is not None else 'null'
+        gpu_count = gpu_count if gpu_count is not None else 'null'
+        gpu_model = gpu_model if gpu_model is not None else 'null'
+        node_name = node_name if node_name is not None else 'null'
+        gpu_percent = gpu_percent if gpu_percent is not None else 'null'
 
         # Write as indented list item under api_calls
         with open(self.yaml_log_path, "a") as f:
             f.write(f"  - api_call: {api_call}\n")
-            f.write(f"    duration_seconds: {round(duration, 1)}\n")
-            f.write(f"    cpu_percent: {round(cpu, 1)}\n")
-            f.write(f"    gpu_percent: {gpu_value}\n")
+            f.write(f"    duration_seconds: {duration}\n")
+            f.write(f"    cpu_percent: {cpu_percent}\n")
+            f.write(f"    gpu_percent: {gpu_percent}\n")
+            f.write(f"    cpu_cores_available: {cpu_cores_available}\n")
+            f.write(f"    gpu_count: {gpu_count}\n")
+            f.write(f"    gpu_model: {gpu_model}\n")
+            f.write(f"    node_name: {node_name}\n")
 
     def close(self):
         """Clean up resources."""

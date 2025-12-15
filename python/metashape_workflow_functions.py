@@ -287,12 +287,11 @@ class MetashapeWorkflow:
             self.cfg["output_path"], f"{self.run_id}_metrics.yaml"
         )
 
-        # Gather system info for logging
-        self.system_info = self._get_system_info()
-
         # Initialize benchmark monitor for performance logging
+        # Pass _get_system_info as a callable so it can be called fresh for each API call
+        # (since each step may run on a different node)
         self.benchmark = BenchmarkMonitor(
-            self.log_file, self.yaml_log_file, self.system_info
+            self.log_file, self.yaml_log_file, self._get_system_info
         )
 
         """
@@ -340,48 +339,22 @@ class MetashapeWorkflow:
             file.write(
                 MetashapeWorkflow.sep.join(["Processing started", stamp_time()]) + "\n"
             )
-            # write system info
-            file.write(
-                MetashapeWorkflow.sep.join(["Node", self.system_info["node"]]) + "\n"
-            )
-            file.write(
-                MetashapeWorkflow.sep.join(["CPU", self.system_info["cpu"]]) + "\n"
-            )
-            file.write(
-                MetashapeWorkflow.sep.join(
-                    [
-                        "CPU Cores Available",
-                        str(self.system_info["cpu_cores_available"]),
-                    ]
-                )
-                + "\n"
-            )
+            # Node and system specs are now logged per-step
 
     def enable_and_log_gpu(self):
         """
-        Enables GPU and logs GPU specs
+        Configure GPU settings for Metashape
         """
+        system_info = self._get_system_info()
+        gpucount = system_info["gpu_count"]
+        gpu_mask = system_info["gpu_mask"]
 
-        gpucount = self.system_info["gpu_count"]
-        gpustring = self.system_info["gpu_model"]
-        gpu_mask = self.system_info["gpu_mask"]
-
-        with open(self.log_file, "a") as file:
-            file.write(
-                MetashapeWorkflow.sep.join(["Number of GPUs Found", str(gpucount)])
-                + "\n"
-            )
-            file.write(MetashapeWorkflow.sep.join(["GPU Model", gpustring]) + "\n")
-            file.write(MetashapeWorkflow.sep.join(["GPU Mask", str(gpu_mask)]) + "\n")
-
-            # If a GPU exists but is not enabled, enable the 1st one
-            if (gpucount > 0) and (gpu_mask == 0):
-                Metashape.app.gpu_mask = 1
-                gpu_mask = Metashape.app.gpu_mask
-                file.write(
-                    MetashapeWorkflow.sep.join(["GPU Mask Enabled", str(gpu_mask)])
-                    + "\n"
-                )
+        # If GPUs exist but are not all enabled, enable all of them
+        if gpucount > 0:
+            # Create mask with all GPUs enabled (bitmask with gpucount bits set)
+            all_gpus_mask = (1 << gpucount) - 1
+            if gpu_mask != all_gpus_mask:
+                Metashape.app.gpu_mask = all_gpus_mask
 
         # set Metashape to *not* use the CPU during GPU steps (appears to be standard wisdom)
         Metashape.app.cpu_enable = False
@@ -398,7 +371,8 @@ class MetashapeWorkflow:
         # Write header for benchmark log
         with open(self.log_file, "a") as file:
             file.write(
-                f"\n{'API Call':<35} | {'Run Time':>12} | {'CPU Util':>8} | {'GPU Util':>8}\n"
+                f"\n{'Step':<18} | {'API Call':<24} | {'Run Time':>8} | {'CPU %':>5} | {'GPU %':>5} | "
+                f"{'CPUs':>4} | {'GPUs':>4} | {'GPU Model':<15} | {'Node':<15}\n"
             )
 
         return True
