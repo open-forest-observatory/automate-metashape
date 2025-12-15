@@ -43,6 +43,7 @@ class BenchmarkMonitor:
         self.log_file = log_file
         self.yaml_log_path = yaml_log_path
         self.get_system_info_fn = get_system_info_fn
+        self.current_step = ""  # Store current step name
 
         # GPU initialization for monitoring
         self.gpu_available = False
@@ -83,13 +84,12 @@ class BenchmarkMonitor:
 
     def log_step_header(self, step_name: str):
         """
-        Write a step header to the human-readable log.
+        Store the current step name for inclusion in log entries.
 
         Args:
             step_name: Name of the automate-metashape workflow step
         """
-        with open(self.log_file, "a") as f:
-            f.write(f"\n=== {step_name} ===\n")
+        self.current_step = step_name
 
     @contextmanager
     def monitor(self, api_call_name: str):
@@ -153,8 +153,8 @@ class BenchmarkMonitor:
     ):
         """Append entry to human-readable log."""
         duration_str = self._format_duration(duration)
-        cpu_str = f"CPU: {cpu_percent:>2.0f}%"
-        gpu_str = f"GPU: {gpu_percent:>2.0f}%" if gpu_percent is not None else "GPU: N/A"
+        cpu_str = f"{cpu_percent:>3.0f}"
+        gpu_str = f"{gpu_percent:>3.0f}" if gpu_percent is not None else "N/A"
 
         # Extract node info - use "N/A" for missing values in TXT log
         cpu_cores_available = system_info.get("cpu_cores_available", "N/A")
@@ -164,8 +164,8 @@ class BenchmarkMonitor:
 
         with open(self.log_file, "a") as f:
             f.write(
-                f"{api_call:<24} | {duration_str} | {cpu_str} | {gpu_str} | "
-                f"CPUs: {cpu_cores_available:>7} | GPU: {gpu_count} | {gpu_model:<15} | {node_name:<15}\n"
+                f"{self.current_step:<18} | {api_call:<24} | {duration_str} | {cpu_str:>5} | {gpu_str:>5} | "
+                f"{cpu_cores_available:>4} | {gpu_count:>4} | {gpu_model:<15} | {node_name:<15}\n"
             )
 
     def _write_yaml_log(

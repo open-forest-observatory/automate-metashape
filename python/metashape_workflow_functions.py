@@ -371,8 +371,8 @@ class MetashapeWorkflow:
         # Write header for benchmark log
         with open(self.log_file, "a") as file:
             file.write(
-                f"\n{'API Call':<24} | {'Run Time':>8} | {'CPU %':>10} | {'GPU %':>10} | "
-                f"{'CPUs':>11} | {'GPU'} | {'GPU Model':<15} | {'Node':<15}\n"
+                f"\n{'Step':<18} | {'API Call':<24} | {'Run Time':>8} | {'CPU %':>5} | {'GPU %':>5} | "
+                f"{'CPUs':>4} | {'GPUs':>4} | {'GPU Model':<15} | {'Node':<15}\n"
             )
 
         return True
