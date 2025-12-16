@@ -623,14 +623,31 @@ class MetashapeWorkflow:
 
     def finalize(self):
         """
-        Finalize step: Export report and finish run.
+        Finalize step: Clean up and generate reports.
 
         This step:
+        - Optionally removes point cloud from project if configured
         - Exports processing report
         - Writes completion timestamp to log
         """
+        # Optional operation: remove point cloud after export
+        if self.cfg["build_point_cloud"]["enabled"] and self.cfg["build_point_cloud"]["remove_after_export"]:
+            self.remove_point_cloud()
+
         self.export_report()
         self.finish_run()
+
+        self.doc.save()
+
+    def remove_point_cloud(self):
+        """
+        Remove point cloud from project to reduce file size.
+
+        This is typically called after all point-cloud-derived products
+        (DEMs, orthomosaics) have been exported.
+        """
+        self.doc.chunk.remove(self.doc.chunk.point_clouds)
+        self.doc.save()
 
     def _get_system_info(self):
         """Gather system information for logging."""
@@ -1464,9 +1481,6 @@ class MetashapeWorkflow:
                         )
 
                     self.build_export_orthomosaic(file_ending=surface.lower())
-
-        if self.cfg["build_point_cloud"]["remove_after_export"]:
-            self.doc.chunk.remove(self.doc.chunk.point_clouds)
 
         self.doc.save()
 
