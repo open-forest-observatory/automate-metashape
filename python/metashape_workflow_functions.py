@@ -556,6 +556,71 @@ class MetashapeWorkflow:
         if self.cfg["export_cameras"]["enabled"]:
             self.export_cameras()
 
+    def match_photos_secondary(self):
+        """
+        Match secondary photos step: Add and match secondary photos.
+
+        This step:
+        - Validates that keep_keypoints=True and reset_alignment=False
+        - Adds secondary photos from configured path
+        - Matches them to existing tie points
+
+        Secondary photos are matched to the existing tie points from primary photos
+        without affecting the primary photogrammetry products.
+        """
+        # Validate config settings
+        if self.cfg["align_cameras"]["reset_alignment"] == True:
+            raise ValueError(
+                "For aligning secondary photos, reset_alignment must be False."
+            )
+        if self.cfg["match_photos"]["keep_keypoints"] == False:
+            raise ValueError(
+                "For aligning secondary photos, keep_keypoints must be True."
+            )
+
+        self.benchmark.log_step_header("Match Secondary Photos")
+
+        # Add the secondary photos
+        self.add_photos(secondary=True, log_header=False)
+
+        # Match the secondary photos (only newly added photos will be matched)
+        with self.benchmark.monitor("matchPhotos (secondary)"):
+            self.doc.chunk.matchPhotos(
+                downscale=self.cfg["match_photos"]["downscale"],
+                subdivide_task=self.cfg["project"]["subdivide_task"],
+                keep_keypoints=self.cfg["match_photos"]["keep_keypoints"],
+                generic_preselection=self.cfg["match_photos"]["generic_preselection"],
+                reference_preselection=self.cfg["match_photos"]["reference_preselection"],
+                reference_preselection_mode=self.cfg["match_photos"]["reference_preselection_mode"],
+            )
+
+        self.doc.save()
+
+    def align_cameras_secondary(self):
+        """
+        Align secondary cameras step: Align secondary cameras and optionally export.
+
+        This step:
+        - Aligns secondary cameras (only unaligned cameras are affected)
+        - Optionally exports camera positions if configured
+
+        Note: Primary photos are not re-aligned because reset_alignment=False.
+        """
+        self.benchmark.log_step_header("Align Secondary Cameras")
+
+        with self.benchmark.monitor("alignCameras (secondary)"):
+            self.doc.chunk.alignCameras(
+                adaptive_fitting=self.cfg["align_cameras"]["adaptive_fitting"],
+                subdivide_task=self.cfg["project"]["subdivide_task"],
+                reset_alignment=self.cfg["align_cameras"]["reset_alignment"],
+            )
+
+        self.doc.save()
+
+        # Optionally export cameras after aligning secondary photos
+        if self.cfg["export_cameras"]["enabled"]:
+            self.export_cameras()
+
     def _get_system_info(self):
         """Gather system information for logging."""
         gpustringraw = str(Metashape.app.enumGPUDevices())
@@ -604,10 +669,8 @@ class MetashapeWorkflow:
         self.build_dem_orthomosaic()
 
         if self.cfg["project"]["photo_path_secondary"] != "":
-            self.add_align_secondary_photos()
-
-            if self.cfg["export_cameras"]["enabled"]:
-                self.export_cameras()
+            self.match_photos_secondary()
+            self.align_cameras_secondary()
 
         self.export_report()
 
@@ -999,39 +1062,6 @@ class MetashapeWorkflow:
         with self.benchmark.monitor("exportCameras"):
             self.doc.chunk.exportCameras(path=output_file)
         self.written_paths["camera_export"] = output_file  # export
-
-    def align_photos(self, log_header=True):
-        """
-        Match photos, align cameras
-        """
-
-        if log_header:
-            self.benchmark.log_step_header("Align Photos")
-
-        with self.benchmark.monitor("matchPhotos"):
-            self.doc.chunk.matchPhotos(
-                downscale=self.cfg["match_photos"]["downscale"],
-                subdivide_task=self.cfg["project"]["subdivide_task"],
-                keep_keypoints=self.cfg["match_photos"]["keep_keypoints"],
-                generic_preselection=self.cfg["match_photos"]["generic_preselection"],
-                reference_preselection=self.cfg["match_photos"][
-                    "reference_preselection"
-                ],
-                reference_preselection_mode=self.cfg["match_photos"][
-                    "reference_preselection_mode"
-                ],
-            )
-
-        with self.benchmark.monitor("alignCameras"):
-            self.doc.chunk.alignCameras(
-                adaptive_fitting=self.cfg["align_cameras"]["adaptive_fitting"],
-                subdivide_task=self.cfg["project"]["subdivide_task"],
-                reset_alignment=self.cfg["align_cameras"]["reset_alignment"],
-            )
-
-        self.doc.save()
-
-        return True
 
     def reset_region(self):
         """
@@ -1490,35 +1520,6 @@ class MetashapeWorkflow:
             self.doc.chunk.remove(self.doc.chunk.orthomosaics)
 
         return True
-
-    def add_align_secondary_photos(self):
-        """
-        Add and align a second set of photos, to be aligned only. The main use case for this currently
-        is to be able to build all photogrammetry products from the primary set of photos (e.g., a nadir
-        mission), but to also estimate the positions of a secondary set of photos (e.g., oblique photos)
-        to use for multiview object detection/classification.
-        """
-
-        if self.cfg["align_cameras"]["reset_alignment"] == True:
-            raise ValueError(
-                "For aligning secondary photos, reset_alignment must be False."
-            )
-        if self.cfg["match_photos"]["keep_keypoints"] == False:
-            raise ValueError(
-                "For aligning secondary photos, keep_keypoints must be True."
-            )
-
-        self.benchmark.log_step_header("Add/Align Secondary Photos")
-
-        # Add the secondary photos
-        self.add_photos(secondary=True, log_header=False)
-
-        # Align the secondary photos (really, align all photos, but only the secondary photos will be
-        # affected because Metashape only matches and aligns photos that were not already
-        # matched/aligned, assuming keep_keypoints and reset_alignment were set as required).
-        self.align_photos(log_header=False)
-
-        self.doc.save()
 
     def export_report(self):
         """
