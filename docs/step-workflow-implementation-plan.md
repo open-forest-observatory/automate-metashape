@@ -127,9 +127,9 @@ Based on Phase 1 benchmarking results, only **matchPhotos, buildDepthMaps, and b
 | `match_photos` | matchPhotos | Yes | Config-driven: `matchPhotos.gpu_enabled` |
 | `align_cameras` | alignCameras, reset_region, filter_points_usgs_part1, add_gcps, optimize_cameras, filter_points_usgs_part2, export_cameras | No | CPU only |
 | `depth_maps` | buildDepthMaps | Yes | GPU only (always benefits) |
-| `point_cloud` | buildPointCloud, classifyGroundPoints (optional), export | No | CPU only |
+| `point_cloud` | buildPointCloud, classifyGroundPoints, export | No | CPU only |
 | `mesh` | buildModel, export | Yes | Config-driven: `buildMesh.gpu_enabled` |
-| `dem_orthomosaic` | classify_ground_points (optional), build DEM/ortho operations | No | CPU only |
+| `dem_orthomosaic` | classify_ground_points, build DEM/ortho operations | No | CPU only |
 | `match_secondary_photos` | add_photos, matchPhotos | Yes | Config-driven: `matchPhotos.gpu_enabled` |
 | `align_secondary_cameras` | alignCameras, export_cameras | No | CPU only |
 | `finalize` | remove_point_cloud, export_report, finish_run | No | CPU only |
@@ -278,6 +278,94 @@ Each step in the workflow gets a method that coordinates its component operation
 - The `run()` method is updated to call the new step methods instead
 
 **Note:** GPU vs CPU selection for matchPhotos and buildModel is handled by Metashape's auto-detection based on available hardware during local execution. In Argo workflows, the optional config parameters `matchPhotos.gpu_enabled` and `buildMesh.gpu_enabled` determine which node type to schedule on. If omitted, these parameters default to `true` for backward compatibility.
+
+**Example Step Method Implementations:**
+
+Below are concrete code examples showing how step methods perform config checks for optional operations:
+
+```python
+def setup(self):
+    """Setup step: Initialize project and add photos."""
+    self.project_setup()
+    self.enable_and_log_gpu()
+
+    # Optional operation: add photos (check config)
+    if self.cfg["addPhotos"]["enabled"]:
+        self.add_photos()
+
+    # Optional operation: calibrate reflectance (check config)
+    if self.cfg["calibrateReflectance"]["enabled"]:
+        self.calibrate_reflectance()
+
+    self.doc.save()
+
+def match_photos(self):
+    """Match photos step: Generate tie points."""
+    self.log("Match Photos", "header")
+
+    # Direct Metashape API call (no config check here - run() method already checked alignPhotos.enabled)
+    self.doc.chunk.matchPhotos(
+        downscale=self.cfg["alignPhotos"]["downscale"],
+        generic_preselection=self.cfg["alignPhotos"]["generic_preselection"],
+        reference_preselection=self.cfg["alignPhotos"]["reference_preselection"]
+    )
+
+    self.doc.save()
+
+def align_cameras(self):
+    """Align cameras step: Perform alignment and post-alignment operations."""
+    self.log("Align Cameras", "header")
+
+    # Direct Metashape API call (no config check - already checked in run())
+    self.doc.chunk.alignCameras()
+    self.reset_region()
+
+    # Optional operation: filter sparse points (part 1)
+    if self.cfg["filterPointsUSGS"]["enabled"]:
+        self.filter_points_usgs_part1()
+        self.reset_region()
+
+    # Optional operation: add GCPs
+    if self.cfg["addGCPs"]["enabled"]:
+        self.add_gcps()
+        self.reset_region()
+
+    # Optional operation: optimize cameras
+    if self.cfg["optimizeCameras"]["enabled"]:
+        self.optimize_cameras()
+        self.reset_region()
+
+    # Optional operation: filter sparse points (part 2)
+    if self.cfg["filterPointsUSGS"]["enabled"]:
+        self.filter_points_usgs_part2()
+        self.reset_region()
+
+    # Optional operation: export cameras
+    if self.cfg["exportCameras"]["enabled"]:
+        self.export_cameras()
+
+    self.doc.save()
+
+def finalize(self):
+    """Finalize step: Clean up and generate reports."""
+    self.log("Finalize", "header")
+
+    # Optional operation: remove point cloud after export
+    if self.cfg["buildPointCloud"]["enabled"] and self.cfg["buildPointCloud"]["remove_after_export"]:
+        self.remove_point_cloud()
+
+    # Always run these operations
+    self.export_report()
+    self.finish_run()
+
+    self.doc.save()
+```
+
+**Key patterns:**
+- **Step-level checks** happen in `run()` method (e.g., `if self.cfg["alignPhotos"]["enabled"]: self.match_photos()`)
+- **Operation-level checks** happen inside step methods (e.g., `if self.cfg["addGCPs"]["enabled"]: self.add_gcps()`)
+- Helper methods like `add_gcps()`, `filter_points_usgs_part1()`, etc. contain NO config checks—they just perform their operation
+- Step methods coordinate operations and handle all config logic
 
 #### 3. Unified Logging Across Steps
 
