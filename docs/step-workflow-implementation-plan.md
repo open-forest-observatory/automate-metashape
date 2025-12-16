@@ -117,16 +117,20 @@ Implement detailed per-API-call logging to benchmark processing times and resour
 
 Based on Phase 1 benchmarking results, only **matchPhotos, buildDepthMaps, and buildModel** actually utilize GPU. All other operations are CPU-only.
 
+**Note on Operations column naming:**
+- **snake_case names** (e.g., `add_photos`, `filter_points_usgs_part1`) refer to automate-metashape Python helper methods that the step calls
+- **camelCase names** (e.g., `matchPhotos`, `alignCameras`, `buildDepthMaps`) refer to Metashape API calls made directly by the step method (no wrapper exists)
+
 | Step | Operations | GPU Capable | Node Type Selection |
 |------|------------|-------------|---------------------|
-| `setup` | project_setup, add_photos, calibrate_reflectance | No | CPU only |
+| `setup` | project_setup, enable_and_log_gpu, add_photos, calibrate_reflectance | No | CPU only |
 | `match_photos` | matchPhotos | Yes | Config-driven: `matchPhotos.gpu_enabled` |
-| `align_cameras` | alignCameras, filter_points_part1, add_gcps, optimize_cameras, filter_points_part2, export_cameras | No | CPU only |
+| `align_cameras` | alignCameras, reset_region, filter_points_usgs_part1, add_gcps, optimize_cameras, filter_points_usgs_part2, export_cameras | No | CPU only |
 | `depth_maps` | buildDepthMaps | Yes | GPU only (always benefits) |
-| `point_cloud` | buildPointCloud, classifyGroundPoints (optional) | No | CPU only |
-| `mesh` | buildModel | Yes | Config-driven: `buildMesh.gpu_enabled` |
-| `dem_orthomosaic` | buildDem, buildOrthomosaic | No | CPU only |
-| `match_secondary_photos` | add_photos (secondary), matchPhotos | Yes | Config-driven: `matchPhotos.gpu_enabled` |
+| `point_cloud` | buildPointCloud, classifyGroundPoints (optional), export | No | CPU only |
+| `mesh` | buildModel, export | Yes | Config-driven: `buildMesh.gpu_enabled` |
+| `dem_orthomosaic` | classify_ground_points (optional), build DEM/ortho operations | No | CPU only |
+| `match_secondary_photos` | add_photos, matchPhotos | Yes | Config-driven: `matchPhotos.gpu_enabled` |
 | `align_secondary_cameras` | alignCameras, export_cameras | No | CPU only |
 | `finalize` | remove_point_cloud, export_report, finish_run | No | CPU only |
 
@@ -229,21 +233,21 @@ Each step in the workflow gets a method that coordinates its component operation
 - Keeps: all component methods unchanged (`filter_points_usgs_part1()`, `add_gcps()`, `optimize_cameras()`, etc.)
 
 **`depth_maps()` step:**
-- Simply calls `build_depth_maps()`
-- Keeps: `build_depth_maps()` unchanged
+- Rename existing `build_depth_maps()` to `depth_maps()`
+- Otherwise unchanged
 
 **`point_cloud()` step:**
-- Simply calls `build_point_cloud()`
-- Keeps: `build_point_cloud()` unchanged (already handles classify_ground_points internally)
+- Rename existing `build_point_cloud()` to `point_cloud()`
+- Otherwise unchanged (already handles classify_ground_points internally)
 
 **`mesh()` step:**
-- Simply calls `build_mesh()`
-- Keeps: `build_mesh()` unchanged
+- Rename existing `build_mesh()` to `mesh()`
+- Otherwise unchanged
 
 **`dem_orthomosaic()` step:**
 - Rename existing `build_dem_orthomosaic()` to `dem_orthomosaic()`
 - Remove point cloud removal logic (lines 1067-1068) from the method
-- Otherwise keeps all DEM/ortho building logic unchanged
+- Otherwise keeps all DEM/ortho building logic unchanged (including optional classifyGroundPoints if configured)
 
 **`match_secondary_photos()` step:**
 - Calls `add_photos(secondary=True, log_header=False)` to add secondary photos
@@ -289,21 +293,54 @@ with open(self.log_file, "a") as f:
 
 #### 4. Prerequisite Validation
 
-Each step validates required prior state:
+Each step validates required prior state. Steps without prerequisites (`setup`, `match_photos`, `match_secondary_photos`, `finalize`) are not listed.
+
+**Important:** Error messages must include context about what's missing and what prerequisite step needs to be run first.
 
 ```python
 def validate_prerequisites(self, step_name):
+    """Validate that prerequisites for a step are met.
+
+    Raises:
+        ValueError: If prerequisites not met, with message indicating what's missing
+                   and which step(s) need to run first.
+    """
     prereqs = {
-        'align_cameras': lambda: self.doc.chunk.point_cloud is not None,  # needs match results
-        'depth_maps': lambda: len([c for c in self.doc.chunk.cameras if c.transform]) > 0,  # needs alignment
-        'point_cloud': lambda: self.doc.chunk.depth_maps is not None,  # needs depth maps
-        'mesh': lambda: self.doc.chunk.depth_maps is not None,  # needs depth maps
-        'dem_ortho_finalize': lambda: self.doc.chunk.point_cloud is not None or self.doc.chunk.model is not None,
-        # ...
+        'align_cameras': {
+            'check': lambda: self.doc.chunk.tie_points is not None,
+            'error': "Tie points not found. Run 'match_photos' step first."
+        },
+        'depth_maps': {
+            'check': lambda: len([c for c in self.doc.chunk.cameras if c.transform]) > 0,
+            'error': "No aligned cameras found. Run 'align_cameras' step first."
+        },
+        'point_cloud': {
+            'check': lambda: self.doc.chunk.depth_maps is not None,
+            'error': "Depth maps not found. Run 'depth_maps' step first."
+        },
+        'mesh': {
+            'check': lambda: self.doc.chunk.depth_maps is not None,
+            'error': "Depth maps not found. Run 'depth_maps' step first."
+        },
+        'dem_orthomosaic': {
+            'check': lambda: self.doc.chunk.point_cloud is not None or self.doc.chunk.model is not None,
+            'error': "Neither point cloud nor mesh model found. Run 'point_cloud' or 'mesh' step first."
+        },
+        'align_secondary_cameras': {
+            'check': lambda: self.doc.chunk.tie_points is not None,
+            'error': "Tie points not found for secondary cameras. Run 'match_secondary_photos' step first."
+        },
     }
-    if step_name in prereqs and not prereqs[step_name]():
-        raise ValueError(f"Prerequisites not met for step '{step_name}'")
+
+    if step_name in prereqs:
+        if not prereqs[step_name]['check']():
+            raise ValueError(f"Prerequisites not met for step '{step_name}': {prereqs[step_name]['error']}")
 ```
+
+**Note on `chunk.tie_points` vs `chunk.point_cloud`:**
+- `chunk.tie_points`: Sparse point cloud created by `matchPhotos()` operation
+- `chunk.point_cloud`: Dense point cloud created by `buildPointCloud()` operation
+- After `match_photos` step, tie points exist but dense point cloud does not yet exist
 
 ### Commit Structure
 
@@ -324,10 +361,11 @@ Phase 2 should be implemented as a **single PR** with the following logical comm
    - Remove old `align_photos()` method
    - Update `run()` method to call `match_photos()` and `align_cameras()` instead of `align_photos()`
 
-4. **Create simple step methods**
-   - Add `depth_maps()` method (calls `build_depth_maps()`)
-   - Add `point_cloud()` method (calls `build_point_cloud()`)
-   - Add `mesh()` method (calls `build_mesh()`)
+4. **Rename simple step methods**
+   - Rename `build_depth_maps()` to `depth_maps()`
+   - Rename `build_point_cloud()` to `point_cloud()`
+   - Rename `build_mesh()` to `mesh()`
+   - Update `run()` method to call renamed methods
 
 5. **Rename build_dem_orthomosaic to dem_orthomosaic and extract point cloud removal**
    - Rename `build_dem_orthomosaic()` to `dem_orthomosaic()`
@@ -346,9 +384,9 @@ Phase 2 should be implemented as a **single PR** with the following logical comm
    - Update `run()` method to call `finalize()` instead of individual finalization steps
 
 8. **Add prerequisite validation**
-   - Implement `validate_prerequisites()` method
-   - Add prerequisite checks for all steps
-   - Add appropriate error messages
+   - Implement `validate_prerequisites()` method with contextual error messages
+   - Add prerequisite checks for steps that require prior state (align_cameras, depth_maps, point_cloud, mesh, dem_orthomosaic, align_secondary_cameras)
+   - Error messages must explain what's missing and which step needs to run first
 
 9. **Update tests and documentation**
    - Add tests for step-based execution
