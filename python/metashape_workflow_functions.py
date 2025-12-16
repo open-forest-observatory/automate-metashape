@@ -1295,9 +1295,16 @@ class MetashapeWorkflow:
 
     def build_dem_orthomosaic(self):
         """
-        Build and export DEM
-        """
+        Build DEM and orthomosaic step.
 
+        This step:
+        - Optionally classifies ground points if configured
+        - Builds DEMs based on configured surfaces (DTM-ptcloud, DSM-ptcloud, DSM-mesh)
+        - Exports DEMs if configured
+        - Builds orthomosaics on configured surfaces
+        - Exports orthomosaics if configured
+        - Optionally removes point cloud from project after export
+        """
         # classify ground points if specified
         if self.cfg["build_dem"]["classify_ground_points"]:
             self.classify_ground_points()
