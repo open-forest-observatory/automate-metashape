@@ -490,6 +490,72 @@ class MetashapeWorkflow:
 
         self.doc.save()
 
+    def match_photos(self):
+        """
+        Match photos step: Find tie points between photos.
+
+        This step runs Metashape's matchPhotos function to identify
+        matching features between photos.
+        """
+        self.benchmark.log_step_header("Match Photos")
+
+        with self.benchmark.monitor("matchPhotos"):
+            self.doc.chunk.matchPhotos(
+                downscale=self.cfg["match_photos"]["downscale"],
+                subdivide_task=self.cfg["project"]["subdivide_task"],
+                keep_keypoints=self.cfg["match_photos"]["keep_keypoints"],
+                generic_preselection=self.cfg["match_photos"]["generic_preselection"],
+                reference_preselection=self.cfg["match_photos"]["reference_preselection"],
+                reference_preselection_mode=self.cfg["match_photos"]["reference_preselection_mode"],
+            )
+
+        self.doc.save()
+
+    def align_cameras(self):
+        """
+        Align cameras step: Estimate camera positions and perform post-alignment operations.
+
+        This step:
+        - Aligns cameras using tie points from match_photos
+        - Resets the region
+        - Optionally filters points (USGS part 1)
+        - Optionally adds GCPs
+        - Optionally optimizes cameras
+        - Optionally filters points (USGS part 2)
+        - Optionally exports cameras
+        """
+        self.benchmark.log_step_header("Align Cameras")
+
+        with self.benchmark.monitor("alignCameras"):
+            self.doc.chunk.alignCameras(
+                adaptive_fitting=self.cfg["align_cameras"]["adaptive_fitting"],
+                subdivide_task=self.cfg["project"]["subdivide_task"],
+                reset_alignment=self.cfg["align_cameras"]["reset_alignment"],
+            )
+
+        self.doc.save()
+        self.reset_region()
+
+        # Post-alignment operations
+        if self.cfg["filter_points_usgs"]["enabled"]:
+            self.filter_points_usgs_part1()
+            self.reset_region()
+
+        if self.cfg["add_gcps"]["enabled"]:
+            self.add_gcps()
+            self.reset_region()
+
+        if self.cfg["optimize_cameras"]["enabled"]:
+            self.optimize_cameras()
+            self.reset_region()
+
+        if self.cfg["filter_points_usgs"]["enabled"]:
+            self.filter_points_usgs_part2()
+            self.reset_region()
+
+        if self.cfg["export_cameras"]["enabled"]:
+            self.export_cameras()
+
     def _get_system_info(self):
         """Gather system information for logging."""
         gpustringraw = str(Metashape.app.enumGPUDevices())
@@ -520,27 +586,10 @@ class MetashapeWorkflow:
         self.setup()
 
         if self.cfg["match_photos"]["enabled"]:
-            self.align_photos()
-            self.reset_region()
+            self.match_photos()
 
-        if self.cfg["filter_points_usgs"]["enabled"]:
-            self.filter_points_usgs_part1()
-            self.reset_region()
-
-        if self.cfg["add_gcps"]["enabled"]:
-            self.add_gcps()
-            self.reset_region()
-
-        if self.cfg["optimize_cameras"]["enabled"]:
-            self.optimize_cameras()
-            self.reset_region()
-
-        if self.cfg["filter_points_usgs"]["enabled"]:
-            self.filter_points_usgs_part2()
-            self.reset_region()
-
-        if self.cfg["export_cameras"]["enabled"]:
-            self.export_cameras()
+        if self.cfg["align_cameras"]["enabled"]:
+            self.align_cameras()
 
         if self.cfg["build_depth_maps"]["enabled"]:
             self.build_depth_maps()
