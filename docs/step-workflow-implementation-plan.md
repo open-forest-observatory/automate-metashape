@@ -125,11 +125,14 @@ Based on Phase 1 benchmarking results, only **matchPhotos, buildDepthMaps, and b
 | `depth_maps` | buildDepthMaps | Yes | GPU only (always benefits) |
 | `point_cloud` | buildPointCloud, classifyGroundPoints (optional) | No | CPU only |
 | `mesh` | buildModel | Yes | Config-driven: `buildMesh.gpu_enabled` |
-| `dem_ortho_finalize` | buildDem, buildOrthomosaic, remove_point_cloud, export_report, finish_run | No | CPU only |
+| `dem_orthomosaic` | buildDem, buildOrthomosaic | No | CPU only |
+| `match_secondary_photos` | add_photos (secondary), matchPhotos | Yes | Config-driven: `matchPhotos.gpu_enabled` |
+| `align_secondary_cameras` | alignCameras, export_cameras | No | CPU only |
+| `finalize` | remove_point_cloud, export_report, finish_run | No | CPU only |
 
 **Note:** For steps with optional GPU acceleration (match_photos, mesh), the config parameter determines:
-- **In Argo**: Which node type (GPU vs CPU) to schedule the step on
-- **In local execution**: Metashape auto-detects available hardware; the parameter serves as documentation only
+- **In Argo**: Which node type (GPU vs CPU) to schedule the step on. If the `gpu_enabled` parameter is omitted, it defaults to `true` for backward compatibility.
+- **In local execution**: The parameter has no effect; Metashape auto-detects available hardware
 
 ### CLI Interface
 
@@ -138,14 +141,21 @@ Based on Phase 1 benchmarking results, only **matchPhotos, buildDepthMaps, and b
 python metashape_workflow.py config.yml
 
 # New: run single step, load project from previous step
+python metashape_workflow.py config.yml --step setup
 python metashape_workflow.py config.yml --step match_photos
+python metashape_workflow.py config.yml --step align_cameras
 python metashape_workflow.py config.yml --step depth_maps
+python metashape_workflow.py config.yml --step point_cloud
 python metashape_workflow.py config.yml --step mesh
+python metashape_workflow.py config.yml --step dem_orthomosaic
+python metashape_workflow.py config.yml --step match_secondary_photos
+python metashape_workflow.py config.yml --step align_secondary_cameras
+python metashape_workflow.py config.yml --step finalize
 ```
 
 **Note:** The step name doesn't specify GPU vs CPU. For GPU-capable steps, hardware selection is automatic:
-- Local execution: Metashape auto-detects available GPU
-- Argo execution: Config parameter determines node scheduling
+- Local execution: Metashape auto-detects available GPU (the `gpu_enabled` config parameter has no effect)
+- Argo execution: The optional `gpu_enabled` config parameter determines node scheduling. If omitted, defaults to `true` for backward compatibility.
 
 ### Implementation Details
 
@@ -153,42 +163,123 @@ python metashape_workflow.py config.yml --step mesh
 
 - Add `--step` CLI argument to `metashape_workflow.py`
 - Create step dispatcher in `MetashapeWorkflow` class
-- Each step: loads project → executes operations → saves project
+- Update `run()` method to call new step orchestration methods
+- Each step: loads project (if needed) → executes operations → saves project
 
 ```python
+def run(self):
+    """Execute full metashape workflow by calling step methods."""
+    self.setup()
+
+    if self.cfg["alignPhotos"]["enabled"]:
+        self.match_photos()
+        self.align_cameras()
+
+    if self.cfg["buildDepthMaps"]["enabled"]:
+        self.depth_maps()
+
+    if self.cfg["buildPointCloud"]["enabled"]:
+        self.point_cloud()
+
+    if self.cfg["buildMesh"]["enabled"]:
+        self.mesh()
+
+    self.dem_orthomosaic()
+
+    if self.cfg["photo_path_secondary"] != "":
+        self.match_secondary_photos()
+        self.align_secondary_cameras()
+
+    self.finalize()
+
 def run_step(self, step_name):
     """Run a single step, loading project from previous step."""
-    self.load_project()
+    # For setup step, project is created fresh
+    # For other steps, project is loaded in project_setup() if load_project is set
     self.validate_prerequisites(step_name)
 
     # Step names match method names directly
     method = getattr(self, step_name)
     method()
-    self.doc.save()
 ```
 
-#### 2. Break Apart Tightly Coupled Methods
+#### 2. Create Step Methods
 
-**`align_photos()`** → split into:
-- `match_photos()`: calls matchPhotos, saves
-- `align_cameras()`: calls alignCameras, then filter_points_part1, add_gcps, optimize_cameras, filter_points_part2, export_cameras
+Each step in the workflow gets a method that coordinates its component operations. Step methods handle config checking; atomic helper methods just perform their operations.
 
-**`build_dem_orthomosaic()`** → becomes:
-- `dem_ortho_finalize()`: builds all configured DEMs and orthomosaics (buildDem, buildOrthomosaic), then calls remove_point_cloud, export_report, finish_run
+**`setup()` step:**
+- Calls `project_setup()`, `enable_and_log_gpu()`
+- Calls `add_photos()` if configured
+- Calls `calibrate_reflectance()` if configured
+- Keeps: `project_setup()`, `enable_and_log_gpu()`, `add_photos()`, `calibrate_reflectance()` unchanged
 
-**`build_mesh()`** → extract/rename:
-- `build_mesh()`: calls buildModel, saves
+**`match_photos()` step:**
+- Extracts just the matchPhotos call from existing `align_photos()` method
+- Logs "Match Photos" header
+- Saves project
 
-**Create new method** for point cloud removal:
-- `remove_point_cloud()`: checks config and removes point cloud if configured (wraps `chunk.remove(point_clouds)`)
+**`align_cameras()` step:**
+- Extracts the alignCameras call from existing `align_photos()` method
+- Calls `reset_region()`
+- Calls `filter_points_usgs_part1()` if configured, then `reset_region()`
+- Calls `add_gcps()` if configured, then `reset_region()`
+- Calls `optimize_cameras()` if configured, then `reset_region()`
+- Calls `filter_points_usgs_part2()` if configured, then `reset_region()`
+- Calls `export_cameras()` if configured
+- Keeps: all component methods unchanged (`filter_points_usgs_part1()`, `add_gcps()`, `optimize_cameras()`, etc.)
 
-**Note:** GPU vs CPU selection for matchPhotos and buildModel is handled by Metashape's auto-detection based on available hardware. In Argo workflows, the config parameters `matchPhotos.gpu_enabled` and `buildMesh.gpu_enabled` determine which node type to schedule on.
+**`depth_maps()` step:**
+- Simply calls `build_depth_maps()`
+- Keeps: `build_depth_maps()` unchanged
+
+**`point_cloud()` step:**
+- Simply calls `build_point_cloud()`
+- Keeps: `build_point_cloud()` unchanged (already handles classify_ground_points internally)
+
+**`mesh()` step:**
+- Simply calls `build_mesh()`
+- Keeps: `build_mesh()` unchanged
+
+**`dem_orthomosaic()` step:**
+- Rename existing `build_dem_orthomosaic()` to `dem_orthomosaic()`
+- Remove point cloud removal logic (lines 1067-1068) from the method
+- Otherwise keeps all DEM/ortho building logic unchanged
+
+**`match_secondary_photos()` step:**
+- Calls `add_photos(secondary=True, log_header=False)` to add secondary photos
+- Calls matchPhotos API directly (extracted from the removed `align_photos()` method)
+- Logs "Match Secondary Photos" header
+- Saves project
+- Note: Combines add + match into one step since add_photos is quick and doesn't need GPU
+
+**`align_secondary_cameras()` step:**
+- Calls alignCameras API directly (extracted from the removed `align_photos()` method)
+- Calls `export_cameras()` if configured
+- Logs "Align Secondary Cameras" header
+- Saves project
+
+**`finalize()` step:**
+- Calls `remove_point_cloud()` if `buildPointCloud.remove_after_export` is true
+- Calls `export_report()`
+- Calls `finish_run()`
+
+**New `remove_point_cloud()` helper method:**
+- Removes point clouds from chunk (no config checking - step method handles this)
+- Saves project
+- Extracted from line 1067-1068 in current `build_dem_orthomosaic()`
+
+**Remove `align_photos()` and `add_align_secondary_photos()` methods:**
+- The old `align_photos()` method is removed (replaced by `match_photos()` and `align_cameras()` steps)
+- The old `add_align_secondary_photos()` method is removed (replaced by `match_secondary_photos()` and `align_secondary_cameras()` steps)
+- The `run()` method is updated to call the new step methods instead
+
+**Note:** GPU vs CPU selection for matchPhotos and buildModel is handled by Metashape's auto-detection based on available hardware during local execution. In Argo workflows, the optional config parameters `matchPhotos.gpu_enabled` and `buildMesh.gpu_enabled` determine which node type to schedule on. If omitted, these parameters default to `true` for backward compatibility.
 
 #### 3. Unified Logging Across Steps
 
 - All steps append to the same log files in the output directory
 - Files opened in append mode
-- Sequential execution ensures no conflicts
+- Sequential execution ensures no conflicts (for local execution; for Argo execution, see Phase 3)
 
 ```python
 # Each step appends to unified logs
@@ -213,6 +304,58 @@ def validate_prerequisites(self, step_name):
     if step_name in prereqs and not prereqs[step_name]():
         raise ValueError(f"Prerequisites not met for step '{step_name}'")
 ```
+
+### Commit Structure
+
+Phase 2 should be implemented as a **single PR** with the following logical commits:
+
+1. **Add --step CLI infrastructure and dispatcher**
+   - Add `--step` argument to CLI parser
+   - Implement `run_step()` method in `MetashapeWorkflow` class that dispatches to step methods
+   - Add step name validation (valid steps: setup, match_photos, align_cameras, depth_maps, point_cloud, mesh, dem_orthomosaic, match_secondary_photos, align_secondary_cameras, finalize)
+
+2. **Create setup step method**
+   - Add `setup()` method that calls `project_setup()`, `enable_and_log_gpu()`, `add_photos()`, `calibrate_reflectance()`
+   - All component methods remain unchanged
+
+3. **Split align_photos into match_photos and align_cameras steps**
+   - Create `match_photos()` method (extracts matchPhotos call from `align_photos()`)
+   - Create `align_cameras()` method (extracts alignCameras call plus all post-alignment operations)
+   - Remove old `align_photos()` method
+   - Update `run()` method to call `match_photos()` and `align_cameras()` instead of `align_photos()`
+
+4. **Create simple step methods**
+   - Add `depth_maps()` method (calls `build_depth_maps()`)
+   - Add `point_cloud()` method (calls `build_point_cloud()`)
+   - Add `mesh()` method (calls `build_mesh()`)
+
+5. **Rename build_dem_orthomosaic to dem_orthomosaic and extract point cloud removal**
+   - Rename `build_dem_orthomosaic()` to `dem_orthomosaic()`
+   - Remove point cloud removal logic (lines 1067-1068) from `dem_orthomosaic()`
+   - Create `remove_point_cloud()` helper method (just removes, no config checking)
+   - Update `run()` method to call `dem_orthomosaic()` instead of `build_dem_orthomosaic()`
+
+6. **Create secondary photos step methods**
+   - Create `match_secondary_photos()` method (calls add_photos, matchPhotos API)
+   - Create `align_secondary_cameras()` method (calls alignCameras API, export_cameras)
+   - Remove old `add_align_secondary_photos()` method
+   - Update `run()` method to call new secondary photo step methods
+
+7. **Create finalize step method**
+   - Create `finalize()` method (calls remove_point_cloud if configured, export_report, finish_run)
+   - Update `run()` method to call `finalize()` instead of individual finalization steps
+
+8. **Add prerequisite validation**
+   - Implement `validate_prerequisites()` method
+   - Add prerequisite checks for all steps
+   - Add appropriate error messages
+
+9. **Update tests and documentation**
+   - Add tests for step-based execution
+   - Test prerequisite validation
+   - Test full workflow mode with new step methods
+   - Update README with `--step` usage examples
+   - Add docstrings for new step methods
 
 ### Estimated Effort
 
@@ -239,16 +382,16 @@ For GPU-capable operations, add optional config parameters:
 ```yaml
 alignPhotos:
   enabled: true
-  gpu_enabled: true  # If true, run on GPU node; if false, run on CPU node
+  gpu_enabled: true  # Optional. For Argo: if true, run on GPU node; if false, run on CPU node. If omitted, defaults to true.
 
 buildMesh:
   enabled: true
-  gpu_enabled: false  # If true, run on GPU node; if false, run on CPU node
+  gpu_enabled: false  # Optional. For Argo: if true, run on GPU node; if false, run on CPU node. If omitted, defaults to true.
 ```
 
-These parameters serve dual purposes:
-- **In Argo**: Determine which node type (GPU vs CPU) to schedule the step on
-- **In local execution**: Documentation only; Metashape auto-detects available hardware
+These parameters are **optional** and serve different purposes depending on the execution environment:
+- **In Argo**: Determine which node type (GPU vs CPU) to schedule the step on. If omitted, defaults to `true` for backward compatibility.
+- **In local execution**: Have no effect; Metashape auto-detects available hardware
 
 **Translation Logic:**
 
@@ -260,14 +403,17 @@ These parameters serve dual purposes:
 | `depth_maps_enabled` | `buildDepthMaps.enabled == true` | GPU |
 | `point_cloud_enabled` | `buildPointCloud.enabled == true` | CPU |
 | `mesh_enabled` | `buildMesh.enabled == true` | Determined by `buildMesh.gpu_enabled` |
-| `dem_ortho_finalize_enabled` | Always `true` | CPU |
+| `dem_orthomosaic_enabled` | `buildDem.enabled == true` OR `buildOrthomosaic.enabled == true` | CPU |
+| `match_secondary_photos_enabled` | `photo_path_secondary != ""` | Determined by `alignPhotos.gpu_enabled` |
+| `align_secondary_cameras_enabled` | `photo_path_secondary != ""` | CPU |
+| `finalize_enabled` | Always `true` | CPU |
 
 **Preprocess Step:**
 
 A lightweight Python script runs once per workflow to:
 1. Read all mission config YAML files
 2. Apply translation logic above for each mission
-3. Read `gpu_enabled` parameters to determine node type for GPU-capable steps
+3. Read `gpu_enabled` parameters to determine node type for GPU-capable steps (defaulting to `true` if omitted)
 4. Output a JSON array of missions with step-level enabled flags and node types
 
 Example output structure:
@@ -321,7 +467,11 @@ spec:
       - name: point_cloud_enabled
       - name: mesh_enabled
       - name: mesh_use_gpu
-      - name: dem_ortho_finalize_enabled
+      - name: dem_orthomosaic_enabled
+      - name: match_secondary_photos_enabled
+      - name: match_secondary_photos_use_gpu
+      - name: align_secondary_cameras_enabled
+      - name: finalize_enabled
   templates:
     - name: main
       dag:
@@ -382,7 +532,7 @@ spec:
 
           # mesh: separate tasks for GPU vs CPU, mutually exclusive via when conditions
           - name: mesh-gpu
-            depends: "depth-maps"
+            depends: "point-cloud.Succeeded || point-cloud.Skipped"
             when: "{{workflow.parameters.mesh_enabled}} == 'true' && {{workflow.parameters.mesh_use_gpu}} == 'true'"
             template: gpu-step
             arguments:
@@ -391,7 +541,7 @@ spec:
                   value: "mesh"
 
           - name: mesh-cpu
-            depends: "depth-maps"
+            depends: "point-cloud.Succeeded || point-cloud.Skipped"
             when: "{{workflow.parameters.mesh_enabled}} == 'true' && {{workflow.parameters.mesh_use_gpu}} == 'false'"
             template: cpu-step
             arguments:
@@ -399,14 +549,51 @@ spec:
                 - name: step
                   value: "mesh"
 
-          - name: dem-ortho-finalize
-            depends: "(point-cloud.Succeeded || point-cloud.Skipped) && (mesh-gpu || mesh-cpu)"
-            when: "{{workflow.parameters.dem_ortho_finalize_enabled}} == 'true'"
+          - name: dem-orthomosaic
+            depends: "(point-cloud.Succeeded || point-cloud.Skipped) && (mesh-gpu.Succeeded || mesh-gpu.Skipped || mesh-cpu.Succeeded || mesh-cpu.Skipped)"
+            when: "{{workflow.parameters.dem_orthomosaic_enabled}} == 'true'"
             template: cpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "dem_ortho_finalize"
+                  value: "dem_orthomosaic"
+
+          # match_secondary_photos: separate tasks for GPU vs CPU, mutually exclusive via when conditions
+          - name: match-secondary-photos-gpu
+            depends: "dem-orthomosaic.Succeeded || dem-orthomosaic.Skipped"
+            when: "{{workflow.parameters.match_secondary_photos_enabled}} == 'true' && {{workflow.parameters.match_secondary_photos_use_gpu}} == 'true'"
+            template: gpu-step
+            arguments:
+              parameters:
+                - name: step
+                  value: "match_secondary_photos"
+
+          - name: match-secondary-photos-cpu
+            depends: "dem-orthomosaic.Succeeded || dem-orthomosaic.Skipped"
+            when: "{{workflow.parameters.match_secondary_photos_enabled}} == 'true' && {{workflow.parameters.match_secondary_photos_use_gpu}} == 'false'"
+            template: cpu-step
+            arguments:
+              parameters:
+                - name: step
+                  value: "match_secondary_photos"
+
+          - name: align-secondary-cameras
+            depends: "match-secondary-photos-gpu || match-secondary-photos-cpu"
+            when: "{{workflow.parameters.align_secondary_cameras_enabled}} == 'true'"
+            template: cpu-step
+            arguments:
+              parameters:
+                - name: step
+                  value: "align_secondary_cameras"
+
+          - name: finalize
+            depends: "(dem-orthomosaic.Succeeded || dem-orthomosaic.Skipped) && (align-secondary-cameras.Succeeded || align-secondary-cameras.Skipped)"
+            when: "{{workflow.parameters.finalize_enabled}} == 'true'"
+            template: cpu-step
+            arguments:
+              parameters:
+                - name: step
+                  value: "finalize"
 
     - name: cpu-step
       inputs:
@@ -454,6 +641,7 @@ spec:
 4. **Mutually Exclusive Execution**: `when` conditions ensure only one variant (GPU or CPU) runs based on the `use_gpu` parameter
 5. **Standard Argo Patterns**: Uses proven conditional execution rather than experimental template selection syntax
 6. **Python Conventions**: Step names use underscores (match_photos) matching Python method naming, simplifying the dispatcher implementation
+7. **Sequential Execution Guarantee**: The `depends` fields enforce strict sequential execution across all 10 steps. Steps never run in parallel because they share the same Metashape project file (.psx) and log files. The DAG dependencies ensure each step completes (or is skipped) before the next begins, preventing file conflicts. This includes the secondary photo steps, which execute sequentially after dem_orthomosaic and before finalize.
 
 ### Outer Workflow Integration
 
@@ -489,8 +677,16 @@ spec:
                   value: "{{item.mesh_enabled}}"
                 - name: mesh_use_gpu
                   value: "{{item.mesh_use_gpu}}"
-                - name: dem_ortho_finalize_enabled
-                  value: "{{item.dem_ortho_finalize_enabled}}"
+                - name: dem_orthomosaic_enabled
+                  value: "{{item.dem_orthomosaic_enabled}}"
+                - name: match_secondary_photos_enabled
+                  value: "{{item.match_secondary_photos_enabled}}"
+                - name: match_secondary_photos_use_gpu
+                  value: "{{item.match_secondary_photos_use_gpu}}"
+                - name: align_secondary_cameras_enabled
+                  value: "{{item.align_secondary_cameras_enabled}}"
+                - name: finalize_enabled
+                  value: "{{item.finalize_enabled}}"
             withParam: "{{steps.preprocess.outputs.parameters.missions}}"
 
         - - name: postprocess
