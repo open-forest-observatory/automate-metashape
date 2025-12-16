@@ -621,6 +621,17 @@ class MetashapeWorkflow:
         if self.cfg["export_cameras"]["enabled"]:
             self.export_cameras()
 
+    def finalize(self):
+        """
+        Finalize step: Export report and finish run.
+
+        This step:
+        - Exports processing report
+        - Writes completion timestamp to log
+        """
+        self.export_report()
+        self.finish_run()
+
     def _get_system_info(self):
         """Gather system information for logging."""
         gpustringraw = str(Metashape.app.enumGPUDevices())
@@ -672,9 +683,7 @@ class MetashapeWorkflow:
             self.match_photos_secondary()
             self.align_cameras_secondary()
 
-        self.export_report()
-
-        self.finish_run()
+        self.finalize()
 
     def project_setup(self):
         """
@@ -1538,7 +1547,7 @@ class MetashapeWorkflow:
 
     def finish_run(self):
         """
-        Finish run (i.e., write completed time to log)
+        Finish run (i.e., write completed time to log, write configuration to log)
         """
 
         # finish local results log and close it for the last time
