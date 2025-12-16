@@ -124,17 +124,34 @@ Based on Phase 1 benchmarking results, only **matchPhotos, buildDepthMaps, and b
 | Step | Operations | GPU Capable | Node Type Selection |
 |------|------------|-------------|---------------------|
 | `setup` | project_setup, enable_and_log_gpu, add_photos, calibrate_reflectance | No | CPU only |
-| `match_photos` | matchPhotos | Yes | Config-driven: `matchPhotos.gpu_enabled` |
+| `match_photos` | matchPhotos | Yes | Config-driven: `match_photos.gpu_enabled` |
 | `align_cameras` | alignCameras, reset_region, filter_points_usgs_part1, add_gcps, optimize_cameras, filter_points_usgs_part2, export_cameras | No | CPU only |
-| `depth_maps` | buildDepthMaps | Yes | GPU only (always benefits) |
-| `point_cloud` | buildPointCloud, classifyGroundPoints, export | No | CPU only |
-| `mesh` | buildModel, export | Yes | Config-driven: `buildMesh.gpu_enabled` |
-| `dem_orthomosaic` | classify_ground_points, build DEM/ortho operations | No | CPU only |
-| `match_secondary_photos` | add_photos, matchPhotos | Yes | Config-driven: `matchPhotos.gpu_enabled` |
-| `align_secondary_cameras` | alignCameras, export_cameras | No | CPU only |
+| `build_depth_maps` | buildDepthMaps | Yes | GPU only (always benefits) |
+| `build_point_cloud` | buildPointCloud, classifyGroundPoints, export | No | CPU only |
+| `build_mesh` | buildModel, export | Yes | Config-driven: `build_mesh.gpu_enabled` |
+| `build_dem_orthomosaic` | classify_ground_points, build DEM/ortho operations | No | CPU only |
+| `match_photos_secondary` | add_photos, matchPhotos | Yes | Config-driven: `match_photos.gpu_enabled` |
+| `align_cameras_secondary` | alignCameras, export_cameras | No | CPU only |
 | `finalize` | remove_point_cloud, export_report, finish_run | No | CPU only |
 
-**Note:** For steps with optional GPU acceleration (match_photos, mesh), the config parameter determines:
+**Config-to-Step Mapping:**
+
+This table shows the relationship between step methods, config sections, and Argo parameters:
+
+| Step Method | Config Section | Argo Parameter |
+|-------------|----------------|----------------|
+| `setup()` | `setup:` | `setup_enabled` |
+| `match_photos()` | `match_photos:` | `match_photos_enabled` |
+| `align_cameras()` | `align_cameras:` | `align_cameras_enabled` |
+| `build_depth_maps()` | `build_depth_maps:` | `build_depth_maps_enabled` |
+| `build_point_cloud()` | `build_point_cloud:` | `build_point_cloud_enabled` |
+| `build_mesh()` | `build_mesh:` | `build_mesh_enabled` |
+| `build_dem_orthomosaic()` | `build_dem_orthomosaic:` | `build_dem_orthomosaic_enabled` |
+| `match_photos_secondary()` | `match_photos_secondary:` | `match_photos_secondary_enabled` |
+| `align_cameras_secondary()` | `align_cameras_secondary:` | `align_cameras_secondary_enabled` |
+| `finalize()` | `finalize:` | `finalize_enabled` |
+
+**Note:** For steps with optional GPU acceleration (match_photos, build_mesh), the config parameter determines:
 - **In Argo**: Which node type (GPU vs CPU) to schedule the step on. If the `gpu_enabled` parameter is omitted, it defaults to `true` for backward compatibility.
 - **In local execution**: The parameter has no effect; Metashape auto-detects available hardware
 
@@ -148,12 +165,12 @@ python metashape_workflow.py config.yml
 python metashape_workflow.py config.yml --step setup
 python metashape_workflow.py config.yml --step match_photos
 python metashape_workflow.py config.yml --step align_cameras
-python metashape_workflow.py config.yml --step depth_maps
-python metashape_workflow.py config.yml --step point_cloud
-python metashape_workflow.py config.yml --step mesh
-python metashape_workflow.py config.yml --step dem_orthomosaic
-python metashape_workflow.py config.yml --step match_secondary_photos
-python metashape_workflow.py config.yml --step align_secondary_cameras
+python metashape_workflow.py config.yml --step build_depth_maps
+python metashape_workflow.py config.yml --step build_point_cloud
+python metashape_workflow.py config.yml --step build_mesh
+python metashape_workflow.py config.yml --step build_dem_orthomosaic
+python metashape_workflow.py config.yml --step match_photos_secondary
+python metashape_workflow.py config.yml --step align_cameras_secondary
 python metashape_workflow.py config.yml --step finalize
 ```
 
@@ -175,24 +192,29 @@ def run(self):
     """Execute full metashape workflow by calling step methods."""
     self.setup()
 
-    if self.cfg["alignPhotos"]["enabled"]:
+    if self.cfg["match_photos"]["enabled"]:
         self.match_photos()
+
+    if self.cfg["align_cameras"]["enabled"]:
         self.align_cameras()
 
-    if self.cfg["buildDepthMaps"]["enabled"]:
-        self.depth_maps()
+    if self.cfg["build_depth_maps"]["enabled"]:
+        self.build_depth_maps()
 
-    if self.cfg["buildPointCloud"]["enabled"]:
-        self.point_cloud()
+    if self.cfg["build_point_cloud"]["enabled"]:
+        self.build_point_cloud()
 
-    if self.cfg["buildMesh"]["enabled"]:
-        self.mesh()
+    if self.cfg["build_mesh"]["enabled"]:
+        self.build_mesh()
 
-    self.dem_orthomosaic()
+    if self.cfg["build_dem_orthomosaic"]["enabled"]:
+        self.build_dem_orthomosaic()
 
-    if self.cfg["photo_path_secondary"] != "":
-        self.match_secondary_photos()
-        self.align_secondary_cameras()
+    if self.cfg["match_photos_secondary"]["enabled"]:
+        self.match_photos_secondary()
+
+    if self.cfg["align_cameras_secondary"]["enabled"]:
+        self.align_cameras_secondary()
 
     self.finalize()
 
@@ -232,38 +254,38 @@ Each step in the workflow gets a method that coordinates its component operation
 - Calls `export_cameras()` if configured
 - Keeps: all component methods unchanged (`filter_points_usgs_part1()`, `add_gcps()`, `optimize_cameras()`, etc.)
 
-**`depth_maps()` step:**
-- Rename existing `build_depth_maps()` to `depth_maps()`
+**`build_depth_maps()` step:**
+- Keep existing `build_depth_maps()` method name
 - Otherwise unchanged
 
-**`point_cloud()` step:**
-- Rename existing `build_point_cloud()` to `point_cloud()`
+**`build_point_cloud()` step:**
+- Keep existing `build_point_cloud()` method name
 - Otherwise unchanged (already handles classify_ground_points internally)
 
-**`mesh()` step:**
-- Rename existing `build_mesh()` to `mesh()`
+**`build_mesh()` step:**
+- Keep existing `build_mesh()` method name
 - Otherwise unchanged
 
-**`dem_orthomosaic()` step:**
-- Rename existing `build_dem_orthomosaic()` to `dem_orthomosaic()`
+**`build_dem_orthomosaic()` step:**
+- Keep existing `build_dem_orthomosaic()` method name
 - Remove point cloud removal logic (lines 1067-1068) from the method
 - Otherwise keeps all DEM/ortho building logic unchanged (including optional classifyGroundPoints if configured)
 
-**`match_secondary_photos()` step:**
+**`match_photos_secondary()` step:**
 - Calls `add_photos(secondary=True, log_header=False)` to add secondary photos
 - Calls matchPhotos API directly (extracted from the removed `align_photos()` method)
 - Logs "Match Secondary Photos" header
 - Saves project
 - Note: Combines add + match into one step since add_photos is quick and doesn't need GPU
 
-**`align_secondary_cameras()` step:**
+**`align_cameras_secondary()` step:**
 - Calls alignCameras API directly (extracted from the removed `align_photos()` method)
 - Calls `export_cameras()` if configured
 - Logs "Align Secondary Cameras" header
 - Saves project
 
 **`finalize()` step:**
-- Calls `remove_point_cloud()` if `buildPointCloud.remove_after_export` is true
+- Calls `remove_point_cloud()` if `build_point_cloud.remove_after_export` is true
 - Calls `export_report()`
 - Calls `finish_run()`
 
@@ -274,10 +296,10 @@ Each step in the workflow gets a method that coordinates its component operation
 
 **Remove `align_photos()` and `add_align_secondary_photos()` methods:**
 - The old `align_photos()` method is removed (replaced by `match_photos()` and `align_cameras()` steps)
-- The old `add_align_secondary_photos()` method is removed (replaced by `match_secondary_photos()` and `align_secondary_cameras()` steps)
+- The old `add_align_secondary_photos()` method is removed (replaced by `match_photos_secondary()` and `align_cameras_secondary()` steps)
 - The `run()` method is updated to call the new step methods instead
 
-**Note:** GPU vs CPU selection for matchPhotos and buildModel is handled by Metashape's auto-detection based on available hardware during local execution. In Argo workflows, the optional config parameters `matchPhotos.gpu_enabled` and `buildMesh.gpu_enabled` determine which node type to schedule on. If omitted, these parameters default to `true` for backward compatibility.
+**Note:** GPU vs CPU selection for matchPhotos and buildModel is handled by Metashape's auto-detection based on available hardware during local execution. In Argo workflows, the optional config parameters `match_photos.gpu_enabled` and `build_mesh.gpu_enabled` determine which node type to schedule on. If omitted, these parameters default to `true` for backward compatibility.
 
 **Example Step Method Implementations:**
 
@@ -290,11 +312,11 @@ def setup(self):
     self.enable_and_log_gpu()
 
     # Optional operation: add photos (check config)
-    if self.cfg["addPhotos"]["enabled"]:
+    if self.cfg["setup"]["add_photos"]:
         self.add_photos()
 
     # Optional operation: calibrate reflectance (check config)
-    if self.cfg["calibrateReflectance"]["enabled"]:
+    if self.cfg["setup"]["calibrate_reflectance"]:
         self.calibrate_reflectance()
 
     self.doc.save()
@@ -303,11 +325,11 @@ def match_photos(self):
     """Match photos step: Generate tie points."""
     self.log("Match Photos", "header")
 
-    # Direct Metashape API call (no config check here - run() method already checked alignPhotos.enabled)
+    # Direct Metashape API call (no config check here - run() method already checked match_photos.enabled)
     self.doc.chunk.matchPhotos(
-        downscale=self.cfg["alignPhotos"]["downscale"],
-        generic_preselection=self.cfg["alignPhotos"]["generic_preselection"],
-        reference_preselection=self.cfg["alignPhotos"]["reference_preselection"]
+        downscale=self.cfg["match_photos"]["downscale"],
+        generic_preselection=self.cfg["match_photos"]["generic_preselection"],
+        reference_preselection=self.cfg["match_photos"]["reference_preselection"]
     )
 
     self.doc.save()
@@ -321,27 +343,27 @@ def align_cameras(self):
     self.reset_region()
 
     # Optional operation: filter sparse points (part 1)
-    if self.cfg["filterPointsUSGS"]["enabled"]:
+    if self.cfg["align_cameras"]["filter_points_usgs"]:
         self.filter_points_usgs_part1()
         self.reset_region()
 
     # Optional operation: add GCPs
-    if self.cfg["addGCPs"]["enabled"]:
+    if self.cfg["align_cameras"]["add_gcps"]:
         self.add_gcps()
         self.reset_region()
 
     # Optional operation: optimize cameras
-    if self.cfg["optimizeCameras"]["enabled"]:
+    if self.cfg["align_cameras"]["optimize_cameras"]:
         self.optimize_cameras()
         self.reset_region()
 
     # Optional operation: filter sparse points (part 2)
-    if self.cfg["filterPointsUSGS"]["enabled"]:
+    if self.cfg["align_cameras"]["filter_points_usgs"]:
         self.filter_points_usgs_part2()
         self.reset_region()
 
     # Optional operation: export cameras
-    if self.cfg["exportCameras"]["enabled"]:
+    if self.cfg["align_cameras"]["export_cameras"]:
         self.export_cameras()
 
     self.doc.save()
@@ -351,7 +373,7 @@ def finalize(self):
     self.log("Finalize", "header")
 
     # Optional operation: remove point cloud after export
-    if self.cfg["buildPointCloud"]["enabled"] and self.cfg["buildPointCloud"]["remove_after_export"]:
+    if self.cfg["build_point_cloud"]["enabled"] and self.cfg["build_point_cloud"]["remove_after_export"]:
         self.remove_point_cloud()
 
     # Always run these operations
@@ -362,8 +384,8 @@ def finalize(self):
 ```
 
 **Key patterns:**
-- **Step-level checks** happen in `run()` method (e.g., `if self.cfg["alignPhotos"]["enabled"]: self.match_photos()`)
-- **Operation-level checks** happen inside step methods (e.g., `if self.cfg["addGCPs"]["enabled"]: self.add_gcps()`)
+- **Step-level checks** happen in `run()` method (e.g., `if self.cfg["match_photos"]["enabled"]: self.match_photos()`)
+- **Operation-level checks** happen inside step methods (e.g., `if self.cfg["align_cameras"]["add_gcps"]: self.add_gcps()`)
 - Helper methods like `add_gcps()`, `filter_points_usgs_part1()`, etc. contain NO config checks—they just perform their operation
 - Step methods coordinate operations and handle all config logic
 
@@ -381,7 +403,7 @@ with open(self.log_file, "a") as f:
 
 #### 4. Prerequisite Validation
 
-Each step validates required prior state. Steps without prerequisites (`setup`, `match_photos`, `match_secondary_photos`, `finalize`) are not listed.
+Each step validates required prior state. Steps without prerequisites (`setup`, `match_photos`, `match_photos_secondary`, `finalize`) are not listed.
 
 **Important:** Error messages must include context about what's missing and what prerequisite step needs to be run first.
 
@@ -398,25 +420,25 @@ def validate_prerequisites(self, step_name):
             'check': lambda: self.doc.chunk.tie_points is not None,
             'error': "Tie points not found. Run 'match_photos' step first."
         },
-        'depth_maps': {
+        'build_depth_maps': {
             'check': lambda: len([c for c in self.doc.chunk.cameras if c.transform]) > 0,
             'error': "No aligned cameras found. Run 'align_cameras' step first."
         },
-        'point_cloud': {
+        'build_point_cloud': {
             'check': lambda: self.doc.chunk.depth_maps is not None,
-            'error': "Depth maps not found. Run 'depth_maps' step first."
+            'error': "Depth maps not found. Run 'build_depth_maps' step first."
         },
-        'mesh': {
+        'build_mesh': {
             'check': lambda: self.doc.chunk.depth_maps is not None,
-            'error': "Depth maps not found. Run 'depth_maps' step first."
+            'error': "Depth maps not found. Run 'build_depth_maps' step first."
         },
-        'dem_orthomosaic': {
+        'build_dem_orthomosaic': {
             'check': lambda: self.doc.chunk.point_cloud is not None or self.doc.chunk.model is not None,
-            'error': "Neither point cloud nor mesh model found. Run 'point_cloud' or 'mesh' step first."
+            'error': "Neither point cloud nor mesh model found. Run 'build_point_cloud' or 'build_mesh' step first."
         },
-        'align_secondary_cameras': {
+        'align_cameras_secondary': {
             'check': lambda: self.doc.chunk.tie_points is not None,
-            'error': "Tie points not found for secondary cameras. Run 'match_secondary_photos' step first."
+            'error': "Tie points not found for secondary cameras. Run 'match_photos_secondary' step first."
         },
     }
 
@@ -437,7 +459,7 @@ Phase 2 should be implemented as a **single PR** with the following logical comm
 1. **Add --step CLI infrastructure and dispatcher**
    - Add `--step` argument to CLI parser
    - Implement `run_step()` method in `MetashapeWorkflow` class that dispatches to step methods
-   - Add step name validation (valid steps: setup, match_photos, align_cameras, depth_maps, point_cloud, mesh, dem_orthomosaic, match_secondary_photos, align_secondary_cameras, finalize)
+   - Add step name validation (valid steps: setup, match_photos, align_cameras, build_depth_maps, build_point_cloud, build_mesh, build_dem_orthomosaic, match_photos_secondary, align_cameras_secondary, finalize)
 
 2. **Create setup step method**
    - Add `setup()` method that calls `project_setup()`, `enable_and_log_gpu()`, `add_photos()`, `calibrate_reflectance()`
@@ -449,21 +471,17 @@ Phase 2 should be implemented as a **single PR** with the following logical comm
    - Remove old `align_photos()` method
    - Update `run()` method to call `match_photos()` and `align_cameras()` instead of `align_photos()`
 
-4. **Rename simple step methods**
-   - Rename `build_depth_maps()` to `depth_maps()`
-   - Rename `build_point_cloud()` to `point_cloud()`
-   - Rename `build_mesh()` to `mesh()`
-   - Update `run()` method to call renamed methods
+4. **Keep existing build_* step method names**
+   - Keep `build_depth_maps()`, `build_point_cloud()`, `build_mesh()`, `build_dem_orthomosaic()` method names unchanged
+   - Update `run()` method to reference these methods with new config structure
 
-5. **Rename build_dem_orthomosaic to dem_orthomosaic and extract point cloud removal**
-   - Rename `build_dem_orthomosaic()` to `dem_orthomosaic()`
-   - Remove point cloud removal logic (lines 1067-1068) from `dem_orthomosaic()`
+5. **Extract point cloud removal from build_dem_orthomosaic**
+   - Remove point cloud removal logic (lines 1067-1068) from `build_dem_orthomosaic()`
    - Create `remove_point_cloud()` helper method (just removes, no config checking)
-   - Update `run()` method to call `dem_orthomosaic()` instead of `build_dem_orthomosaic()`
 
 6. **Create secondary photos step methods**
-   - Create `match_secondary_photos()` method (calls add_photos, matchPhotos API)
-   - Create `align_secondary_cameras()` method (calls alignCameras API, export_cameras)
+   - Create `match_photos_secondary()` method (calls add_photos, matchPhotos API)
+   - Create `align_cameras_secondary()` method (calls alignCameras API, export_cameras)
    - Remove old `add_align_secondary_photos()` method
    - Update `run()` method to call new secondary photo step methods
 
@@ -471,12 +489,17 @@ Phase 2 should be implemented as a **single PR** with the following logical comm
    - Create `finalize()` method (calls remove_point_cloud if configured, export_report, finish_run)
    - Update `run()` method to call `finalize()` instead of individual finalization steps
 
-8. **Add prerequisite validation**
+8. **Migrate config structure to step-based naming**
+   - Rename config sections to match step names: `alignPhotos` → `match_photos`, `buildDepthMaps` → `build_depth_maps`, etc.
+   - Update all config references throughout the codebase
+   - Add backward compatibility note in documentation for existing configs
+
+9. **Add prerequisite validation**
    - Implement `validate_prerequisites()` method with contextual error messages
-   - Add prerequisite checks for steps that require prior state (align_cameras, depth_maps, point_cloud, mesh, dem_orthomosaic, align_secondary_cameras)
+   - Add prerequisite checks for steps that require prior state (align_cameras, build_depth_maps, build_point_cloud, build_mesh, build_dem_orthomosaic, align_cameras_secondary)
    - Error messages must explain what's missing and which step needs to run first
 
-9. **Update tests and documentation**
+10. **Update tests and documentation**
    - Add tests for step-based execution
    - Test prerequisite validation
    - Test full workflow mode with new step methods
@@ -498,24 +521,34 @@ Phase 2 should be implemented as a **single PR** with the following logical comm
 
 ### Config-to-Step Translation
 
-The existing config YAML uses per-operation `enabled` flags (e.g., `alignPhotos.enabled`, `buildDem.enabled`). For Argo to skip disabled steps before pod creation, these must be translated to step-level enabled flags.
+The Phase 2 config restructuring aligns config sections with step names for clarity and consistency. Each step's `enabled` flag determines whether the entire step runs.
 
-**Important:** A step being enabled does NOT mean all its component operations run—each operation checks its own config flag. For example, `align_cameras` could be enabled to add GCPs (`addGCPs.enabled: true`) even if alignment itself is disabled (`alignPhotos.enabled: false`), though this would be unusual.
+**Config Structure (after Phase 2 migration):**
 
-**Config Parameters for GPU Selection:**
-
-For GPU-capable operations, add optional config parameters:
+For GPU-capable steps, optional `gpu_enabled` parameters control node type:
 ```yaml
-alignPhotos:
+match_photos:
   enabled: true
   gpu_enabled: true  # Optional. For Argo: if true, run on GPU node; if false, run on CPU node. If omitted, defaults to true.
+  downscale: 1
+  generic_preselection: true
+  reference_preselection: true
 
-buildMesh:
+align_cameras:
+  enabled: true
+  add_gcps: false
+  filter_points_usgs: false
+  optimize_cameras: true
+  export_cameras: true
+
+build_mesh:
   enabled: true
   gpu_enabled: false  # Optional. For Argo: if true, run on GPU node; if false, run on CPU node. If omitted, defaults to true.
+  surface_type: Arbitrary
+  source_data: DepthMapsData
 ```
 
-These parameters are **optional** and serve different purposes depending on the execution environment:
+The `gpu_enabled` parameters serve different purposes depending on execution environment:
 - **In Argo**: Determine which node type (GPU vs CPU) to schedule the step on. If omitted, defaults to `true` for backward compatibility.
 - **In local execution**: Have no effect; Metashape auto-detects available hardware
 
@@ -524,14 +557,14 @@ These parameters are **optional** and serve different purposes depending on the 
 | Step Parameter | Enabled when... | Node Type |
 |----------------|-----------------|-----------|
 | `setup_enabled` | Always `true` | CPU |
-| `match_photos_enabled` | `alignPhotos.enabled == true` | Determined by `alignPhotos.gpu_enabled` |
-| `align_cameras_enabled` | `alignPhotos.enabled == true` OR `addGCPs.enabled == true` OR `filterPointsUSGS.enabled == true` OR `optimizeCameras.enabled == true` | CPU |
-| `depth_maps_enabled` | `buildDepthMaps.enabled == true` | GPU |
-| `point_cloud_enabled` | `buildPointCloud.enabled == true` | CPU |
-| `mesh_enabled` | `buildMesh.enabled == true` | Determined by `buildMesh.gpu_enabled` |
-| `dem_orthomosaic_enabled` | `buildDem.enabled == true` OR `buildOrthomosaic.enabled == true` | CPU |
-| `match_secondary_photos_enabled` | `photo_path_secondary != ""` | Determined by `alignPhotos.gpu_enabled` |
-| `align_secondary_cameras_enabled` | `photo_path_secondary != ""` | CPU |
+| `match_photos_enabled` | `match_photos.enabled == true` | Determined by `match_photos.gpu_enabled` |
+| `align_cameras_enabled` | `align_cameras.enabled == true` | CPU |
+| `build_depth_maps_enabled` | `build_depth_maps.enabled == true` | GPU |
+| `build_point_cloud_enabled` | `build_point_cloud.enabled == true` | CPU |
+| `build_mesh_enabled` | `build_mesh.enabled == true` | Determined by `build_mesh.gpu_enabled` |
+| `build_dem_orthomosaic_enabled` | `build_dem_orthomosaic.enabled == true` | CPU |
+| `match_photos_secondary_enabled` | `match_photos_secondary.enabled == true` | Determined by `match_photos.gpu_enabled` |
+| `align_cameras_secondary_enabled` | `align_cameras_secondary.enabled == true` | CPU |
 | `finalize_enabled` | Always `true` | CPU |
 
 **Preprocess Step:**
@@ -551,10 +584,13 @@ Example output structure:
     "match_photos_enabled": "true",
     "match_photos_use_gpu": "true",
     "align_cameras_enabled": "true",
-    "depth_maps_enabled": "true",
-    "point_cloud_enabled": "true",
-    "mesh_enabled": "false",
-    "dem_ortho_finalize_enabled": "true"
+    "build_depth_maps_enabled": "true",
+    "build_point_cloud_enabled": "true",
+    "build_mesh_enabled": "false",
+    "build_dem_orthomosaic_enabled": "true",
+    "match_photos_secondary_enabled": "false",
+    "align_cameras_secondary_enabled": "false",
+    "finalize_enabled": "true"
   },
   {
     "config": "/data/mission2/config.yml",
@@ -562,11 +598,14 @@ Example output structure:
     "match_photos_enabled": "true",
     "match_photos_use_gpu": "false",
     "align_cameras_enabled": "true",
-    "depth_maps_enabled": "false",
-    "point_cloud_enabled": "false",
-    "mesh_enabled": "true",
-    "mesh_use_gpu": "false",
-    "dem_ortho_finalize_enabled": "true"
+    "build_depth_maps_enabled": "false",
+    "build_point_cloud_enabled": "false",
+    "build_mesh_enabled": "true",
+    "build_mesh_use_gpu": "false",
+    "build_dem_orthomosaic_enabled": "true",
+    "match_photos_secondary_enabled": "false",
+    "align_cameras_secondary_enabled": "false",
+    "finalize_enabled": "true"
   }
 ]
 ```
@@ -589,14 +628,14 @@ spec:
       - name: match_photos_enabled
       - name: match_photos_use_gpu
       - name: align_cameras_enabled
-      - name: depth_maps_enabled
-      - name: point_cloud_enabled
-      - name: mesh_enabled
-      - name: mesh_use_gpu
-      - name: dem_orthomosaic_enabled
-      - name: match_secondary_photos_enabled
-      - name: match_secondary_photos_use_gpu
-      - name: align_secondary_cameras_enabled
+      - name: build_depth_maps_enabled
+      - name: build_point_cloud_enabled
+      - name: build_mesh_enabled
+      - name: build_mesh_use_gpu
+      - name: build_dem_orthomosaic_enabled
+      - name: match_photos_secondary_enabled
+      - name: match_photos_secondary_use_gpu
+      - name: align_cameras_secondary_enabled
       - name: finalize_enabled
   templates:
     - name: main
@@ -638,82 +677,82 @@ spec:
                 - name: step
                   value: "align_cameras"
 
-          - name: depth-maps
+          - name: build-depth-maps
             depends: "align-cameras.Succeeded || align-cameras.Skipped"
-            when: "{{workflow.parameters.depth_maps_enabled}} == 'true'"
+            when: "{{workflow.parameters.build_depth_maps_enabled}} == 'true'"
             template: gpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "depth_maps"
+                  value: "build_depth_maps"
 
-          - name: point-cloud
-            depends: "depth-maps"
-            when: "{{workflow.parameters.point_cloud_enabled}} == 'true'"
+          - name: build-point-cloud
+            depends: "build-depth-maps"
+            when: "{{workflow.parameters.build_point_cloud_enabled}} == 'true'"
             template: cpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "point_cloud"
+                  value: "build_point_cloud"
 
-          # mesh: separate tasks for GPU vs CPU, mutually exclusive via when conditions
-          - name: mesh-gpu
-            depends: "point-cloud.Succeeded || point-cloud.Skipped"
-            when: "{{workflow.parameters.mesh_enabled}} == 'true' && {{workflow.parameters.mesh_use_gpu}} == 'true'"
+          # build_mesh: separate tasks for GPU vs CPU, mutually exclusive via when conditions
+          - name: build-mesh-gpu
+            depends: "build-point-cloud.Succeeded || build-point-cloud.Skipped"
+            when: "{{workflow.parameters.build_mesh_enabled}} == 'true' && {{workflow.parameters.build_mesh_use_gpu}} == 'true'"
             template: gpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "mesh"
+                  value: "build_mesh"
 
-          - name: mesh-cpu
-            depends: "point-cloud.Succeeded || point-cloud.Skipped"
-            when: "{{workflow.parameters.mesh_enabled}} == 'true' && {{workflow.parameters.mesh_use_gpu}} == 'false'"
+          - name: build-mesh-cpu
+            depends: "build-point-cloud.Succeeded || build-point-cloud.Skipped"
+            when: "{{workflow.parameters.build_mesh_enabled}} == 'true' && {{workflow.parameters.build_mesh_use_gpu}} == 'false'"
             template: cpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "mesh"
+                  value: "build_mesh"
 
-          - name: dem-orthomosaic
-            depends: "(point-cloud.Succeeded || point-cloud.Skipped) && (mesh-gpu.Succeeded || mesh-gpu.Skipped || mesh-cpu.Succeeded || mesh-cpu.Skipped)"
-            when: "{{workflow.parameters.dem_orthomosaic_enabled}} == 'true'"
+          - name: build-dem-orthomosaic
+            depends: "(build-point-cloud.Succeeded || build-point-cloud.Skipped) && (build-mesh-gpu.Succeeded || build-mesh-gpu.Skipped || build-mesh-cpu.Succeeded || build-mesh-cpu.Skipped)"
+            when: "{{workflow.parameters.build_dem_orthomosaic_enabled}} == 'true'"
             template: cpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "dem_orthomosaic"
+                  value: "build_dem_orthomosaic"
 
-          # match_secondary_photos: separate tasks for GPU vs CPU, mutually exclusive via when conditions
-          - name: match-secondary-photos-gpu
-            depends: "dem-orthomosaic.Succeeded || dem-orthomosaic.Skipped"
-            when: "{{workflow.parameters.match_secondary_photos_enabled}} == 'true' && {{workflow.parameters.match_secondary_photos_use_gpu}} == 'true'"
+          # match_photos_secondary: separate tasks for GPU vs CPU, mutually exclusive via when conditions
+          - name: match-photos-secondary-gpu
+            depends: "build-dem-orthomosaic.Succeeded || build-dem-orthomosaic.Skipped"
+            when: "{{workflow.parameters.match_photos_secondary_enabled}} == 'true' && {{workflow.parameters.match_photos_secondary_use_gpu}} == 'true'"
             template: gpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "match_secondary_photos"
+                  value: "match_photos_secondary"
 
-          - name: match-secondary-photos-cpu
-            depends: "dem-orthomosaic.Succeeded || dem-orthomosaic.Skipped"
-            when: "{{workflow.parameters.match_secondary_photos_enabled}} == 'true' && {{workflow.parameters.match_secondary_photos_use_gpu}} == 'false'"
+          - name: match-photos-secondary-cpu
+            depends: "build-dem-orthomosaic.Succeeded || build-dem-orthomosaic.Skipped"
+            when: "{{workflow.parameters.match_photos_secondary_enabled}} == 'true' && {{workflow.parameters.match_photos_secondary_use_gpu}} == 'false'"
             template: cpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "match_secondary_photos"
+                  value: "match_photos_secondary"
 
-          - name: align-secondary-cameras
-            depends: "match-secondary-photos-gpu || match-secondary-photos-cpu"
-            when: "{{workflow.parameters.align_secondary_cameras_enabled}} == 'true'"
+          - name: align-cameras-secondary
+            depends: "match-photos-secondary-gpu || match-photos-secondary-cpu"
+            when: "{{workflow.parameters.align_cameras_secondary_enabled}} == 'true'"
             template: cpu-step
             arguments:
               parameters:
                 - name: step
-                  value: "align_secondary_cameras"
+                  value: "align_cameras_secondary"
 
           - name: finalize
-            depends: "(dem-orthomosaic.Succeeded || dem-orthomosaic.Skipped) && (align-secondary-cameras.Succeeded || align-secondary-cameras.Skipped)"
+            depends: "(build-dem-orthomosaic.Succeeded || build-dem-orthomosaic.Skipped) && (align-cameras-secondary.Succeeded || align-cameras-secondary.Skipped)"
             when: "{{workflow.parameters.finalize_enabled}} == 'true'"
             template: cpu-step
             arguments:
@@ -761,13 +800,13 @@ spec:
 
 **Key Design Points:**
 
-1. **Clean CLI Interface**: Users run `--step match_photos` or `--step mesh` (no GPU suffix)
-2. **Config-Driven GPU Selection**: The `matchPhotos.gpu_enabled` and `buildMesh.gpu_enabled` config parameters control node scheduling
+1. **Clean CLI Interface**: Users run `--step match_photos` or `--step build_mesh` (no GPU suffix)
+2. **Config-Driven GPU Selection**: The `match_photos.gpu_enabled` and `build_mesh.gpu_enabled` config parameters control node scheduling
 3. **Argo Task Names are Internal**: The `-gpu` and `-cpu` suffixes appear only in Argo task names (internal orchestration), not in the user-facing CLI or step values
 4. **Mutually Exclusive Execution**: `when` conditions ensure only one variant (GPU or CPU) runs based on the `use_gpu` parameter
 5. **Standard Argo Patterns**: Uses proven conditional execution rather than experimental template selection syntax
-6. **Python Conventions**: Step names use underscores (match_photos) matching Python method naming, simplifying the dispatcher implementation
-7. **Sequential Execution Guarantee**: The `depends` fields enforce strict sequential execution across all 10 steps. Steps never run in parallel because they share the same Metashape project file (.psx) and log files. The DAG dependencies ensure each step completes (or is skipped) before the next begins, preventing file conflicts. This includes the secondary photo steps, which execute sequentially after dem_orthomosaic and before finalize.
+6. **Python Conventions**: Step names use underscores (match_photos, build_mesh) matching Python method naming, simplifying the dispatcher implementation
+7. **Sequential Execution Guarantee**: The `depends` fields enforce strict sequential execution across all 10 steps. Steps never run in parallel because they share the same Metashape project file (.psx) and log files. The DAG dependencies ensure each step completes (or is skipped) before the next begins, preventing file conflicts. This includes the secondary photo steps, which execute sequentially after build_dem_orthomosaic and before finalize.
 
 ### Outer Workflow Integration
 
@@ -795,22 +834,22 @@ spec:
                   value: "{{item.match_photos_use_gpu}}"
                 - name: align_cameras_enabled
                   value: "{{item.align_cameras_enabled}}"
-                - name: depth_maps_enabled
-                  value: "{{item.depth_maps_enabled}}"
-                - name: point_cloud_enabled
-                  value: "{{item.point_cloud_enabled}}"
-                - name: mesh_enabled
-                  value: "{{item.mesh_enabled}}"
-                - name: mesh_use_gpu
-                  value: "{{item.mesh_use_gpu}}"
-                - name: dem_orthomosaic_enabled
-                  value: "{{item.dem_orthomosaic_enabled}}"
-                - name: match_secondary_photos_enabled
-                  value: "{{item.match_secondary_photos_enabled}}"
-                - name: match_secondary_photos_use_gpu
-                  value: "{{item.match_secondary_photos_use_gpu}}"
-                - name: align_secondary_cameras_enabled
-                  value: "{{item.align_secondary_cameras_enabled}}"
+                - name: build_depth_maps_enabled
+                  value: "{{item.build_depth_maps_enabled}}"
+                - name: build_point_cloud_enabled
+                  value: "{{item.build_point_cloud_enabled}}"
+                - name: build_mesh_enabled
+                  value: "{{item.build_mesh_enabled}}"
+                - name: build_mesh_use_gpu
+                  value: "{{item.build_mesh_use_gpu}}"
+                - name: build_dem_orthomosaic_enabled
+                  value: "{{item.build_dem_orthomosaic_enabled}}"
+                - name: match_photos_secondary_enabled
+                  value: "{{item.match_photos_secondary_enabled}}"
+                - name: match_photos_secondary_use_gpu
+                  value: "{{item.match_photos_secondary_use_gpu}}"
+                - name: align_cameras_secondary_enabled
+                  value: "{{item.align_cameras_secondary_enabled}}"
                 - name: finalize_enabled
                   value: "{{item.finalize_enabled}}"
             withParam: "{{steps.preprocess.outputs.parameters.missions}}"
