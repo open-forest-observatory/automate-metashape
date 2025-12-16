@@ -165,6 +165,138 @@ class MetashapeWorkflow:
 
     #### Functions for each major step in Metashape
 
+    def run_step(self, step_name):
+        """
+        Run a single processing step.
+
+        For the 'setup' step, creates a new project (overwriting if exists).
+        For all other steps, loads the existing project first.
+
+        Args:
+            step_name (str): Name of the step to run. Valid steps: setup, match_photos,
+                align_cameras, build_depth_maps, build_point_cloud, build_mesh,
+                build_dem_orthomosaic, match_photos_secondary, align_cameras_secondary, finalize
+
+        Raises:
+            ValueError: If step_name is invalid or prerequisites not met
+        """
+        valid_steps = [
+            "setup",
+            "match_photos",
+            "align_cameras",
+            "build_depth_maps",
+            "build_point_cloud",
+            "build_mesh",
+            "build_dem_orthomosaic",
+            "match_photos_secondary",
+            "align_cameras_secondary",
+            "finalize",
+        ]
+
+        if step_name not in valid_steps:
+            raise ValueError(
+                f"Invalid step name: '{step_name}'. Valid steps are: {', '.join(valid_steps)}"
+            )
+
+        if step_name == "setup":
+            # Setup step creates new project (may overwrite existing)
+            self.validate_prerequisites(step_name)
+            self.setup()
+        else:
+            # All other steps load existing project first
+            self.load_existing_project()
+            self.validate_prerequisites(step_name)
+            method = getattr(self, step_name)
+            method()
+
+    def load_existing_project(self):
+        """
+        Load existing project for step-based execution.
+
+        Constructs the expected project file path and loads it. Also sets up
+        instance variables needed for logging and benchmarking.
+
+        Raises:
+            ValueError: If project file doesn't exist
+        """
+        # Construct the expected project file path (same logic as project_setup)
+        run_name = self.cfg["run_name"]
+        if run_name == "from_config_filename" or run_name == "":
+            file_basename = os.path.basename(self.config_file)
+            run_name, _ = os.path.splitext(file_basename)
+
+        project_file = os.path.join(self.cfg["project_path"], ".".join([run_name, "psx"]))
+
+        if not os.path.exists(project_file):
+            raise ValueError(
+                f"Project file not found: {project_file}\n"
+                f"Run the 'setup' step first to create the project."
+            )
+
+        # Load the project
+        self.doc = Metashape.Document()
+        self.doc.open(project_file)
+
+        # Set up instance variables (same as project_setup)
+        self.run_id = run_name
+        self.log_file = os.path.join(
+            self.cfg["output_path"], ".".join([self.run_id + "_log", "txt"])
+        )
+        self.yaml_log_file = os.path.join(
+            self.cfg["output_path"], f"{self.run_id}_metrics.yaml"
+        )
+        self.benchmark = BenchmarkMonitor(
+            self.log_file, self.yaml_log_file, self._get_system_info
+        )
+
+    def validate_prerequisites(self, step_name):
+        """
+        Validate that prerequisites for a step are met.
+
+        Args:
+            step_name (str): Name of the step to validate
+
+        Raises:
+            ValueError: If prerequisites not met, with message indicating what's missing
+                       and which step(s) need to run first.
+        """
+        # Steps without prerequisites: setup, match_photos, match_photos_secondary, finalize
+        # Only check prerequisites for steps that require prior state
+        prereqs = {
+            "align_cameras": {
+                "check": lambda: self.doc.chunk.tie_points is not None,
+                "error": "Tie points not found. Run 'match_photos' step first.",
+            },
+            "build_depth_maps": {
+                "check": lambda: len([c for c in self.doc.chunk.cameras if c.transform])
+                > 0,
+                "error": "No aligned cameras found. Run 'align_cameras' step first.",
+            },
+            "build_point_cloud": {
+                "check": lambda: self.doc.chunk.depth_maps is not None,
+                "error": "Depth maps not found. Run 'build_depth_maps' step first.",
+            },
+            "build_mesh": {
+                "check": lambda: self.doc.chunk.depth_maps is not None,
+                "error": "Depth maps not found. Run 'build_depth_maps' step first.",
+            },
+            "build_dem_orthomosaic": {
+                "check": lambda: self.doc.chunk.point_cloud is not None
+                or self.doc.chunk.model is not None,
+                "error": "Neither point cloud nor mesh model found. Run 'build_point_cloud' or 'build_mesh' step first.",
+            },
+            "align_cameras_secondary": {
+                "check": lambda: self.doc.chunk.tie_points is not None,
+                "error": "Tie points not found for secondary cameras. Run 'match_photos_secondary' step first.",
+            },
+        }
+
+        if step_name in prereqs:
+            if not prereqs[step_name]["check"]():
+                raise ValueError(
+                    f"Prerequisites not met for step '{step_name}': {prereqs[step_name]['error']}"
+                )
+
     def _get_system_info(self):
         """Gather system information for logging."""
         gpustringraw = str(Metashape.app.enumGPUDevices())
