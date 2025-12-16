@@ -138,22 +138,24 @@ Based on Phase 1 benchmarking results, only **matchPhotos, buildDepthMaps, and b
 
 This table shows the relationship between step methods, config sections, and Argo parameters:
 
-| Step Method | Config Section | Argo Parameter |
-|-------------|----------------|----------------|
+| Step Method | Config Section(s) | Argo Parameter |
+|-------------|-------------------|----------------|
 | `setup()` | `setup:` | `setup_enabled` |
 | `match_photos()` | `match_photos:` | `match_photos_enabled` |
 | `align_cameras()` | `align_cameras:` | `align_cameras_enabled` |
 | `build_depth_maps()` | `build_depth_maps:` | `build_depth_maps_enabled` |
 | `build_point_cloud()` | `build_point_cloud:` | `build_point_cloud_enabled` |
 | `build_mesh()` | `build_mesh:` | `build_mesh_enabled` |
-| `build_dem_orthomosaic()` | `build_dem_orthomosaic:` | `build_dem_orthomosaic_enabled` |
+| `build_dem_orthomosaic()` | `build_dem:` + `build_orthomosaic:` | `build_dem_orthomosaic_enabled` |
 | `match_photos_secondary()` | `match_photos_secondary:` | `match_photos_secondary_enabled` |
 | `align_cameras_secondary()` | `align_cameras_secondary:` | `align_cameras_secondary_enabled` |
 | `finalize()` | `finalize:` | `finalize_enabled` |
 
-**Note:** For steps with optional GPU acceleration (match_photos, build_mesh), the config parameter determines:
-- **In Argo**: Which node type (GPU vs CPU) to schedule the step on. If the `gpu_enabled` parameter is omitted, it defaults to `true` for backward compatibility.
-- **In local execution**: The parameter has no effect; Metashape auto-detects available hardware
+**Notes:**
+- **GPU acceleration:** For steps with optional GPU acceleration (match_photos, build_mesh), the `gpu_enabled` config parameter determines:
+  - **In Argo**: Which node type (GPU vs CPU) to schedule the step on. If omitted, defaults to `true` for backward compatibility.
+  - **In local execution**: Has no effect; Metashape auto-detects available hardware
+- **build_dem_orthomosaic special case:** This step method reads from TWO separate config sections (`build_dem` and `build_orthomosaic`) because these are independent products. The step runs if either section has `enabled: true`. This allows users to build only a DEM, only an orthomosaic, or both.
 
 ### CLI Interface
 
@@ -207,7 +209,8 @@ def run(self):
     if self.cfg["build_mesh"]["enabled"]:
         self.build_mesh()
 
-    if self.cfg["build_dem_orthomosaic"]["enabled"]:
+    # build_dem_orthomosaic has multiple independent operations, use helper
+    if self.should_run_build_dem_orthomosaic():
         self.build_dem_orthomosaic()
 
     if self.cfg["match_photos_secondary"]["enabled"]:
@@ -217,6 +220,20 @@ def run(self):
         self.align_cameras_secondary()
 
     self.finalize()
+
+def should_run_build_dem_orthomosaic(self):
+    """Check if any DEM or orthomosaic operations are enabled.
+
+    This step can build multiple independent products:
+    - DEM(s): DSM from point cloud, DSM from mesh, DTM (config: build_dem section)
+    - Orthomosaic(s): from DEM or mesh surface (config: build_orthomosaic section)
+
+    Returns:
+        bool: True if any DEM or orthomosaic operation is enabled
+    """
+    dem_enabled = self.cfg["build_dem"]["enabled"]
+    ortho_enabled = self.cfg["build_orthomosaic"]["enabled"]
+    return dem_enabled or ortho_enabled
 
 def run_step(self, step_name):
     """Run a single step, loading project from previous step."""
@@ -228,6 +245,26 @@ def run_step(self, step_name):
     method = getattr(self, step_name)
     method()
 ```
+
+**Step Execution Logic:**
+
+Most steps have a simple top-level `enabled` flag in their config section. However, some steps contain multiple independent operations and need OR logic:
+
+| Step | Execution Check | Rationale |
+|------|----------------|-----------|
+| `setup` | Always runs | Required initialization |
+| `match_photos` | `match_photos.enabled` | Single operation |
+| `align_cameras` | `align_cameras.enabled` | Main operation is alignCameras; post-alignment ops are optional enhancements |
+| `build_depth_maps` | `build_depth_maps.enabled` | Single operation |
+| `build_point_cloud` | `build_point_cloud.enabled` | Single operation (classify is optional enhancement) |
+| `build_mesh` | `build_mesh.enabled` | Single operation |
+| `build_dem_orthomosaic` | `should_run_build_dem_orthomosaic()` helper | Multiple independent products (DEMs and/or orthomosaics) |
+| `match_photos_secondary` | `match_photos_secondary.enabled` | Single operation |
+| `align_cameras_secondary` | `align_cameras_secondary.enabled` | Single operation |
+| `finalize` | Always runs | Required cleanup/reporting |
+
+**Note on `build_dem_orthomosaic`:** This step differs from others because it can produce completely independent outputs. A user might want only a DEM, only an orthomosaic, or both. The helper method ensures the step runs if ANY of its products are requested.
+
 
 #### 2. Create Step Methods
 
@@ -269,6 +306,9 @@ Each step in the workflow gets a method that coordinates its component operation
 **`build_dem_orthomosaic()` step:**
 - Keep existing `build_dem_orthomosaic()` method name
 - Remove point cloud removal logic (lines 1067-1068) from the method
+- Reads from TWO config sections: `build_dem` and `build_orthomosaic`
+- Builds DEM(s) if `build_dem.enabled` is true
+- Builds orthomosaic(s) if `build_orthomosaic.enabled` is true
 - Otherwise keeps all DEM/ortho building logic unchanged (including optional classifyGroundPoints if configured)
 
 **`match_photos_secondary()` step:**
@@ -479,27 +519,34 @@ Phase 2 should be implemented as a **single PR** with the following logical comm
    - Remove point cloud removal logic (lines 1067-1068) from `build_dem_orthomosaic()`
    - Create `remove_point_cloud()` helper method (just removes, no config checking)
 
-6. **Create secondary photos step methods**
+6. **Add helper method for build_dem_orthomosaic step execution logic**
+   - Implement `should_run_build_dem_orthomosaic()` helper method
+   - Method checks if `build_dem.enabled` OR `build_orthomosaic.enabled` is true
+   - Update `run()` method to call helper instead of checking single enabled flag
+   - This allows the step to run if either product is requested
+
+7. **Create secondary photos step methods**
    - Create `match_photos_secondary()` method (calls add_photos, matchPhotos API)
    - Create `align_cameras_secondary()` method (calls alignCameras API, export_cameras)
    - Remove old `add_align_secondary_photos()` method
    - Update `run()` method to call new secondary photo step methods
 
-7. **Create finalize step method**
+8. **Create finalize step method**
    - Create `finalize()` method (calls remove_point_cloud if configured, export_report, finish_run)
    - Update `run()` method to call `finalize()` instead of individual finalization steps
 
-8. **Migrate config structure to step-based naming**
+9. **Migrate config structure to step-based naming**
    - Rename config sections to match step names: `alignPhotos` → `match_photos`, `buildDepthMaps` → `build_depth_maps`, etc.
+   - Split `buildDem` and `buildOrthomosaic` into separate `build_dem` and `build_orthomosaic` sections
    - Update all config references throughout the codebase
    - Add backward compatibility note in documentation for existing configs
 
-9. **Add prerequisite validation**
+10. **Add prerequisite validation**
    - Implement `validate_prerequisites()` method with contextual error messages
    - Add prerequisite checks for steps that require prior state (align_cameras, build_depth_maps, build_point_cloud, build_mesh, build_dem_orthomosaic, align_cameras_secondary)
    - Error messages must explain what's missing and which step needs to run first
 
-10. **Update tests and documentation**
+11. **Update tests and documentation**
    - Add tests for step-based execution
    - Test prerequisite validation
    - Test full workflow mode with new step methods
@@ -546,7 +593,17 @@ build_mesh:
   gpu_enabled: false  # Optional. For Argo: if true, run on GPU node; if false, run on CPU node. If omitted, defaults to true.
   surface_type: Arbitrary
   source_data: DepthMapsData
+
+build_dem:
+  enabled: true
+  # DEM-specific parameters (types, resolution, etc.)
+
+build_orthomosaic:
+  enabled: true
+  # Orthomosaic-specific parameters (surface, blending, etc.)
 ```
+
+**Note:** The `build_dem_orthomosaic()` step method checks both `build_dem.enabled` and `build_orthomosaic.enabled`, running if either is true. There is no separate `build_dem_orthomosaic` config section.
 
 The `gpu_enabled` parameters serve different purposes depending on execution environment:
 - **In Argo**: Determine which node type (GPU vs CPU) to schedule the step on. If omitted, defaults to `true` for backward compatibility.
@@ -562,7 +619,7 @@ The `gpu_enabled` parameters serve different purposes depending on execution env
 | `build_depth_maps_enabled` | `build_depth_maps.enabled == true` | GPU |
 | `build_point_cloud_enabled` | `build_point_cloud.enabled == true` | CPU |
 | `build_mesh_enabled` | `build_mesh.enabled == true` | Determined by `build_mesh.gpu_enabled` |
-| `build_dem_orthomosaic_enabled` | `build_dem_orthomosaic.enabled == true` | CPU |
+| `build_dem_orthomosaic_enabled` | `build_dem.enabled == true` OR `build_orthomosaic.enabled == true` | CPU |
 | `match_photos_secondary_enabled` | `match_photos_secondary.enabled == true` | Determined by `match_photos.gpu_enabled` |
 | `align_cameras_secondary_enabled` | `align_cameras_secondary.enabled == true` | CPU |
 | `finalize_enabled` | Always `true` | CPU |
