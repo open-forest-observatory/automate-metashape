@@ -463,6 +463,33 @@ class MetashapeWorkflow:
                     f"Prerequisites not met for step '{step_name}': {prereqs[step_name]['error']}"
                 )
 
+    #### Step methods
+
+    def setup(self):
+        """
+        Setup step: Initialize project and add photos.
+
+        This step:
+        - Creates project directories and project file
+        - Enables and logs GPU configuration
+        - Adds photos if configured
+        - Calibrates reflectance if configured
+        """
+        self.project_setup()
+        self.enable_and_log_gpu()
+
+        # Optional operation: add photos (check config)
+        if (self.cfg["project"]["photo_path"] != "") and (
+            self.cfg["add_photos"]["enabled"]
+        ):
+            self.add_photos()
+
+        # Optional operation: calibrate reflectance (check config)
+        if self.cfg["calibrate_reflectance"]["enabled"]:
+            self.calibrate_reflectance()
+
+        self.doc.save()
+
     def _get_system_info(self):
         """Gather system information for logging."""
         gpustringraw = str(Metashape.app.enumGPUDevices())
@@ -490,17 +517,7 @@ class MetashapeWorkflow:
         """
         Execute metashape workflow steps based on config file
         """
-        self.project_setup()
-
-        self.enable_and_log_gpu()
-
-        if (self.cfg["project"]["photo_path"] != "") and (
-            self.cfg["add_photos"]["enabled"]
-        ):  # only add photos if there is a photo directory listed
-            self.add_photos()
-
-        if self.cfg["calibrate_reflectance"]["enabled"]:
-            self.calibrate_reflectance()
+        self.setup()
 
         if self.cfg["match_photos"]["enabled"]:
             self.align_photos()
