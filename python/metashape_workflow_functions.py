@@ -453,7 +453,7 @@ class MetashapeWorkflow:
             },
             "align_cameras_secondary": {
                 "check": lambda: self.doc.chunk.tie_points is not None,
-                "error": "Tie points not found for secondary cameras. Run 'match_photos_secondary' step first.",
+                "error": "Tie points not found. Run 'match_photos' step first (and 'match_photos_secondary' if aligning secondary cameras).",
             },
         }
 
