@@ -279,7 +279,7 @@ class MetashapeWorkflow:
         self.doc = None
         self.log_file = None
         self.yaml_log_file = None
-        self.run_id = None
+        self.project_name = None
         self.cfg = None
         # track the written paths
         self.written_paths = {}
@@ -408,12 +408,12 @@ class MetashapeWorkflow:
         self.doc.open(project_file)
 
         # Set up instance variables (same as project_setup)
-        self.run_id = project_name
+        self.project_name = project_name
         self.log_file = os.path.join(
-            self.cfg["project"]["output_path"], ".".join([self.run_id + "_log", "txt"])
+            self.cfg["project"]["output_path"], ".".join([self.project_name + "_log", "txt"])
         )
         self.yaml_log_file = os.path.join(
-            self.cfg["project"]["output_path"], f"{self.run_id}_metrics.yaml"
+            self.cfg["project"]["output_path"], f"{self.project_name}_metrics.yaml"
         )
         self.benchmark = BenchmarkMonitor(
             self.log_file, self.yaml_log_file, self._get_system_info
@@ -732,16 +732,16 @@ class MetashapeWorkflow:
             )  # extracts file base name from path
             project_name, _ = os.path.splitext(file_basename)  # removes extension
 
-        self.run_id = project_name
+        self.project_name = project_name
 
         project_file = os.path.join(
-            self.cfg["project"]["project_path"], ".".join([self.run_id, "psx"])
+            self.cfg["project"]["project_path"], ".".join([self.project_name, "psx"])
         )
         self.log_file = os.path.join(
-            self.cfg["project"]["output_path"], ".".join([self.run_id + "_log", "txt"])
+            self.cfg["project"]["output_path"], ".".join([self.project_name + "_log", "txt"])
         )
         self.yaml_log_file = os.path.join(
-            self.cfg["project"]["output_path"], f"{self.run_id}_metrics.yaml"
+            self.cfg["project"]["output_path"], f"{self.project_name}_metrics.yaml"
         )
 
         # Initialize benchmark monitor for performance logging
@@ -785,7 +785,7 @@ class MetashapeWorkflow:
         with open(self.log_file, "w") as file:
 
             # write a line with the Metashape version
-            file.write(MetashapeWorkflow.sep.join(["Project", self.run_id]) + "\n")
+            file.write(MetashapeWorkflow.sep.join(["Project", self.project_name]) + "\n")
             file.write(
                 MetashapeWorkflow.sep.join(
                     ["Agisoft Metashape Professional Version", Metashape.app.version]
@@ -1083,7 +1083,7 @@ class MetashapeWorkflow:
         self.benchmark.set_step_name("align_cameras")
 
         output_file = os.path.join(
-            self.cfg["project"]["output_path"], self.run_id + "_cameras.xml"
+            self.cfg["project"]["output_path"], self.project_name + "_cameras.xml"
         )
         # Defaults to xml format, which is the only one we've used so far
         with self.benchmark.monitor("exportCameras"):
@@ -1287,7 +1287,7 @@ class MetashapeWorkflow:
 
             # Export the point cloud
             output_file = os.path.join(
-                self.cfg["project"]["output_path"], self.run_id + export_file_ending
+                self.cfg["project"]["output_path"], self.project_name + export_file_ending
             )
             if self.cfg["build_point_cloud"]["classes"] == "ALL":
                 # call without classes argument (Metashape then defaults to all classes)
@@ -1350,7 +1350,7 @@ class MetashapeWorkflow:
 
             output_file = os.path.join(
                 self.cfg["project"]["output_path"],
-                self.run_id + "_mesh." + self.cfg["build_mesh"]["export_extension"],
+                self.project_name + "_mesh." + self.cfg["build_mesh"]["export_extension"],
             )
             # Export the georeferenced mesh in the project CRS. The metadata file is the only thing
             # that encodes the CRS.
@@ -1405,7 +1405,7 @@ class MetashapeWorkflow:
                 self.doc.chunk.elevation.label = "DSM-ptcloud"
 
                 output_file = os.path.join(
-                    self.cfg["project"]["output_path"], self.run_id + "_dsm-ptcloud.tif"
+                    self.cfg["project"]["output_path"], self.project_name + "_dsm-ptcloud.tif"
                 )
                 if self.cfg["build_dem"]["export"]:
                     with self.benchmark.monitor("exportRaster (DSM-ptcloud)"):
@@ -1433,7 +1433,7 @@ class MetashapeWorkflow:
                 self.doc.chunk.elevation.label = "DTM-ptcloud"
 
                 output_file = os.path.join(
-                    self.cfg["project"]["output_path"], self.run_id + "_dtm-ptcloud.tif"
+                    self.cfg["project"]["output_path"], self.project_name + "_dtm-ptcloud.tif"
                 )
                 if self.cfg["build_dem"]["export"]:
                     with self.benchmark.monitor("exportRaster (DTM-ptcloud)"):
@@ -1457,7 +1457,7 @@ class MetashapeWorkflow:
                 self.doc.chunk.elevation.label = "DSM-mesh"
 
                 output_file = os.path.join(
-                    self.cfg["project"]["output_path"], self.run_id + "_dsm-mesh.tif"
+                    self.cfg["project"]["output_path"], self.project_name + "_dsm-mesh.tif"
                 )
                 if self.cfg["build_dem"]["export"]:
                     with self.benchmark.monitor("exportRaster (DSM-mesh)"):
@@ -1533,7 +1533,7 @@ class MetashapeWorkflow:
         ## Export orthomosaic
         if self.cfg["build_orthomosaic"]["export"]:
             output_file = os.path.join(
-                self.cfg["project"]["output_path"], self.run_id + "_ortho-" + file_ending + ".tif"
+                self.cfg["project"]["output_path"], self.project_name + "_ortho-" + file_ending + ".tif"
             )
 
             compression = Metashape.ImageCompression()
@@ -1566,7 +1566,7 @@ class MetashapeWorkflow:
 
         self.benchmark.set_step_name("finalize")
 
-        output_file = os.path.join(self.cfg["project"]["output_path"], self.run_id + "_report.pdf")
+        output_file = os.path.join(self.cfg["project"]["output_path"], self.project_name + "_report.pdf")
 
         with self.benchmark.monitor("exportReport"):
             self.doc.chunk.exportReport(path=output_file)

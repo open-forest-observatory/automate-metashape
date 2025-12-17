@@ -47,7 +47,7 @@ Implement detailed per-API-call logging to benchmark processing times and resour
 
 **Two log files per run:**
 
-1. **Human-readable log** (`{run_name}_log.txt`):
+1. **Human-readable log** (`{project_name}_log.txt`):
    ```
    Project Setup           | 00:00:03 | CPU: 12% | GPU: 0%
    Add Photos              | 00:01:47 | CPU: 34% | GPU: 0%
@@ -59,7 +59,7 @@ Implement detailed per-API-call logging to benchmark processing times and resour
    Build Orthomosaic       | 00:18:33 | CPU: 58% | GPU: 38%
    ```
 
-2. **Machine-readable log** (`{run_name}_metrics.yaml`):
+2. **Machine-readable log** (`{project_name}_metrics.yaml`):
    ```yaml
    - api_call: matchPhotos
      duration_seconds: 5025.3
@@ -269,7 +269,7 @@ Each step in the workflow gets a method that coordinates its component operation
 - Calls `project_setup()`, `enable_and_log_gpu()`
 - Calls `add_photos()` if configured
 - Calls `calibrate_reflectance()` if configured
-- **Modify `project_setup()`**: Add logic to automatically detect and load existing project file if it exists at the constructed path (`{project_path}/{run_name}.psx`). If the file doesn't exist, create a new project as before. This enables seamless step-based execution where setup creates the project and subsequent steps load it automatically, all using the same CLI arguments and config file.
+- **Modify `project_setup()`**: Add logic to automatically detect and load existing project file if it exists at the constructed path (`{project_path}/{project_name}.psx`). If the file doesn't exist, create a new project as before. This enables seamless step-based execution where setup creates the project and subsequent steps load it automatically, all using the same CLI arguments and config file.
 
 **`match_photos()` step:**
 - Extracts just the matchPhotos call from existing `align_photos()` method
@@ -503,7 +503,7 @@ Phase 2 should be implemented as a **single PR** with the following logical comm
    - Add step name validation (valid steps: setup, match_photos, align_cameras, build_depth_maps, build_point_cloud, build_mesh, build_dem_orthomosaic, match_photos_secondary, align_cameras_secondary, finalize)
 
 2. **Migrate config structure to flat, operation-based naming**
-   - Group global settings under `project:` section: `load_project`, `photo_path`, `photo_path_secondary`, `project_path`, `output_path`, `project_crs`, `run_name`, `subdivide_task`
+   - Group global settings under `project:` section: `load_project`, `photo_path`, `photo_path_secondary`, `project_path`, `output_path`, `project_crs`, `project_name`, `subdivide_task`
    - Flatten operations: all operations become top-level sections with `enabled` flag
    - Split `alignPhotos` into `match_photos` and `align_cameras` sections:
      - `match_photos` gets: `downscale`, `generic_preselection`, `reference_preselection`, `reference_preselection_mode`, `keep_keypoints`, `gpu_enabled`
@@ -517,7 +517,7 @@ Phase 2 should be implemented as a **single PR** with the following logical comm
 
 3. **Create setup step method and enhance project_setup()**
    - Add `setup()` method that calls `project_setup()`, `enable_and_log_gpu()`, `add_photos()`, `calibrate_reflectance()`
-   - Modify `project_setup()` to automatically detect and load existing project file if it exists at the constructed path (`{project_path}/{run_name}.psx`), otherwise create new project
+   - Modify `project_setup()` to automatically detect and load existing project file if it exists at the constructed path (`{project_path}/{project_name}.psx`), otherwise create new project
    - This enables seamless step-based execution where all steps use the same CLI arguments
 
 4. **Split align_photos into match_photos and align_cameras steps**
