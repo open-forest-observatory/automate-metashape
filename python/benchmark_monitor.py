@@ -180,7 +180,7 @@ class BenchmarkMonitor:
 
         with open(self.log_file, "a") as f:
             f.write(
-                f"{self.current_step:<18} | {api_call:<24} | {duration_str} | {cpu_str:>5} | {gpu_str:>5} | "
+                f"{self.current_step:<23} | {api_call:<35} | {duration_str} | {cpu_str:>5} | {gpu_str:>5} | "
                 f"{cpu_cores_available:>4} | {gpu_count:>4} | {gpu_model:<15} | {node_name:<15}\n"
             )
 

@@ -497,7 +497,7 @@ class MetashapeWorkflow:
         This step runs Metashape's matchPhotos function to identify
         matching features between photos.
         """
-        self.benchmark.set_step_name("Match Photos")
+        self.benchmark.set_step_name("match_photos")
 
         with self.benchmark.monitor("matchPhotos"):
             self.doc.chunk.matchPhotos(
@@ -524,7 +524,7 @@ class MetashapeWorkflow:
         - Optionally filters points (USGS part 2)
         - Optionally exports cameras
         """
-        self.benchmark.set_step_name("Align Cameras")
+        self.benchmark.set_step_name("align_cameras")
 
         with self.benchmark.monitor("alignCameras"):
             self.doc.chunk.alignCameras(
@@ -578,7 +578,7 @@ class MetashapeWorkflow:
                 "For aligning secondary photos, keep_keypoints must be True."
             )
 
-        self.benchmark.set_step_name("Match Secondary Photos")
+        self.benchmark.set_step_name("match_photos_secondary")
 
         # Add the secondary photos
         self.add_photos(secondary=True, log_header=False)
@@ -606,7 +606,7 @@ class MetashapeWorkflow:
 
         Note: Primary photos are not re-aligned because reset_alignment=False.
         """
-        self.benchmark.set_step_name("Align Secondary Cameras")
+        self.benchmark.set_step_name("align_cameras_secondary")
 
         with self.benchmark.monitor("alignCameras (secondary)"):
             self.doc.chunk.alignCameras(
@@ -815,7 +815,7 @@ class MetashapeWorkflow:
         # Write header for benchmark log
         with open(self.log_file, "a") as file:
             file.write(
-                f"\n{'Step':<18} | {'API Call':<24} | {'Run Time':>8} | {'CPU %':>5} | {'GPU %':>5} | "
+                f"\n{'Step':<23} | {'API Call':<35} | {'Run Time':>8} | {'CPU %':>5} | {'GPU %':>5} | "
                 f"{'CPUs':>4} | {'GPUs':>4} | {'GPU Model':<15} | {'Node':<15}\n"
             )
 
@@ -829,7 +829,7 @@ class MetashapeWorkflow:
         """
 
         if log_header:
-            self.benchmark.set_step_name("Add Photos")
+            self.benchmark.set_step_name("setup")
 
         if secondary:
             photo_paths = self.cfg["project"]["photo_path_secondary"]
@@ -948,7 +948,7 @@ class MetashapeWorkflow:
 
     def calibrate_reflectance(self):
         # TODO: Handle failure to find panels, or mulitple panel images by returning error to user.
-        self.benchmark.set_step_name("Calibrate Reflectance")
+        self.benchmark.set_step_name("setup")
 
         with self.benchmark.monitor("locateReflectancePanels"):
             self.doc.chunk.locateReflectancePanels()
@@ -979,9 +979,6 @@ class MetashapeWorkflow:
         Add GCPs (GCP coordinates and the locations of GCPs in individual photos.
         See the helper script (and the comments therein) for details on how to prepare the data needed by this function: R/prep_gcps.R
         """
-
-        self.benchmark.set_step_name("Add GCPs")
-
         # Determine the location of the GCPs file, which is also the base path to prepend to the GCP
         # camera label (relative to what's specified in the GCPs file, which is a relative path), to
         # make it into an absolute path to match the label of the camera in the Metashape. Note the
@@ -1079,7 +1076,7 @@ class MetashapeWorkflow:
         return True
 
     def export_cameras(self):
-        self.benchmark.set_step_name("Export Cameras")
+        self.benchmark.set_step_name("align_cameras")
 
         output_file = os.path.join(
             self.cfg["project"]["output_path"], self.run_id + "_cameras.xml"
@@ -1106,7 +1103,7 @@ class MetashapeWorkflow:
         Optimize cameras
         """
 
-        self.benchmark.set_step_name("Optimize Cameras")
+        self.benchmark.set_step_name("align_cameras")
 
         # Disable camera locations as reference if specified in YML
         if (
@@ -1128,7 +1125,7 @@ class MetashapeWorkflow:
 
     def filter_points_usgs_part1(self):
 
-        self.benchmark.set_step_name("Filter Points USGS Part 1")
+        self.benchmark.set_step_name("align_cameras")
 
         with self.benchmark.monitor("optimizeCameras"):
             self.doc.chunk.optimizeCameras(
@@ -1188,7 +1185,7 @@ class MetashapeWorkflow:
 
     def filter_points_usgs_part2(self):
 
-        self.benchmark.set_step_name("Filter Points USGS Part 2")
+        self.benchmark.set_step_name("align_cameras")
 
         with self.benchmark.monitor("optimizeCameras"):
             self.doc.chunk.optimizeCameras(
@@ -1233,7 +1230,7 @@ class MetashapeWorkflow:
         depth information for each photo, which will be used to build
         the dense point cloud or mesh model.
         """
-        self.benchmark.set_step_name("Build Depth Maps")
+        self.benchmark.set_step_name("build_depth_maps")
 
         with self.benchmark.monitor("buildDepthMaps"):
             self.doc.chunk.buildDepthMaps(
@@ -1256,7 +1253,7 @@ class MetashapeWorkflow:
         - Exports point cloud if configured
         - Optionally removes depth maps to save space if configured
         """
-        self.benchmark.set_step_name("Build Point Cloud")
+        self.benchmark.set_step_name("build_point_cloud")
 
         with self.benchmark.monitor("buildPointCloud"):
             self.doc.chunk.buildPointCloud(
@@ -1323,7 +1320,7 @@ class MetashapeWorkflow:
         - Optionally applies coordinate frame shift if configured
         - Exports mesh model if configured
         """
-        self.benchmark.set_step_name("Build Mesh")
+        self.benchmark.set_step_name("build_mesh")
 
         with self.benchmark.monitor("buildModel"):
             self.doc.chunk.buildModel(
@@ -1380,7 +1377,7 @@ class MetashapeWorkflow:
             self.classify_ground_points()
 
         if self.cfg["build_dem"]["enabled"]:
-            self.benchmark.set_step_name("Build DEM")
+            self.benchmark.set_step_name("build_dem_orthomosaic")
 
             # prepping params for buildDem
             projection = Metashape.OrthoProjection()
@@ -1470,7 +1467,7 @@ class MetashapeWorkflow:
 
         # Each DEM has a label associated with it which is used to identify and activate the correct DEM for orthomosaic generation
         if self.cfg["build_orthomosaic"]["enabled"]:
-            self.benchmark.set_step_name("Build Orthomosaic")
+            self.benchmark.set_step_name("build_dem_orthomosaic")
 
             # Iterate through each specified surface in the configuration
             for surface in self.cfg["build_orthomosaic"]["surface"]:
@@ -1563,7 +1560,7 @@ class MetashapeWorkflow:
         Export report
         """
 
-        self.benchmark.set_step_name("Export Report")
+        self.benchmark.set_step_name("finalize")
 
         output_file = os.path.join(self.cfg["project"]["output_path"], self.run_id + "_report.pdf")
 
