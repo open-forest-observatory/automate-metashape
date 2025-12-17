@@ -1226,8 +1226,13 @@ class MetashapeWorkflow:
         self.doc.save()
 
     def build_depth_maps(self):
-        ### Build depth maps
+        """
+        Build depth maps step: Generate depth maps from aligned photos.
 
+        This step runs Metashape's buildDepthMaps function to create
+        depth information for each photo, which will be used to build
+        the dense point cloud or mesh model.
+        """
         self.benchmark.log_step_header("Build Depth Maps")
 
         with self.benchmark.monitor("buildDepthMaps"):
@@ -1243,9 +1248,14 @@ class MetashapeWorkflow:
 
     def build_point_cloud(self):
         """
-        Build point cloud
-        """
+        Build point cloud step: Generate dense 3D point cloud from depth maps.
 
+        This step:
+        - Builds dense point cloud from depth maps
+        - Optionally classifies ground points if configured
+        - Exports point cloud if configured
+        - Optionally removes depth maps to save space if configured
+        """
         self.benchmark.log_step_header("Build Point Cloud")
 
         with self.benchmark.monitor("buildPointCloud"):
@@ -1306,9 +1316,13 @@ class MetashapeWorkflow:
 
     def build_mesh(self):
         """
-        Build and export the mesh
-        """
+        Build mesh step: Generate and export 3D mesh model.
 
+        This step:
+        - Builds 3D mesh model from depth maps
+        - Optionally applies coordinate frame shift if configured
+        - Exports mesh model if configured
+        """
         self.benchmark.log_step_header("Build Mesh")
 
         with self.benchmark.monitor("buildModel"):

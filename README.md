@@ -117,6 +117,32 @@ For example:
 
 `--project-crs` Coordinate reference system EPSG code for outputs. Eg. _EPSG:26910_
 
+`--step`    Run a single processing step instead of the full workflow. This enables step-by-step execution where each step loads the project from the previous step. Valid steps are:
+- `setup` - Initialize project and add photos
+- `match_photos` - Find tie points between photos
+- `align_cameras` - Estimate camera positions and perform post-alignment operations
+- `build_depth_maps` - Generate depth maps from aligned photos
+- `build_point_cloud` - Build dense 3D point cloud from depth maps
+- `build_mesh` - Build 3D mesh model from depth maps
+- `build_dem_orthomosaic` - Generate DEMs and/or orthomosaics
+- `match_photos_secondary` - Match secondary photos (if configured in config file)
+- `align_cameras_secondary` - Align secondary cameras (if configured in config file)
+- `finalize` - Clean up and generate processing reports
+
+Example step-based workflow execution:
+
+```bash
+python metashape_workflow.py --config_file config.yml --step setup
+python metashape_workflow.py --config_file config.yml --step match_photos
+python metashape_workflow.py --config_file config.yml --step align_cameras
+python metashape_workflow.py --config_file config.yml --step build_depth_maps
+python metashape_workflow.py --config_file config.yml --step build_point_cloud
+python metashape_workflow.py --config_file config.yml --step build_dem_orthomosaic
+python metashape_workflow.py --config_file config.yml --step finalize
+```
+
+**Note:** Each step automatically loads the project file created/updated by previous steps, so all steps must use the same `--project-path` and `--run-name` values. The `setup` step creates the project; all subsequent steps load it.
+
 <br/>
 
 <br/>
