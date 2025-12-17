@@ -72,7 +72,7 @@ A **sample RGB photo dataset** (which includes GCPs and a USGS DEM) may be [down
 
 All of the parameters defining the Metashape workflow are specified in the configuration file (a [YAML-format](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html) file). This includes directories of input and output files, workflow steps to include, quality settings, and many other parameters.
 
-An example configuration file is provided in this repo at [`config/config-base.yml`](/config/config-base.yml). Edit the parameter values to meet your specifications. The file contains comments explaining the purpose of each customizable parameter.  You can directly edit the `config-base.yml` or save a new copy somewhere on the your local computer. You will specify the path of this config.yml in the [python run command](#running-the-workflow).
+An example configuration file is provided in this repo at [`config/config-example.yml`](/config/config-example.yml). Edit the parameter values to meet your specifications. The file contains comments explaining the purpose of each customizable parameter.  You can directly edit the `config-example.yml` or save a new copy somewhere on the your local computer. You will specify the path of this config.yml in the [python run command](#running-the-workflow).
 
 Note: Please do not remove or add parameters to the configuration file; adding will have no effect unless the Python code is changed along with the addition, and removing will produce errors.
 
@@ -90,7 +90,7 @@ For example:
 
 <br/>
 
-With this minimalist run command, the script assumes your config.yml file is located in the repo at `{repo_path}/config/config-base.yml`
+With this minimalist run command, the script assumes your config.yml file is located in the repo at `{repo_path}/config/config-example.yml`
 
 <br/>
 
@@ -208,7 +208,7 @@ The images to be processed should all be in one parent folder (and optionally or
 
 #### Workflow configuration file
 
-An example configuration file is provided in this repository at [`config/config-base.yml`](/config/config-base.yml). Please download this file to your local machine and rename it `config.yml`. By default the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`. So in a case where the local folder to be mounted is `~/drone_data/`, then for the config file to be mounted in the Docker container at `/data/config.yaml`, it must be located on the local computer at `~/drone_data/config.yaml`. However, the config file location can be overridden by passing a different location following an optional command line argument `--config_file` of the `docker run` command. For more information click [here](#custom-location-of-the-metashape-configuration-file).
+An example configuration file is provided in this repository at [`config/config-example.yml`](/config/config-example.yml). Please download this file to your local machine and rename it `config.yml`. By default the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`. So in a case where the local folder to be mounted is `~/drone_data/`, then for the config file to be mounted in the Docker container at `/data/config.yaml`, it must be located on the local computer at `~/drone_data/config.yaml`. However, the config file location can be overridden by passing a different location following an optional command line argument `--config_file` of the `docker run` command. For more information click [here](#custom-location-of-the-metashape-configuration-file).
 
 Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Within this config file, all paths will be relative to the file structure of the docker container (beginning with `/data/`). In the config.yaml, at a minimum the following entries should be updated:
 
