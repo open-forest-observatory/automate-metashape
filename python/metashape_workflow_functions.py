@@ -408,7 +408,7 @@ class MetashapeWorkflow:
         self.doc.open(project_file)
 
         # Set up instance variables (same as project_setup)
-        self.run_id = run_name
+        self.run_id = project_name
         self.log_file = os.path.join(
             self.cfg["project"]["output_path"], ".".join([self.run_id + "_log", "txt"])
         )
