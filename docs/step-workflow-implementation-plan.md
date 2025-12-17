@@ -584,7 +584,7 @@ project:
   project_path: "/path/to/project"
   output_path: "/path/to/output"
   project_crs: "EPSG:32610"
-  run_name: "mission_001"
+  project_name: "mission_001"
   subdivide_task: true
 
 # Operation sections (each is a potential step)
@@ -653,7 +653,7 @@ build_orthomosaic:
 ```
 
 **Notes on config structure:**
-- **Global settings:** Project-wide settings grouped under `project:` section (paths, CRS, run name, etc.)
+- **Global settings:** Project-wide settings grouped under `project:` section (paths, CRS, project name, etc.)
 - **Operation sections:** All operations are top-level config sections with their own `enabled` flag and parameters
 - **Multi-section steps:** Some step methods check multiple config sections:
   - `setup()`: Checks `add_photos.enabled` and `calibrate_reflectance.enabled`
@@ -684,7 +684,7 @@ build_orthomosaic:
 
 A lightweight Python script runs once per workflow to:
 1. Read all mission config YAML files
-2. Extract `project.run_name` from each config (this will be used as the mission identifier and to override the config's run_name via CLI)
+2. Extract `project.project_name` from each config (this will be used as the mission identifier and to override the config's project_name via CLI)
 3. Apply translation logic above for each mission
 4. Read `gpu_enabled` parameters to determine node type for GPU-capable steps (defaulting to `true` if omitted)
 5. Output a JSON array of missions with step-level enabled flags and node types
@@ -693,7 +693,7 @@ Example output structure:
 ```json
 [
   {
-    "run_name": "mission1",
+    "project_name": "mission1",
     "config": "/data/mission1/config.yml",
     "match_photos_enabled": "true",
     "match_photos_use_gpu": "true",
@@ -707,7 +707,7 @@ Example output structure:
     "align_cameras_secondary_enabled": "false"
   },
   {
-    "run_name": "mission2",
+    "project_name": "mission2",
     "config": "/data/mission2/config.yml",
     "match_photos_enabled": "true",
     "match_photos_use_gpu": "false",
@@ -726,7 +726,7 @@ Example output structure:
 
 **Notes**:
 - `setup` and `finalize` are not included in this JSON output because they always run unconditionally in the Argo WorkflowTemplate.
-- The `run_name` field corresponds to the `project.run_name` config parameter and will be passed via CLI `--run-name` to override the config file setting. This ensures each mission uses a unique identifier in Argo workflows while still supporting local execution with the config's run_name.
+- The `project_name` field corresponds to the `project.project_name` config parameter and will be passed via CLI `--project-name` to override the config file setting. This ensures each mission uses a unique identifier in Argo workflows while still supporting local execution with the config's project_name.
 - This ensures disabled steps are skipped by Argo before pod scheduling, and GPU-capable steps are scheduled on the appropriate node type.
 
 ### WorkflowTemplate Structure
@@ -742,7 +742,7 @@ spec:
       - name: config-path
       - name: project-path
       - name: output-path
-      - name: run-name
+      - name: project-name
       - name: match_photos_enabled
       - name: match_photos_use_gpu
       - name: align_cameras_enabled
@@ -891,8 +891,8 @@ spec:
           - "{{workflow.parameters.project-path}}"
           - "--output-path"
           - "{{workflow.parameters.output-path}}"
-          - "--run-name"
-          - "{{workflow.parameters.run-name}}"
+          - "--project-name"
+          - "{{workflow.parameters.project-name}}"
           - "--step"
           - "{{inputs.parameters.step}}"
         volumeMounts:
@@ -921,8 +921,8 @@ spec:
           - "{{workflow.parameters.project-path}}"
           - "--output-path"
           - "{{workflow.parameters.output-path}}"
-          - "--run-name"
-          - "{{workflow.parameters.run-name}}"
+          - "--project-name"
+          - "{{workflow.parameters.project-name}}"
           - "--step"
           - "{{inputs.parameters.step}}"
         volumeMounts:
@@ -943,7 +943,7 @@ spec:
 6. **Python Conventions**: Step names use underscores (match_photos, build_mesh) matching Python method naming, simplifying the dispatcher implementation
 7. **Sequential Execution Guarantee**: The `depends` fields enforce strict sequential execution across all 10 steps. Steps never run in parallel because they share the same Metashape project file (.psx) and log files. The DAG dependencies ensure each step completes (or is skipped) before the next begins, preventing file conflicts. This includes the secondary photo steps, which execute sequentially after build_dem_orthomosaic and before finalize.
 8. **Setup and Finalize Always Run**: The `setup` and `finalize` steps have no `when` conditions and no enabled parameters. They always execute for complete mission processing in Argo workflows. Setup is required for project initialization (or loads existing project via `load_project` config). Finalize performs cleanup and reporting.
-9. **CLI Overrides for Paths**: Following the existing Argo workflow pattern, the WorkflowTemplate uses CLI arguments (`--project-path`, `--output-path`, `--run-name`) to override config file settings. These are constructed dynamically from workflow parameters (e.g., `RUN_FOLDER`, `dataset-name`). The setup step creates the project at `{project-path}/{run-name}.psx`, and subsequent steps load it from that location.
+9. **CLI Overrides for Paths**: Following the existing Argo workflow pattern, the WorkflowTemplate uses CLI arguments (`--project-path`, `--output-path`, `--project-name`) to override config file settings. These are constructed dynamically from workflow parameters (e.g., `RUN_FOLDER`, `dataset-name`). The setup step creates the project at `{project-path}/{project-name}.psx`, and subsequent steps load it from that location.
 10. **Explicit Dependency State Checking**: All `depends` fields use explicit `.Succeeded || .Skipped` state checking for consistency and clarity, especially important for mutually exclusive GPU/CPU task pairs.
 
 ### Outer Workflow Integration
@@ -965,11 +965,11 @@ spec:
                 - name: config-path
                   value: "{{item.config}}"
                 - name: project-path
-                  value: "/data/argo-output/{{workflow.parameters.RUN_FOLDER}}/{{item.run_name}}/project"
+                  value: "/data/argo-output/{{workflow.parameters.RUN_FOLDER}}/{{item.project_name}}/project"
                 - name: output-path
-                  value: "/data/argo-output/{{workflow.parameters.RUN_FOLDER}}/{{item.run_name}}/output"
-                - name: run-name
-                  value: "{{item.run_name}}"
+                  value: "/data/argo-output/{{workflow.parameters.RUN_FOLDER}}/{{item.project_name}}/output"
+                - name: project-name
+                  value: "{{item.project_name}}"
                 - name: match_photos_enabled
                   value: "{{item.match_photos_enabled}}"
                 - name: match_photos_use_gpu

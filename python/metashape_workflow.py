@@ -53,8 +53,8 @@ def parse_args():
         + "Will be created if does not exist.",
     )
     parser.add_argument(
-        "--run-name",
-        help="The identifier for the run. Will be used in naming output files.",
+        "--project-name",
+        help="The identifier for the project. Will be used in naming the project file and output files.",
     )
     parser.add_argument(
         "--project-crs",

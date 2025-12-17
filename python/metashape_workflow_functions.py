@@ -77,7 +77,7 @@ def convert_objects(a_dict):
                     and not ("path" in k)
                     and not ("project" in k)
                     and not ("name" in k)
-                ):  # allow "path" and "project" and "name" keys (e.g. "photoset_path" and "run_name") from YAML to include "Metashape" (e.g., Metashape in the filename)
+                ):  # allow "path" and "project" and "name" keys (e.g. "photoset_path" and "project_name") from YAML to include "Metashape" (e.g., Metashape in the filename)
                     a_dict[k] = eval(v)
             elif isinstance(v, list):
                 # skip if no item in list have metashape, else convert string to metashape object
@@ -109,7 +109,7 @@ def detect_config_format(cfg):
         str: 'old' or 'new'
     """
     # Check for old format indicators: top-level global settings
-    old_format_keys = ['photo_path', 'project_path', 'output_path', 'run_name']
+    old_format_keys = ['photo_path', 'project_path', 'output_path', 'run_name', 'project_name']
     has_old_format = any(key in cfg for key in old_format_keys)
 
     # Check for new format indicator: 'project' section with nested settings
@@ -160,7 +160,7 @@ def migrate_config_to_new_format(old_cfg):
         'project_path': old_cfg.get('project_path', ''),
         'output_path': old_cfg.get('output_path', ''),
         'project_crs': old_cfg.get('project_crs', 'EPSG::26910'),
-        'run_name': old_cfg.get('run_name', ''),
+        'project_name': old_cfg.get('run_name', old_cfg.get('project_name', '')),  # Support both old run_name and new project_name
         'subdivide_task': old_cfg.get('subdivide_task', True),
     }
 
@@ -309,14 +309,18 @@ class MetashapeWorkflow:
         stucture as the yaml config file.
 
         Note: CLI overrides for project-level settings (photo_path, project_path, output_path,
-        run_name, project_crs) are mapped to the project section if using new config format.
+        project_name, project_crs) are mapped to the project section if using new config format.
         """
         # Map CLI overrides to project section for new config format
-        project_keys = ['photo_path', 'photo_path_secondary', 'project_path', 'output_path', 'run_name', 'project_crs']
+        # Support both old 'run_name' and new 'project_name' for backward compatibility
+        project_keys = ['photo_path', 'photo_path_secondary', 'project_path', 'output_path', 'project_name', 'run_name', 'project_crs']
 
         # Create a modified override dict that properly nests project settings
         modified_override = {}
         for key, value in override_dict.items():
+            # Map old 'run_name' to new 'project_name' for backward compatibility
+            if key == 'run_name':
+                key = 'project_name'
             if key in project_keys:
                 # Map to project section
                 if 'project' not in modified_override:
@@ -386,12 +390,12 @@ class MetashapeWorkflow:
             ValueError: If project file doesn't exist
         """
         # Construct the expected project file path (same logic as project_setup)
-        run_name = self.cfg["project"]["run_name"]
-        if run_name == "from_config_filename" or run_name == "":
+        project_name = self.cfg["project"]["project_name"]
+        if project_name == "from_config_filename" or project_name == "":
             file_basename = os.path.basename(self.config_file)
-            run_name, _ = os.path.splitext(file_basename)
+            project_name, _ = os.path.splitext(file_basename)
 
-        project_file = os.path.join(self.cfg["project"]["project_path"], ".".join([run_name, "psx"]))
+        project_file = os.path.join(self.cfg["project"]["project_path"], ".".join([project_name, "psx"]))
 
         if not os.path.exists(project_file):
             raise ValueError(
@@ -717,18 +721,18 @@ class MetashapeWorkflow:
         if not os.path.exists(self.cfg["project"]["project_path"]):
             os.makedirs(self.cfg["project"]["project_path"])
 
-        ### Set a filename template for project files and output files based on the 'run_name' key of the config YML
-        ## BUT if the value for run_name is "from_config_filename", then use the config filename for the run name.
+        ### Set a filename template for project files and output files based on the 'project_name' key of the config YML
+        ## BUT if the value for project_name is "from_config_filename", then use the config filename for the project name.
 
-        run_name = self.cfg["project"]["run_name"]
+        project_name = self.cfg["project"]["project_name"]
 
-        if run_name == "from_config_filename" or run_name == "":
+        if project_name == "from_config_filename" or project_name == "":
             file_basename = os.path.basename(
                 self.config_file
             )  # extracts file base name from path
-            run_name, _ = os.path.splitext(file_basename)  # removes extension
+            project_name, _ = os.path.splitext(file_basename)  # removes extension
 
-        self.run_id = run_name
+        self.run_id = project_name
 
         project_file = os.path.join(
             self.cfg["project"]["project_path"], ".".join([self.run_id, "psx"])

@@ -113,7 +113,7 @@ For example:
 
 `--output-path` Path where all imagery products (orthomosaic, point cloud, DEMs, mesh model, reports) will be written 
 
-`--run-name`    The identifier for the run. Will be used in naming output files
+`--project-name`    The identifier for the project. Will be used in naming the project file and output files
 
 `--project-crs` Coordinate reference system EPSG code for outputs. Eg. _EPSG:26910_
 
@@ -141,7 +141,7 @@ python metashape_workflow.py --config_file config.yml --step build_dem_orthomosa
 python metashape_workflow.py --config_file config.yml --step finalize
 ```
 
-**Note:** Each step automatically loads the project file created/updated by previous steps, so all steps must use the same `--project-path` and `--run-name` values. The `setup` step creates the project; all subsequent steps load it.
+**Note:** Each step automatically loads the project file created/updated by previous steps, so all steps must use the same `--project-path` and `--project-name` values. The `setup` step creates the project; all subsequent steps load it.
 
 <br/>
 
@@ -174,7 +174,7 @@ The outputs of the workflow are the following:
 - **A Metashape project file** (for additional future processing or for inspecting the data via the Metashape GUI)
 - **A processing log** (which records the processing time for each step and the full set of configuration parameters, for reproducibility)
 
-The outputs for a given workflow run are named using the following convention: `{run_name}_abc.xyz`. For example: `set14-highQuality_ortho.tif`. The run name and output directories are specified in the configuration file.
+The outputs for a given workflow run are named using the following convention: `{project_name}_abc.xyz`. For example: `set14-highQuality_ortho.tif`. The project name and output directories are specified in the configuration file.
 
 <br/>
 <br/>
