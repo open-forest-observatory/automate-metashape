@@ -95,9 +95,9 @@ def stamp_time():
     return stamp
 
 
-def detect_config_format(cfg):
+def is_old_config_format(cfg):
     """
-    Detect whether a config uses old or new format.
+    Detect whether a config uses old format.
 
     Old format: Global settings at top level (photo_path, project_path, etc.)
     New format: Global settings under 'project:' section
@@ -106,7 +106,7 @@ def detect_config_format(cfg):
         cfg (dict): Configuration dictionary
 
     Returns:
-        str: 'old' or 'new'
+        bool: True if old format, False if new format
     """
     # Check for old format indicators: top-level global settings
     old_format_keys = ['photo_path', 'project_path', 'output_path', 'run_name', 'project_name']
@@ -115,13 +115,8 @@ def detect_config_format(cfg):
     # Check for new format indicator: 'project' section with nested settings
     has_new_format = 'project' in cfg and isinstance(cfg['project'], dict)
 
-    if has_new_format:
-        return 'new'
-    elif has_old_format:
-        return 'old'
-    else:
-        # Default to new format if unclear
-        return 'new'
+    # New format takes priority over old format indicators
+    return has_old_format and not has_new_format
 
 
 def migrate_config_to_new_format(old_cfg):
@@ -297,8 +292,7 @@ class MetashapeWorkflow:
             self.cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
 
         # Auto-detect and migrate old config format to new format
-        config_format = detect_config_format(self.cfg)
-        if config_format == 'old':
+        if is_old_config_format(self.cfg):
             print(f"Detected old config format. Auto-migrating to new format...")
             self.cfg = migrate_config_to_new_format(self.cfg)
             print(f"Config migration complete.")
