@@ -64,10 +64,10 @@ def parse_args():
     )
     parser.add_argument(
         "--step",
-        help="Run a single processing step. Valid steps: setup, match_photos, "
-        + "align_cameras, build_depth_maps, build_point_cloud, build_mesh, "
-        + "build_dem_orthomosaic, match_photos_secondary, align_cameras_secondary, finalize. "
-        + "If not specified, runs the full workflow.",
+        choices=["setup", "match_photos", "align_cameras", "build_depth_maps",
+                 "build_point_cloud", "build_mesh", "build_dem_orthomosaic",
+                 "match_photos_secondary", "align_cameras_secondary", "finalize"],
+        help="Run a single processing step. If not specified, runs the full workflow.",
     )
 
     args = parser.parse_args()
