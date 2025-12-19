@@ -407,7 +407,7 @@ class MetashapeWorkflow:
             self.cfg["project"]["output_path"], self.project_name + "_log.txt"
         )
         self.yaml_log_file = os.path.join(
-            self.cfg["project"]["output_path"], f"{self.project_name}_metrics.yaml"
+            self.cfg["project"]["output_path"], self.project_name + "_metrics.yaml"
         )
         self.benchmark = BenchmarkMonitor(
             self.log_file, self.yaml_log_file, self._get_system_info
@@ -735,7 +735,7 @@ class MetashapeWorkflow:
             self.cfg["project"]["output_path"], self.project_name + "_log.txt"
         )
         self.yaml_log_file = os.path.join(
-            self.cfg["project"]["output_path"], f"{self.project_name}_metrics.yaml"
+            self.cfg["project"]["output_path"], self.project_name + "_metrics.yaml"
         )
 
         # Initialize benchmark monitor for performance logging
