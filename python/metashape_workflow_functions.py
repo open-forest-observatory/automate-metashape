@@ -389,7 +389,7 @@ class MetashapeWorkflow:
             file_basename = os.path.basename(self.config_file)
             project_name, _ = os.path.splitext(file_basename)
 
-        project_file = os.path.join(self.cfg["project"]["project_path"], ".".join([project_name, "psx"]))
+        project_file = os.path.join(self.cfg["project"]["project_path"], project_name + ".psx")
 
         if not os.path.exists(project_file):
             raise ValueError(
@@ -404,7 +404,7 @@ class MetashapeWorkflow:
         # Set up instance variables (same as project_setup)
         self.project_name = project_name
         self.log_file = os.path.join(
-            self.cfg["project"]["output_path"], ".".join([self.project_name + "_log", "txt"])
+            self.cfg["project"]["output_path"], self.project_name + "_log.txt"
         )
         self.yaml_log_file = os.path.join(
             self.cfg["project"]["output_path"], f"{self.project_name}_metrics.yaml"
@@ -729,10 +729,10 @@ class MetashapeWorkflow:
         self.project_name = project_name
 
         project_file = os.path.join(
-            self.cfg["project"]["project_path"], ".".join([self.project_name, "psx"])
+            self.cfg["project"]["project_path"], self.project_name + ".psx"
         )
         self.log_file = os.path.join(
-            self.cfg["project"]["output_path"], ".".join([self.project_name + "_log", "txt"])
+            self.cfg["project"]["output_path"], self.project_name + "_log.txt"
         )
         self.yaml_log_file = os.path.join(
             self.cfg["project"]["output_path"], f"{self.project_name}_metrics.yaml"
