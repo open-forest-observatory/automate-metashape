@@ -6,6 +6,7 @@ import json
 import os
 import platform
 import re
+
 # Import the fuctionality we need to make time stamps to measure performance
 import time
 from pathlib import Path
@@ -108,11 +109,17 @@ def is_old_config_format(cfg):
         bool: True if old format, False if new format
     """
     # Check for old format indicators: top-level global settings
-    old_format_keys = ['photo_path', 'project_path', 'output_path', 'run_name', 'project_name']
+    old_format_keys = [
+        "photo_path",
+        "project_path",
+        "output_path",
+        "run_name",
+        "project_name",
+    ]
     has_old_format = any(key in cfg for key in old_format_keys)
 
     # Check for new format indicator: 'project' section with nested settings
-    has_new_format = 'project' in cfg and isinstance(cfg['project'], dict)
+    has_new_format = "project" in cfg and isinstance(cfg["project"], dict)
 
     # New format takes priority over old format indicators
     return has_old_format and not has_new_format
@@ -147,85 +154,89 @@ def migrate_config_to_new_format(old_cfg):
     new_cfg = {}
 
     # Create project section with global settings
-    new_cfg['project'] = {
-        'load_project': old_cfg.get('load_project', ''),
-        'photo_path': old_cfg.get('photo_path', ''),
-        'photo_path_secondary': old_cfg.get('photo_path_secondary', ''),
-        'project_path': old_cfg.get('project_path', ''),
-        'output_path': old_cfg.get('output_path', ''),
-        'project_crs': old_cfg.get('project_crs', 'EPSG::26910'),
-        'project_name': old_cfg.get('run_name', old_cfg.get('project_name', '')),  # Support both old run_name and new project_name
-        'subdivide_task': old_cfg.get('subdivide_task', True),
+    new_cfg["project"] = {
+        "load_project": old_cfg.get("load_project", ""),
+        "photo_path": old_cfg.get("photo_path", ""),
+        "photo_path_secondary": old_cfg.get("photo_path_secondary", ""),
+        "project_path": old_cfg.get("project_path", ""),
+        "output_path": old_cfg.get("output_path", ""),
+        "project_crs": old_cfg.get("project_crs", "EPSG::26910"),
+        "project_name": old_cfg.get(
+            "run_name", old_cfg.get("project_name", "")
+        ),  # Support both old run_name and new project_name
+        "subdivide_task": old_cfg.get("subdivide_task", True),
     }
 
     # Migrate add_photos (rename from addPhotos)
-    if 'addPhotos' in old_cfg:
-        new_cfg['add_photos'] = old_cfg['addPhotos'].copy()
+    if "addPhotos" in old_cfg:
+        new_cfg["add_photos"] = old_cfg["addPhotos"].copy()
 
     # Migrate calibrate_reflectance (rename from calibrateReflectance)
-    if 'calibrateReflectance' in old_cfg:
-        new_cfg['calibrate_reflectance'] = old_cfg['calibrateReflectance'].copy()
+    if "calibrateReflectance" in old_cfg:
+        new_cfg["calibrate_reflectance"] = old_cfg["calibrateReflectance"].copy()
 
     # Split alignPhotos into match_photos and align_cameras
-    if 'alignPhotos' in old_cfg:
-        align_photos = old_cfg['alignPhotos']
+    if "alignPhotos" in old_cfg:
+        align_photos = old_cfg["alignPhotos"]
 
         # match_photos section
-        new_cfg['match_photos'] = {
-            'enabled': align_photos.get('enabled', True),
-            'downscale': align_photos.get('downscale', 2),
-            'generic_preselection': align_photos.get('generic_preselection', True),
-            'reference_preselection': align_photos.get('reference_preselection', True),
-            'reference_preselection_mode': align_photos.get('reference_preselection_mode', 'Metashape.ReferencePreselectionSource'),
-            'keep_keypoints': align_photos.get('keep_keypoints', True),
+        new_cfg["match_photos"] = {
+            "enabled": align_photos.get("enabled", True),
+            "downscale": align_photos.get("downscale", 2),
+            "generic_preselection": align_photos.get("generic_preselection", True),
+            "reference_preselection": align_photos.get("reference_preselection", True),
+            "reference_preselection_mode": align_photos.get(
+                "reference_preselection_mode", "Metashape.ReferencePreselectionSource"
+            ),
+            "keep_keypoints": align_photos.get("keep_keypoints", True),
         }
 
         # align_cameras section
-        new_cfg['align_cameras'] = {
-            'enabled': align_photos.get('enabled', True),
-            'adaptive_fitting': align_photos.get('adaptive_fitting', True),
-            'reset_alignment': align_photos.get('reset_alignment', False),
+        new_cfg["align_cameras"] = {
+            "enabled": align_photos.get("enabled", True),
+            "adaptive_fitting": align_photos.get("adaptive_fitting", True),
+            "reset_alignment": align_photos.get("reset_alignment", False),
         }
 
     # Migrate add_gcps (rename from addGCPs)
-    if 'addGCPs' in old_cfg:
-        new_cfg['add_gcps'] = old_cfg['addGCPs'].copy()
+    if "addGCPs" in old_cfg:
+        new_cfg["add_gcps"] = old_cfg["addGCPs"].copy()
 
     # Migrate filter_points_usgs (rename from filterPointsUSGS)
-    if 'filterPointsUSGS' in old_cfg:
-        new_cfg['filter_points_usgs'] = old_cfg['filterPointsUSGS'].copy()
+    if "filterPointsUSGS" in old_cfg:
+        new_cfg["filter_points_usgs"] = old_cfg["filterPointsUSGS"].copy()
 
     # Migrate optimize_cameras (rename from optimizeCameras)
-    if 'optimizeCameras' in old_cfg:
-        new_cfg['optimize_cameras'] = old_cfg['optimizeCameras'].copy()
+    if "optimizeCameras" in old_cfg:
+        new_cfg["optimize_cameras"] = old_cfg["optimizeCameras"].copy()
 
     # Migrate export_cameras (rename from exportCameras)
-    if 'exportCameras' in old_cfg:
-        new_cfg['export_cameras'] = old_cfg['exportCameras'].copy()
+    if "exportCameras" in old_cfg:
+        new_cfg["export_cameras"] = old_cfg["exportCameras"].copy()
 
     # Migrate build_depth_maps (rename from buildDepthMaps)
-    if 'buildDepthMaps' in old_cfg:
-        new_cfg['build_depth_maps'] = old_cfg['buildDepthMaps'].copy()
+    if "buildDepthMaps" in old_cfg:
+        new_cfg["build_depth_maps"] = old_cfg["buildDepthMaps"].copy()
 
     # Migrate build_point_cloud (rename from buildPointCloud)
-    if 'buildPointCloud' in old_cfg:
-        new_cfg['build_point_cloud'] = old_cfg['buildPointCloud'].copy()
+    if "buildPointCloud" in old_cfg:
+        new_cfg["build_point_cloud"] = old_cfg["buildPointCloud"].copy()
 
     # Migrate classify_ground_points (rename from classifyGroundPoints)
-    if 'classifyGroundPoints' in old_cfg:
-        new_cfg['classify_ground_points'] = old_cfg['classifyGroundPoints'].copy()
+    if "classifyGroundPoints" in old_cfg:
+        new_cfg["classify_ground_points"] = old_cfg["classifyGroundPoints"].copy()
 
     # Migrate build_mesh (rename from buildMesh)
-    if 'buildMesh' in old_cfg:
-        new_cfg['build_mesh'] = old_cfg['buildMesh'].copy()
+    if "buildMesh" in old_cfg:
+        new_cfg["build_mesh"] = old_cfg["buildMesh"].copy()
 
     # Migrate build_dem (rename from buildDem)
-    if 'buildDem' in old_cfg:
-        new_cfg['build_dem'] = old_cfg['buildDem'].copy()
+    if "buildDem" in old_cfg:
+        new_cfg["build_dem"] = old_cfg["buildDem"].copy()
 
     # Migrate build_orthomosaic (rename from buildOrthomosaic)
-    if 'buildOrthomosaic' in old_cfg:
-        new_cfg['build_orthomosaic'] = old_cfg['buildOrthomosaic'].copy()
+    if "buildOrthomosaic" in old_cfg:
+        new_cfg["build_orthomosaic"] = old_cfg["buildOrthomosaic"].copy()
 
     return new_cfg
 
@@ -306,19 +317,27 @@ class MetashapeWorkflow:
         """
         # Map CLI overrides to project section for new config format
         # Support both old 'run_name' and new 'project_name' for backward compatibility
-        project_keys = ['photo_path', 'photo_path_secondary', 'project_path', 'output_path', 'project_name', 'run_name', 'project_crs']
+        project_keys = [
+            "photo_path",
+            "photo_path_secondary",
+            "project_path",
+            "output_path",
+            "project_name",
+            "run_name",
+            "project_crs",
+        ]
 
         # Create a modified override dict that properly nests project settings
         modified_override = {}
         for key, value in override_dict.items():
             # Map old 'run_name' to new 'project_name' for backward compatibility
-            if key == 'run_name':
-                key = 'project_name'
+            if key == "run_name":
+                key = "project_name"
             if key in project_keys:
                 # Map to project section
-                if 'project' not in modified_override:
-                    modified_override['project'] = {}
-                modified_override['project'][key] = value
+                if "project" not in modified_override:
+                    modified_override["project"] = {}
+                modified_override["project"][key] = value
             else:
                 # Keep other overrides at top level
                 modified_override[key] = value
@@ -388,7 +407,9 @@ class MetashapeWorkflow:
             file_basename = os.path.basename(self.config_file)
             project_name, _ = os.path.splitext(file_basename)
 
-        project_file = os.path.join(self.cfg["project"]["project_path"], project_name + ".psx")
+        project_file = os.path.join(
+            self.cfg["project"]["project_path"], project_name + ".psx"
+        )
 
         if not os.path.exists(project_file):
             raise ValueError(
@@ -502,8 +523,12 @@ class MetashapeWorkflow:
                 subdivide_task=self.cfg["project"]["subdivide_task"],
                 keep_keypoints=self.cfg["match_photos"]["keep_keypoints"],
                 generic_preselection=self.cfg["match_photos"]["generic_preselection"],
-                reference_preselection=self.cfg["match_photos"]["reference_preselection"],
-                reference_preselection_mode=self.cfg["match_photos"]["reference_preselection_mode"],
+                reference_preselection=self.cfg["match_photos"][
+                    "reference_preselection"
+                ],
+                reference_preselection_mode=self.cfg["match_photos"][
+                    "reference_preselection_mode"
+                ],
             )
 
         self.doc.save()
@@ -587,8 +612,12 @@ class MetashapeWorkflow:
                 subdivide_task=self.cfg["project"]["subdivide_task"],
                 keep_keypoints=self.cfg["match_photos"]["keep_keypoints"],
                 generic_preselection=self.cfg["match_photos"]["generic_preselection"],
-                reference_preselection=self.cfg["match_photos"]["reference_preselection"],
-                reference_preselection_mode=self.cfg["match_photos"]["reference_preselection_mode"],
+                reference_preselection=self.cfg["match_photos"][
+                    "reference_preselection"
+                ],
+                reference_preselection_mode=self.cfg["match_photos"][
+                    "reference_preselection_mode"
+                ],
             )
 
         self.doc.save()
@@ -628,7 +657,10 @@ class MetashapeWorkflow:
         - Writes completion timestamp to log
         """
         # Optional operation: remove point cloud after export
-        if self.cfg["build_point_cloud"]["enabled"] and self.cfg["build_point_cloud"]["remove_after_export"]:
+        if (
+            self.cfg["build_point_cloud"]["enabled"]
+            and self.cfg["build_point_cloud"]["remove_after_export"]
+        ):
             self.remove_point_cloud()
 
         self.export_report()
@@ -778,7 +810,9 @@ class MetashapeWorkflow:
         with open(self.log_file, "w") as file:
 
             # write a line with the Metashape version
-            file.write(MetashapeWorkflow.sep.join(["Project", self.project_name]) + "\n")
+            file.write(
+                MetashapeWorkflow.sep.join(["Project", self.project_name]) + "\n"
+            )
             file.write(
                 MetashapeWorkflow.sep.join(
                     ["Agisoft Metashape Professional Version", Metashape.app.version]
@@ -1134,7 +1168,9 @@ class MetashapeWorkflow:
         proj_thresh_percent = self.cfg["filter_points_usgs"]["proj_thresh_percent"]
         proj_thresh_absolute = self.cfg["filter_points_usgs"]["proj_thresh_absolute"]
         reproj_thresh_percent = self.cfg["filter_points_usgs"]["reproj_thresh_percent"]
-        reproj_thresh_absolute = self.cfg["filter_points_usgs"]["reproj_thresh_absolute"]
+        reproj_thresh_absolute = self.cfg["filter_points_usgs"][
+            "reproj_thresh_absolute"
+        ]
 
         fltr = Metashape.TiePoints.Filter()
         fltr.init(self.doc.chunk, Metashape.TiePoints.Filter.ReconstructionUncertainty)
@@ -1190,7 +1226,9 @@ class MetashapeWorkflow:
             )
 
         reproj_thresh_percent = self.cfg["filter_points_usgs"]["reproj_thresh_percent"]
-        reproj_thresh_absolute = self.cfg["filter_points_usgs"]["reproj_thresh_absolute"]
+        reproj_thresh_absolute = self.cfg["filter_points_usgs"][
+            "reproj_thresh_absolute"
+        ]
 
         fltr = Metashape.TiePoints.Filter()
         fltr.init(self.doc.chunk, Metashape.TiePoints.Filter.ReprojectionError)
@@ -1280,7 +1318,8 @@ class MetashapeWorkflow:
 
             # Export the point cloud
             output_file = os.path.join(
-                self.cfg["project"]["output_path"], self.project_name + export_file_ending
+                self.cfg["project"]["output_path"],
+                self.project_name + export_file_ending,
             )
             if self.cfg["build_point_cloud"]["classes"] == "ALL":
                 # call without classes argument (Metashape then defaults to all classes)
@@ -1289,7 +1328,9 @@ class MetashapeWorkflow:
                         path=output_file,
                         source_data=Metashape.PointCloudData,
                         format=self.cfg["build_point_cloud"]["export_format"],
-                        crs=Metashape.CoordinateSystem(self.cfg["project"]["project_crs"]),
+                        crs=Metashape.CoordinateSystem(
+                            self.cfg["project"]["project_crs"]
+                        ),
                         subdivide_task=self.cfg["project"]["subdivide_task"],
                     )
                 self.written_paths["point_cloud_all_classes"] = output_file  # export
@@ -1300,7 +1341,9 @@ class MetashapeWorkflow:
                         path=output_file,
                         source_data=Metashape.PointCloudData,
                         format=Metashape.PointCloudFormatLAZ,
-                        crs=Metashape.CoordinateSystem(self.cfg["project"]["project_crs"]),
+                        crs=Metashape.CoordinateSystem(
+                            self.cfg["project"]["project_crs"]
+                        ),
                         classes=self.cfg["build_point_cloud"]["classes"],
                         subdivide_task=self.cfg["project"]["subdivide_task"],
                     )
@@ -1343,7 +1386,9 @@ class MetashapeWorkflow:
 
             output_file = os.path.join(
                 self.cfg["project"]["output_path"],
-                self.project_name + "_mesh." + self.cfg["build_mesh"]["export_extension"],
+                self.project_name
+                + "_mesh."
+                + self.cfg["build_mesh"]["export_extension"],
             )
             # Export the georeferenced mesh in the project CRS. The metadata file is the only thing
             # that encodes the CRS.
@@ -1378,7 +1423,9 @@ class MetashapeWorkflow:
 
             # prepping params for buildDem
             projection = Metashape.OrthoProjection()
-            projection.crs = Metashape.CoordinateSystem(self.cfg["project"]["project_crs"])
+            projection.crs = Metashape.CoordinateSystem(
+                self.cfg["project"]["project_crs"]
+            )
 
             # prepping params for export
             compression = Metashape.ImageCompression()
@@ -1398,7 +1445,8 @@ class MetashapeWorkflow:
                 self.doc.chunk.elevation.label = "DSM-ptcloud"
 
                 output_file = os.path.join(
-                    self.cfg["project"]["output_path"], self.project_name + "_dsm-ptcloud.tif"
+                    self.cfg["project"]["output_path"],
+                    self.project_name + "_dsm-ptcloud.tif",
                 )
                 if self.cfg["build_dem"]["export"]:
                     with self.benchmark.monitor("exportRaster (DSM-ptcloud)"):
@@ -1426,7 +1474,8 @@ class MetashapeWorkflow:
                 self.doc.chunk.elevation.label = "DTM-ptcloud"
 
                 output_file = os.path.join(
-                    self.cfg["project"]["output_path"], self.project_name + "_dtm-ptcloud.tif"
+                    self.cfg["project"]["output_path"],
+                    self.project_name + "_dtm-ptcloud.tif",
                 )
                 if self.cfg["build_dem"]["export"]:
                     with self.benchmark.monitor("exportRaster (DTM-ptcloud)"):
@@ -1450,7 +1499,8 @@ class MetashapeWorkflow:
                 self.doc.chunk.elevation.label = "DSM-mesh"
 
                 output_file = os.path.join(
-                    self.cfg["project"]["output_path"], self.project_name + "_dsm-mesh.tif"
+                    self.cfg["project"]["output_path"],
+                    self.project_name + "_dsm-mesh.tif",
                 )
                 if self.cfg["build_dem"]["export"]:
                     with self.benchmark.monitor("exportRaster (DSM-mesh)"):
@@ -1526,7 +1576,8 @@ class MetashapeWorkflow:
         ## Export orthomosaic
         if self.cfg["build_orthomosaic"]["export"]:
             output_file = os.path.join(
-                self.cfg["project"]["output_path"], self.project_name + "_ortho-" + file_ending + ".tif"
+                self.cfg["project"]["output_path"],
+                self.project_name + "_ortho-" + file_ending + ".tif",
             )
 
             compression = Metashape.ImageCompression()
@@ -1535,7 +1586,9 @@ class MetashapeWorkflow:
             compression.tiff_overviews = self.cfg["build_orthomosaic"]["tiff_overviews"]
 
             projection = Metashape.OrthoProjection()
-            projection.crs = Metashape.CoordinateSystem(self.cfg["project"]["project_crs"])
+            projection.crs = Metashape.CoordinateSystem(
+                self.cfg["project"]["project_crs"]
+            )
 
             with self.benchmark.monitor(f"exportRaster (ortho-{file_ending})"):
                 self.doc.chunk.exportRaster(
@@ -1559,7 +1612,9 @@ class MetashapeWorkflow:
 
         self.benchmark.set_step_name("finalize")
 
-        output_file = os.path.join(self.cfg["project"]["output_path"], self.project_name + "_report.pdf")
+        output_file = os.path.join(
+            self.cfg["project"]["output_path"], self.project_name + "_report.pdf"
+        )
 
         with self.benchmark.monitor("exportReport"):
             self.doc.chunk.exportReport(path=output_file)
