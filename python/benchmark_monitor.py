@@ -82,12 +82,15 @@ class BenchmarkMonitor:
         except pynvml.NVMLError:
             return None
 
-    def log_step_header(self, step_name: str):
+    def set_step_name(self, step_name: str):
         """
-        Store the current step name for inclusion in log entries.
+        Set the current step name to be included in subsequent log entries.
+
+        This sets the step context for all API calls monitored within this step.
+        The step name appears in both human-readable and YAML log outputs.
 
         Args:
-            step_name: Name of the automate-metashape workflow step
+            step_name: Human-readable name of the workflow step (e.g., "Match Photos")
         """
         self.current_step = step_name
 
@@ -177,7 +180,7 @@ class BenchmarkMonitor:
 
         with open(self.log_file, "a") as f:
             f.write(
-                f"{self.current_step:<18} | {api_call:<24} | {duration_str} | {cpu_str:>5} | {gpu_str:>5} | "
+                f"{self.current_step:<23} | {api_call:<35} | {duration_str} | {cpu_str:>5} | {gpu_str:>5} | "
                 f"{cpu_cores_available:>4} | {gpu_count:>4} | {gpu_model:<15} | {node_name:<15}\n"
             )
 

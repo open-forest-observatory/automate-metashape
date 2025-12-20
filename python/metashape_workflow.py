@@ -53,14 +53,21 @@ def parse_args():
         + "Will be created if does not exist.",
     )
     parser.add_argument(
-        "--run-name",
-        help="The identifier for the run. Will be used in naming output files.",
+        "--project-name",
+        help="The identifier for the project. Will be used in naming the project file and output files.",
     )
     parser.add_argument(
         "--project-crs",
         help="CRS EPSG code that project outputs should be in "
         + "(projection should be in meter units and intended for the project area). "
         + "It should be specified in the following format: 'EPSG::<EPSG code>'.",
+    )
+    parser.add_argument(
+        "--step",
+        choices=["setup", "match_photos", "align_cameras", "build_depth_maps",
+                 "build_point_cloud", "build_mesh", "build_dem_orthomosaic",
+                 "match_photos_secondary", "align_cameras_secondary", "finalize"],
+        help="Run a single processing step. If not specified, runs the full workflow.",
     )
 
     args = parser.parse_args()
@@ -87,7 +94,10 @@ if __name__ == "__main__":
     with contextlib.redirect_stdout(sys.stderr):
         # Actually run the processing step
         try:
-            meta.run()
+            if args.step:
+                meta.run_step(args.step)
+            else:
+                meta.run()
         except Exception as e:
             metashape_error_occurred = True
             # TODO make this error message more descriptive
