@@ -94,11 +94,11 @@ With this minimalist run command, the script assumes your config.yml file is loc
 
 <br/>
 
-If your config file is located in a different directory, use the optional flag `--config_file`   
+If your config file is located in a different directory, use the optional flag `--config-file`
 
-For example: 
+For example:
 
-`python {repo_path}/python/metashape_workflow.py --config_file {config_path}/{config_file}.yml`
+`python {repo_path}/python/metashape_workflow.py --config-file {config_path}/{config_file}.yml`
 
 
 <br/>
@@ -132,13 +132,13 @@ For example:
 Example step-based workflow execution:
 
 ```bash
-python metashape_workflow.py --config_file config.yml --step setup
-python metashape_workflow.py --config_file config.yml --step match_photos
-python metashape_workflow.py --config_file config.yml --step align_cameras
-python metashape_workflow.py --config_file config.yml --step build_depth_maps
-python metashape_workflow.py --config_file config.yml --step build_point_cloud
-python metashape_workflow.py --config_file config.yml --step build_dem_orthomosaic
-python metashape_workflow.py --config_file config.yml --step finalize
+python metashape_workflow.py --config-file config.yml --step setup
+python metashape_workflow.py --config-file config.yml --step match_photos
+python metashape_workflow.py --config-file config.yml --step align_cameras
+python metashape_workflow.py --config-file config.yml --step build_depth_maps
+python metashape_workflow.py --config-file config.yml --step build_point_cloud
+python metashape_workflow.py --config-file config.yml --step build_dem_orthomosaic
+python metashape_workflow.py --config-file config.yml --step finalize
 ```
 
 **Note:** Each step automatically loads the project file created/updated by previous steps, so all steps must use the same `--project-path` and `--project-name` values. The `setup` step creates the project; all subsequent steps load it.
@@ -157,9 +157,9 @@ Running workflows in batch (i.e., multiple workflows in series) on a single comp
 
 
 ```
-python ~/repos/automate-metashape/python/metashape_workflow.py --config_file ~/projects/forest_structure/metashape_configs/config001.yml
-python ~/repos/automate-metashape/python/metashape_workflow.py --config_file ~/projects/forest_structure/metashape_configs/config002.yml
-python ~/repos/automate-metashape/python/metashape_workflow.py --config_file ~/projects/forest_structure/metashape_configs/config003.yml
+python ~/repos/automate-metashape/python/metashape_workflow.py --config-file ~/projects/forest_structure/metashape_configs/config001.yml
+python ~/repos/automate-metashape/python/metashape_workflow.py --config-file ~/projects/forest_structure/metashape_configs/config002.yml
+python ~/repos/automate-metashape/python/metashape_workflow.py --config-file ~/projects/forest_structure/metashape_configs/config003.yml
 ```
 3. Give the shell script file executable permissions ` chmod +x metashape.sh`
 4. Make sure you are located in the directory that contains the shell script. Run the shell script `./metashape.sh`
@@ -208,7 +208,7 @@ The images to be processed should all be in one parent folder (and optionally or
 
 #### Workflow configuration file
 
-An example configuration file is provided in this repository at [`config/config-example.yml`](/config/config-example.yml). Please download this file to your local machine and rename it `config.yml`. By default the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`. So in a case where the local folder to be mounted is `~/drone_data/`, then for the config file to be mounted in the Docker container at `/data/config.yaml`, it must be located on the local computer at `~/drone_data/config.yaml`. However, the config file location can be overridden by passing a different location following an optional command line argument `--config_file` of the `docker run` command. For more information click [here](#custom-location-of-the-metashape-configuration-file).
+An example configuration file is provided in this repository at [`config/config-example.yml`](/config/config-example.yml). Please download this file to your local machine and rename it `config.yml`. By default the container expects the config YAML file describing the Metashape workflow parameters to be located at `/data/config.yaml`. So in a case where the local folder to be mounted is `~/drone_data/`, then for the config file to be mounted in the Docker container at `/data/config.yaml`, it must be located on the local computer at `~/drone_data/config.yaml`. However, the config file location can be overridden by passing a different location following an optional command line argument `--config-file` of the `docker run` command. For more information click [here](#custom-location-of-the-metashape-configuration-file).
 
 Within the `config.yml` you will need to edit some of the project level parameters to specify where to find input images and where to put output products within the container. Within this config file, all paths will be relative to the file structure of the docker container (beginning with `/data/`). In the config.yaml, at a minimum the following entries should be updated:
 
@@ -254,9 +254,9 @@ Here is a breakdown of the command:
 
 #### Custom location of the Metashape configuration file
 
-If your config.yaml is located anywhere other than `/data/config.yaml` (or the file is named differently), you can specify its location following one additional command line argument `--config_file` at the end of the `docker run` command. For example, if it is located in the container at `/data/configs/project_10/config.yml` (meanining, in the example above, it is located on your local computer at `~/drone_data/configs/project_10/config.yml`), just append `--config_file /data/configs/project_10/config.yml` to the `docker run` command above. So the command above would look like:
+If your config.yaml is located anywhere other than `/data/config.yaml` (or the file is named differently), you can specify its location following one additional command line argument `--config-file` at the end of the `docker run` command. For example, if it is located in the container at `/data/configs/project_10/config.yml` (meanining, in the example above, it is located on your local computer at `~/drone_data/configs/project_10/config.yml`), just append `--config-file /data/configs/project_10/config.yml` to the `docker run` command above. So the command above would look like:
 
-`docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape --config_file /data/configs/project_10/config.yml`
+`docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape --config-file /data/configs/project_10/config.yml`
 
 <br/>
 

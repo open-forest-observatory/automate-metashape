@@ -29,7 +29,7 @@ def parse_args():
         + "All other arguments are optional overrides to the corresponding entry in that config"
     )
     parser.add_argument(
-        "--config_file",
+        "--config-file",
         default=manual_config_file,
         help="A path to a yaml config file.",
     )

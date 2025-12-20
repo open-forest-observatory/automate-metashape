@@ -885,7 +885,7 @@ spec:
         image: metashape:latest
         command: ["python", "metashape_workflow.py"]
         args:
-          - "--config_file"
+          - "--config-file"
           - "{{workflow.parameters.config-path}}"
           - "--project-path"
           - "{{workflow.parameters.project-path}}"
@@ -915,7 +915,7 @@ spec:
             nvidia.com/gpu: 1
         command: ["python", "metashape_workflow.py"]
         args:
-          - "--config_file"
+          - "--config-file"
           - "{{workflow.parameters.config-path}}"
           - "--project-path"
           - "{{workflow.parameters.project-path}}"
