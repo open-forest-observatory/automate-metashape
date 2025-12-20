@@ -193,10 +193,20 @@ class BenchmarkMonitor:
 
             # Write to logs
             self._write_human_log(
-                api_call_name, duration, cpu_percent, gpu_percent, process_cpu_cores, system_info
+                api_call_name,
+                duration,
+                cpu_percent,
+                gpu_percent,
+                process_cpu_cores,
+                system_info,
             )
             self._write_yaml_log(
-                api_call_name, duration, cpu_percent, gpu_percent, process_cpu_cores, system_info
+                api_call_name,
+                duration,
+                cpu_percent,
+                gpu_percent,
+                process_cpu_cores,
+                system_info,
             )
 
     def _write_human_log(
