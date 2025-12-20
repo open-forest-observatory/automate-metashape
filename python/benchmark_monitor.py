@@ -56,6 +56,9 @@ class BenchmarkMonitor:
             except pynvml.NVMLError:
                 pass
 
+        # Get current process for CPU monitoring (including all children)
+        self.process = psutil.Process()
+
         # Write YAML header - system info will be per-call now
         with open(self.yaml_log_path, "w") as f:
             f.write("api_calls:\n")
@@ -66,6 +69,33 @@ class BenchmarkMonitor:
         minutes = int((seconds % 3600) // 60)
         secs = int(seconds % 60)
         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+    def _get_process_cpu_cores(self) -> float:
+        """
+        Get CPU usage in cores for this process and all children.
+
+        Returns:
+            Number of CPU cores being used (e.g., 0.5, 1.2, 4.0)
+        """
+        try:
+            # Get all processes (main process + children recursively)
+            processes = [self.process] + self.process.children(recursive=True)
+
+            # Sum CPU percent across all processes
+            total_cpu_percent = 0.0
+            for proc in processes:
+                try:
+                    # cpu_percent() returns percentage of ONE CPU core (0-100)
+                    # If using 2 full cores, this returns 200
+                    total_cpu_percent += proc.cpu_percent(interval=None)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    # Process may have terminated, skip it
+                    continue
+
+            # Convert to number of cores (200% = 2.0 cores)
+            return total_cpu_percent / 100.0
+        except Exception:
+            return 0.0
 
     def _get_gpu_utilization(self) -> float:
         """Get average GPU utilization across all GPUs."""
@@ -109,6 +139,7 @@ class BenchmarkMonitor:
         # Sampling state
         cpu_samples = []
         gpu_samples = []
+        process_cpu_samples = []
         stop_sampling = threading.Event()
 
         def sample_utilization():
@@ -122,6 +153,10 @@ class BenchmarkMonitor:
                 gpu_util = self._get_gpu_utilization()
                 if gpu_util is not None:
                     gpu_samples.append(gpu_util)
+
+                # Process CPU usage (in cores)
+                process_cpu = self._get_process_cpu_cores()
+                process_cpu_samples.append(process_cpu)
 
                 # Wait for next sample (1 second interval)
                 stop_sampling.wait(timeout=1.0)
@@ -147,16 +182,21 @@ class BenchmarkMonitor:
             gpu_percent = (
                 round(sum(gpu_samples) / len(gpu_samples), 1) if gpu_samples else None
             )
+            process_cpu_cores = (
+                round(sum(process_cpu_samples) / len(process_cpu_samples), 1)
+                if process_cpu_samples
+                else 0.0
+            )
 
             # Get fresh system info for this API call (may be different node per step)
             system_info = self.get_system_info_fn() if self.get_system_info_fn else {}
 
             # Write to logs
             self._write_human_log(
-                api_call_name, duration, cpu_percent, gpu_percent, system_info
+                api_call_name, duration, cpu_percent, gpu_percent, process_cpu_cores, system_info
             )
             self._write_yaml_log(
-                api_call_name, duration, cpu_percent, gpu_percent, system_info
+                api_call_name, duration, cpu_percent, gpu_percent, process_cpu_cores, system_info
             )
 
     def _write_human_log(
@@ -165,12 +205,14 @@ class BenchmarkMonitor:
         duration: float,
         cpu_percent: float,
         gpu_percent: float | None,
+        process_cpu_cores: float,
         system_info: dict,
     ):
         """Append entry to human-readable log."""
         duration_str = self._format_duration(duration)
         cpu_str = f"{cpu_percent:>3.0f}"
         gpu_str = f"{gpu_percent:>3.0f}" if gpu_percent is not None else "N/A"
+        process_cpu_str = f"{process_cpu_cores:>4.1f}"
 
         # Extract node info - use "N/A" for missing values in TXT log
         cpu_cores_available = system_info.get("cpu_cores_available", "N/A")
@@ -181,7 +223,7 @@ class BenchmarkMonitor:
         with open(self.log_file, "a") as f:
             f.write(
                 f"{self.current_step:<23} | {api_call:<35} | {duration_str} | {cpu_str:>5} | {gpu_str:>5} | "
-                f"{cpu_cores_available:>4} | {gpu_count:>4} | {gpu_model:<15} | {node_name:<15}\n"
+                f"{process_cpu_str:>9} | {cpu_cores_available:>4} | {gpu_count:>4} | {gpu_model:<15} | {node_name:<15}\n"
             )
 
     def _write_yaml_log(
@@ -190,6 +232,7 @@ class BenchmarkMonitor:
         duration: float,
         cpu_percent: float,
         gpu_percent: float | None,
+        process_cpu_cores: float,
         system_info: dict,
     ):
         """Append entry to YAML log."""
@@ -214,6 +257,7 @@ class BenchmarkMonitor:
             f.write(f"    duration_seconds: {duration}\n")
             f.write(f"    cpu_percent: {cpu_percent}\n")
             f.write(f"    gpu_percent: {gpu_percent}\n")
+            f.write(f"    cpu_cores_used: {process_cpu_cores}\n")
             f.write(f"    cpu_cores_available: {cpu_cores_available}\n")
             f.write(f"    gpu_count: {gpu_count}\n")
             f.write(f"    gpu_model: {gpu_model}\n")

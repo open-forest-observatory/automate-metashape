@@ -847,7 +847,7 @@ class MetashapeWorkflow:
         with open(self.log_file, "a") as file:
             file.write(
                 f"\n{'Step':<23} | {'API Call':<35} | {'Run Time':>8} | {'CPU %':>5} | {'GPU %':>5} | "
-                f"{'CPUs':>4} | {'GPUs':>4} | {'GPU Model':<15} | {'Node':<15}\n"
+                f"{'CPU usage':>9} | {'CPUs':>4} | {'GPUs':>4} | {'GPU Model':<15} | {'Node':<15}\n"
             )
 
         return True
