@@ -843,11 +843,14 @@ class MetashapeWorkflow:
         # set Metashape to *not* use the CPU during GPU steps (appears to be standard wisdom)
         Metashape.app.cpu_enable = False
 
-        # Write header for benchmark log
+        # Write header for benchmark log (memory columns in GB)
         with open(self.log_file, "a") as file:
             file.write(
-                f"\n{'Step':<23} | {'API Call':<35} | {'Run Time':>8} | {'CPU %':>5} | {'GPU %':>5} | "
-                f"{'CPU usage':>9} | {'CPUs':>4} | {'GPUs':>4} | {'GPU Model':<15} | {'Node':<15}\n"
+                f"\n{'Step':<23} | {'API Call':<35} | {'Run Time':>8} | "
+                f"{'CPU %':>5} | {'GPU %':>5} | {'CPU usage':>9} | "
+                f"{'PrcMem':>6} | {'CtrLim':>6} | {'CtrUsd':>6} | {'CtrAvl':>6} | "
+                f"{'SysTot':>6} | {'SysUsd':>6} | {'SysAvl':>6} | "
+                f"{'CPUs':>4} | {'GPUs':>4} | {'GPU Model':<15} | {'Node':<15}\n"
             )
 
         return True
