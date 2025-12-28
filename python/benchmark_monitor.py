@@ -134,10 +134,6 @@ class BenchmarkMonitor:
         # Get current process for CPU monitoring (including all children)
         self.process = psutil.Process()
 
-        # Write YAML header - system info will be per-call now
-        with open(self.yaml_log_path, "w") as f:
-            f.write("api_calls:\n")
-
     def _format_duration(self, seconds: float) -> str:
         """Format duration as HH:MM:SS."""
         hours = int(seconds // 3600)
@@ -156,6 +152,11 @@ class BenchmarkMonitor:
                 f"{'SysTot':>6} | {'SysUsd':>6} | {'SysAvl':>6} | "
                 f"{'CPUs':>4} | {'GPUs':>4} | {'GPU Model':<15} | {'Node':<15}\n"
             )
+
+    def write_yaml_header(self):
+        """Initialize the YAML log file with header. Call once per run."""
+        with open(self.yaml_log_path, "w") as f:
+            f.write("api_calls:\n")
 
     def _get_process_cpu_cores(self) -> float:
         """

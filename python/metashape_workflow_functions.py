@@ -843,8 +843,9 @@ class MetashapeWorkflow:
         # set Metashape to *not* use the CPU during GPU steps (appears to be standard wisdom)
         Metashape.app.cpu_enable = False
 
-        # Write header for benchmark log
+        # Write headers for benchmark logs
         self.benchmark.write_log_header()
+        self.benchmark.write_yaml_header()
 
         return True
 
