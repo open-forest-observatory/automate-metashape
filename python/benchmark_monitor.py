@@ -145,6 +145,18 @@ class BenchmarkMonitor:
         secs = int(seconds % 60)
         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
+    def write_log_header(self):
+        """Write header row to human-readable log file. Memory columns are in GB."""
+        with open(self.log_file, "a") as f:
+            f.write(
+                f"\n{'Step':<23} | {'API Call':<35} | {'Run Time':>8} | "
+                f"{'CPU %':>5} | {'CPU%P90':>6} | {'GPU %':>5} | {'GPU%P90':>6} | "
+                f"{'CPU usage':>9} | {'CPUusgP90':>10} | "
+                f"{'PrcMem':>6} | {'CtrLim':>6} | {'CtrUsd':>6} | {'CtrAvl':>6} | "
+                f"{'SysTot':>6} | {'SysUsd':>6} | {'SysAvl':>6} | "
+                f"{'CPUs':>4} | {'GPUs':>4} | {'GPU Model':<15} | {'Node':<15}\n"
+            )
+
     def _get_process_cpu_cores(self) -> float:
         """
         Get CPU usage in cores for this process and all children.
