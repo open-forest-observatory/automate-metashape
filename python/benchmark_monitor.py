@@ -3,8 +3,9 @@ Benchmark monitoring for Metashape API calls.
 
 Provides a context manager that wraps API calls and logs:
 - Duration
-- Average CPU utilization
-- Average GPU utilization
+- Average and 90th percentile CPU utilization (system-wide)
+- Average and 90th percentile GPU utilization
+- Average and 90th percentile process CPU cores used
 - Peak memory usage (process, container, and system level)
 
 Integrates with the existing log file and adds a machine-readable YAML format.
@@ -74,6 +75,31 @@ def _bytes_to_gb(bytes_val: int | None) -> float | None:
     if bytes_val is None:
         return None
     return bytes_val / (1024 * 1024 * 1024)
+
+
+def _percentile(samples: list, p: float) -> float | None:
+    """
+    Calculate the p-th percentile of a list of samples.
+
+    Args:
+        samples: List of numeric values
+        p: Percentile to calculate (0-100)
+
+    Returns:
+        The percentile value, or None if samples is empty.
+    """
+    if not samples:
+        return None
+    sorted_samples = sorted(samples)
+    n = len(sorted_samples)
+    # Use linear interpolation between closest ranks
+    rank = (p / 100.0) * (n - 1)
+    lower = int(rank)
+    upper = lower + 1
+    if upper >= n:
+        return sorted_samples[-1]
+    weight = rank - lower
+    return sorted_samples[lower] * (1 - weight) + sorted_samples[upper] * weight
 
 
 class BenchmarkMonitor:
@@ -305,11 +331,22 @@ class BenchmarkMonitor:
             cpu_percent = (
                 round(sum(cpu_samples) / len(cpu_samples), 1) if cpu_samples else 0.0
             )
+            cpu_percent_p90 = (
+                round(_percentile(cpu_samples, 90), 1) if cpu_samples else 0.0
+            )
             gpu_percent = (
                 round(sum(gpu_samples) / len(gpu_samples), 1) if gpu_samples else None
             )
+            gpu_percent_p90 = (
+                round(_percentile(gpu_samples, 90), 1) if gpu_samples else None
+            )
             process_cpu_cores = (
                 round(sum(process_cpu_samples) / len(process_cpu_samples), 1)
+                if process_cpu_samples
+                else 0.0
+            )
+            process_cpu_cores_p90 = (
+                round(_percentile(process_cpu_samples, 90), 1)
                 if process_cpu_samples
                 else 0.0
             )
@@ -358,8 +395,11 @@ class BenchmarkMonitor:
                 api_call_name,
                 duration,
                 cpu_percent,
+                cpu_percent_p90,
                 gpu_percent,
+                gpu_percent_p90,
                 process_cpu_cores,
+                process_cpu_cores_p90,
                 peak_memory,
                 system_info,
             )
@@ -367,8 +407,11 @@ class BenchmarkMonitor:
                 api_call_name,
                 duration,
                 cpu_percent,
+                cpu_percent_p90,
                 gpu_percent,
+                gpu_percent_p90,
                 process_cpu_cores,
+                process_cpu_cores_p90,
                 peak_memory,
                 system_info,
             )
@@ -378,16 +421,22 @@ class BenchmarkMonitor:
         api_call: str,
         duration: float,
         cpu_percent: float,
+        cpu_percent_p90: float,
         gpu_percent: float | None,
+        gpu_percent_p90: float | None,
         process_cpu_cores: float,
+        process_cpu_cores_p90: float,
         peak_memory: dict,
         system_info: dict,
     ):
         """Append entry to human-readable log."""
         duration_str = self._format_duration(duration)
         cpu_str = f"{cpu_percent:>3.0f}"
+        cpu_p90_str = f"{cpu_percent_p90:>3.0f}"
         gpu_str = f"{gpu_percent:>3.0f}" if gpu_percent is not None else "N/A"
+        gpu_p90_str = f"{gpu_percent_p90:>3.0f}" if gpu_percent_p90 is not None else "N/A"
         process_cpu_str = f"{process_cpu_cores:>4.1f}"
+        process_cpu_p90_str = f"{process_cpu_cores_p90:>4.1f}"
 
         # Extract node info - use "N/A" for missing values in TXT log
         cpu_cores_available = system_info.get("cpu_cores_available", "N/A")
@@ -407,7 +456,8 @@ class BenchmarkMonitor:
         with open(self.log_file, "a") as f:
             f.write(
                 f"{self.current_step:<23} | {api_call:<35} | {duration_str} | "
-                f"{cpu_str:>5} | {gpu_str:>5} | {process_cpu_str:>9} | "
+                f"{cpu_str:>5} | {cpu_p90_str:>6} | {gpu_str:>5} | {gpu_p90_str:>6} | "
+                f"{process_cpu_str:>9} | {process_cpu_p90_str:>10} | "
                 f"{proc_mem} | {ctr_limit} | {ctr_used} | {ctr_avail} | "
                 f"{sys_total} | {sys_used} | {sys_avail} | "
                 f"{cpu_cores_available:>4} | {gpu_count:>4} | {gpu_model:<15} | {node_name:<15}\n"
@@ -418,8 +468,11 @@ class BenchmarkMonitor:
         api_call: str,
         duration: float,
         cpu_percent: float,
+        cpu_percent_p90: float,
         gpu_percent: float | None,
+        gpu_percent_p90: float | None,
         process_cpu_cores: float,
+        process_cpu_cores_p90: float,
         peak_memory: dict,
         system_info: dict,
     ):
@@ -438,14 +491,18 @@ class BenchmarkMonitor:
         gpu_model = gpu_model if gpu_model is not None else "null"
         node_name = node_name if node_name is not None else "null"
         gpu_percent = gpu_percent if gpu_percent is not None else "null"
+        gpu_percent_p90 = gpu_percent_p90 if gpu_percent_p90 is not None else "null"
 
         # Write as indented list item under api_calls
         with open(self.yaml_log_path, "a") as f:
             f.write(f"  - api_call: {api_call}\n")
             f.write(f"    duration_seconds: {duration}\n")
             f.write(f"    cpu_percent: {cpu_percent}\n")
+            f.write(f"    cpu_percent_p90: {cpu_percent_p90}\n")
             f.write(f"    gpu_percent: {gpu_percent}\n")
+            f.write(f"    gpu_percent_p90: {gpu_percent_p90}\n")
             f.write(f"    cpu_cores_used: {process_cpu_cores}\n")
+            f.write(f"    cpu_cores_used_p90: {process_cpu_cores_p90}\n")
             f.write(f"    cpu_cores_available: {cpu_cores_available}\n")
             # Memory metrics (all in GB)
             f.write(f"    proc_mem_peak_gb: {peak_memory['proc_mem_peak_gb']}\n")
