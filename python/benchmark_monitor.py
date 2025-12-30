@@ -393,8 +393,12 @@ class BenchmarkMonitor:
                 peak_memory = {
                     "proc_mem_peak_gb": round(current_mem["proc_mem_gb"], 1),
                     "container_limit_gb": round(current_mem["container_limit_gb"], 1),
-                    "container_used_peak_gb": round(current_mem["container_used_gb"], 1),
-                    "container_avail_min_gb": round(current_mem["container_avail_gb"], 1),
+                    "container_used_peak_gb": round(
+                        current_mem["container_used_gb"], 1
+                    ),
+                    "container_avail_min_gb": round(
+                        current_mem["container_avail_gb"], 1
+                    ),
                     "sys_total_gb": round(current_mem["sys_total_gb"], 1),
                     "sys_used_peak_gb": round(current_mem["sys_used_gb"], 1),
                     "sys_avail_min_gb": round(current_mem["sys_avail_gb"], 1),
@@ -447,7 +451,9 @@ class BenchmarkMonitor:
         cpu_str = f"{cpu_percent:>3.0f}"
         cpu_p90_str = f"{cpu_percent_p90:>3.0f}"
         gpu_str = f"{gpu_percent:>3.0f}" if gpu_percent is not None else "N/A"
-        gpu_p90_str = f"{gpu_percent_p90:>3.0f}" if gpu_percent_p90 is not None else "N/A"
+        gpu_p90_str = (
+            f"{gpu_percent_p90:>3.0f}" if gpu_percent_p90 is not None else "N/A"
+        )
         process_cpu_str = f"{process_cpu_cores:>4.1f}"
         process_cpu_p90_str = f"{process_cpu_cores_p90:>4.1f}"
 
