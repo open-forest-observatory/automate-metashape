@@ -159,6 +159,8 @@ When running via the [OFO Argo workflow orchestration system](https://github.com
 
   MIG (Multi-Instance GPU) partitions allow multiple workflow steps to share a single physical GPU, reducing costs for workloads with low GPU utilization. Requires a MIG-enabled nodegroup on the cluster.
 
+- **`gpu_count`** (for `match_photos`, `build_depth_maps`, `build_mesh`): Number of GPU resources to request. Defaults to `1`. Use with MIG partitions to request multiple slices (e.g., `gpu_count: 2` with `mig-1g.10gb` to get 2/7 compute power).
+
 These options have no effect when running locally or via Docker—they are only used by the Argo workflow system.
 
 <br/>

@@ -69,6 +69,7 @@ match_photos: # (Metashape: matchPhotos)
     enabled: True
     gpu_enabled: true # Optional. For Argo workflows: if true, run on GPU node; if false, run on CPU node. If omitted, defaults to true. Has no effect on local execution (Metashape auto-detects available hardware).
     gpu_resource: "nvidia.com/gpu" # Optional. For Argo workflows on OFO cluster: GPU resource to request. Options: "nvidia.com/gpu" (full GPU, default), "nvidia.com/mig-1g.10gb", "nvidia.com/mig-2g.10gb", "nvidia.com/mig-3g.20gb" (MIG partitions). Requires MIG-enabled nodegroup. Has no effect on local execution. See: https://github.com/open-forest-observatory/ofo-argo
+    gpu_count: 1 # Optional. For Argo workflows on OFO cluster: number of GPU resources to request (e.g., 2 for two MIG slices). Defaults to 1. Has no effect on local execution.
     downscale: 2 # How much to coarsen the photos when searching for tie points. Higher number for blurrier photos or when there are small surfaces that may move between photos (such as leaves). Accepts numbers 2^x (and zero) (https://www.agisoft.com/forum/index.php?topic=11697.0).
     keep_keypoints: True # Should keypoints from matching photos be stored in the project? Required if you later want to add more photos and align them to the previously aligned photos without redoing the original alignment.
     generic_preselection: True # When matching photos, use a much-coarsened version of each photo to narrow down the potential neighbors to pair? Works well if the photos have high altitude above the surface and high overlap (e.g. a 120m nadir 90/90 overlap mission), but doesn't work well for low-altitude and/or highly oblique photos (e.g. a 80m 25deg pitch 80/80 overlap mission)
@@ -113,6 +114,7 @@ export_cameras: # (Metashape: exportCameras)
 build_depth_maps: # (Metashape: buildDepthMaps)
     enabled: True
     gpu_resource: "nvidia.com/gpu" # Optional. For Argo workflows on OFO cluster: GPU resource to request. Options: "nvidia.com/gpu" (full GPU, default), "nvidia.com/mig-1g.10gb", "nvidia.com/mig-2g.10gb", "nvidia.com/mig-3g.20gb" (MIG partitions). Requires MIG-enabled nodegroup. Has no effect on local execution. See: https://github.com/open-forest-observatory/ofo-argo
+    gpu_count: 1 # Optional. For Argo workflows on OFO cluster: number of GPU resources to request (e.g., 2 for two MIG slices). Defaults to 1. Has no effect on local execution.
     downscale: 4 # How much to coarsen the photos when searching for matches to build the point cloud. For large photosets, values < 4 likely take prohibitively long. Accepts numbers 2^x (https://www.agisoft.com/forum/index.php?topic=11697.0).
     filter_mode: Metashape.ModerateFiltering # How to filter the depth map. Options are NoFiltering, MildFiltering, ModerateFiltering, AggressiveFiltering. Aggressive filtering removes detail and makes worse DEMs (at least for forest). NoFiltering takes very long. In trials, it never completed.
     reuse_depth: False # Purpose unknown.
@@ -137,6 +139,7 @@ build_mesh:
     enabled: True
     gpu_enabled: true # Optional. For Argo workflows: if true, run on GPU node; if false, run on CPU node. If omitted, defaults to true. Has no effect on local execution (Metashape auto-detects available hardware).
     gpu_resource: "nvidia.com/gpu" # Optional. For Argo workflows on OFO cluster: GPU resource to request. Options: "nvidia.com/gpu" (full GPU, default), "nvidia.com/mig-1g.10gb", "nvidia.com/mig-2g.10gb", "nvidia.com/mig-3g.20gb" (MIG partitions). Requires MIG-enabled nodegroup. Has no effect on local execution. See: https://github.com/open-forest-observatory/ofo-argo
+    gpu_count: 1 # Optional. For Argo workflows on OFO cluster: number of GPU resources to request (e.g., 2 for two MIG slices). Defaults to 1. Has no effect on local execution.
     face_count: "Metashape.MediumFaceCount" # How many faces to use, Metashape.LowFaceCount, MediumFaceCount, HighFaceCount, CustomFaceCount
     face_count_custom: 100000 # Only used if custom number of faces set (above).
     export: True # Export the georeferenced mesh.
