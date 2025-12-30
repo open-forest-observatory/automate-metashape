@@ -145,6 +145,22 @@ python metashape_workflow.py --config-file config.yml --step finalize
 
 <br/>
 
+#### Argo workflow configuration (OFO Kubernetes cluster)
+
+When running via the [OFO Argo workflow orchestration system](https://github.com/open-forest-observatory/ofo-argo), additional configuration options control GPU resource allocation:
+
+- **`gpu_enabled`** (for `match_photos`, `build_mesh`): If `true`, the step runs on a GPU node; if `false`, it runs on a CPU node. Defaults to `true`. This has no effect on local execution where Metashape auto-detects available hardware.
+
+- **`gpu_resource`** (for `match_photos`, `build_depth_maps`, `build_mesh`): Specifies which GPU resource to request. Options:
+  - `"nvidia.com/gpu"` - Full GPU (default)
+  - `"nvidia.com/mig-1g.10gb"` - MIG partition: 1/7 compute, 10GB VRAM
+  - `"nvidia.com/mig-2g.10gb"` - MIG partition: 2/7 compute, 10GB VRAM
+  - `"nvidia.com/mig-3g.20gb"` - MIG partition: 3/7 compute, 20GB VRAM
+
+  MIG (Multi-Instance GPU) partitions allow multiple workflow steps to share a single physical GPU, reducing costs for workloads with low GPU utilization. Requires a MIG-enabled nodegroup on the cluster.
+
+These options have no effect when running locally or via Docker—they are only used by the Argo workflow system.
+
 <br/>
 
 
