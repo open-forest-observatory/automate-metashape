@@ -680,17 +680,14 @@ class MetashapeWorkflow:
 
     def _get_system_info(self):
         """Gather system information for logging."""
-        gpustringraw = str(Metashape.app.enumGPUDevices())
-        gpucount = gpustringraw.count("name': '")
-        gpustring = ""
-        currentgpu = 1
-        while gpucount >= currentgpu:
-            if gpustring != "":
-                gpustring = gpustring + ", "
-            gpustring = (
-                gpustring + gpustringraw.split("name': '")[currentgpu].split("',")[0]
-            )
-            currentgpu = currentgpu + 1
+        gpu_devices = Metashape.app.enumGPUDevices()
+        gpucount = len(gpu_devices)
+
+        # Extract GPU names from device list
+        gpu_names = []
+        for device in gpu_devices:
+            gpu_names.append(device['name'])
+        gpustring = ", ".join(gpu_names)
 
         return {
             "node": platform.node(),
