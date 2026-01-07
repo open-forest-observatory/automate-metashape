@@ -166,19 +166,21 @@ build_orthomosaic: # (Metashape: buildOrthomosaic, exportRaster)
     tiff_overviews: True # Include coarse-scale raster data in file for quick display in GIS.
     remove_after_export: True # Remove orthomosaic from project after export to reduce the metashape project file size
 
-# Argo workflow resource configuration (for running on OFO Argo cluster) This section is only used
-# when running workflows on Argo via the OFO argo step-based workflow and has no effect otherwise
+# Argo workflow resource configuration (for running on OFO Argo cluster). This section is only used
+# when running workflows on Argo via the OFO argo step-based workflow
+# (https://github.com/open-forest-observatory/ofo-argo) and has no effect otherwise
 argo:
     # Optional: User-specified defaults that apply to all steps (unless overridden at step level)
-    # Fallback order: Step-specific value → User defaults → Hardcoded defaults
+    # Fallback order: Step-specific value → User defaults defined here → Hardcoded defaults in argo workflow YAML
     defaults:
-        cpu_request: "12"  # Default CPU cores for steps that don't specify
-        memory_request: "50Gi"  # Default memory for steps that don't specify
-        gpu_resource: "nvidia.com/mig-1g.5gb"  # Default GPU type: nvidia.com/gpu (full GPU), nvidia.com/mig-1g.5gb, nvidia.com/mig-2g.10gb, nvidia.com/mig-3g.20gb
-        gpu_count: 1  # Default number of GPU resources to request
+        cpu_request: "12"  # Default CPU cores for steps that don't specify. Designed to limit to one pod per JS2 m3.large node (16 cores) while leaving some overhead for system processes.
+        memory_request: "50Gi"  # Default memory for steps that don't specify. Designed to limit to one pod per JS2 m3.large node (16 cores) while leaving some overhead for system processes.
+        gpu_resource: "nvidia.com/mig-1g.5gb"  # Default GPU type. Options: nvidia.com/gpu (full GPU), or different MIG configurations: nvidia.com/mig-1g.5gb, nvidia.com/mig-2g.10gb, nvidia.com/mig-3g.20gb
+        gpu_count: 1  # Default number of GPU resources (MIG slices or full GPU nodes) to request
 
-    # Resource configuration for each workflow step (maps to pod names)
-    # Leave values blank to use defaults (e.g., "cpu_request:" with no value)
+    # Resource configuration for each workflow step (maps to Argo steps, not necessarily automate-metashape methods/steps).
+    # Leave values blank (e.g., "cpu_request:" with no value) to use defaults specified above.
+    # Pre-filled values are recommendations for near-maximum compute efficiency, allowing multiple pods per node when possible while maintaining relatilvely fast processing. This assumes CPU ndoes are JS2 m3.large, which our benchmarking found to support more efficient runs that m3.xl. 
 
     setup:
         cpu_request: "500m"
@@ -186,35 +188,37 @@ argo:
 
     match_photos:
         gpu_enabled: true # If true, run on GPU; if false, run on CPU. Blank = default (true)
-        gpu_resource: "nvidia.com/mig-1g.5gb"  # Blank = use defaults.gpu_resource, then nvidia.com/gpu
-        gpu_count: 1  # Blank = use defaults.gpu_count, then 1
-        cpu_request: 4  # Recommendation: 4x number of GPU slices to get full scheduling. Blank = use defaults.cpu_request, then 4 (GPU mode) or 18 (CPU mode)
-        memory_request: "8Gi"  # Recommendation: 8x number of GPU slices to get full scheduling. Blank = use defaults.memory_request, then 16Gi (GPU) or 100Gi (CPU)
+        gpu_resource: "nvidia.com/mig-1g.5gb"  # Options: nvidia.com/mig-1g.5gb, other MIG flavors present in cluster, or nvidia.com/gpu for full GPU node if present in cluster. Blank = use defaults.gpu_resource, then nvidia.com/gpu
+        gpu_count: 1  # Number of MIG slices (if gpu_resource is a MIG flavor) or full GPUs (if gpu_resource is a full GPU). Blank = use defaults.gpu_count, then 1
+        cpu_request: 4  # Recommendation: for GPU run: 4x number of MIG 1g.5gb GPU slices to get full scheduling of pods on all 7 slices assuming JS2 g3.xl flavor; for CPU run: 15. Blank = use defaults.cpu_request, then 4 (GPU mode) or 18 (CPU mode)
+        memory_request: "8Gi"  # Recommendation: 8x number of GPU slices to get full scheduling assuming JS2 g3.xl flavor; for CPU run: 6-8Gi. Blank = use defaults.memory_request, then 16Gi (GPU) or 100Gi (CPU)
+
+    # For explanation of options and defaults for the following steps, see the `match_photos:` section above
 
     align_cameras:
-        cpu_request: 14  # Blank = use defaults.cpu_request, then 18
-        memory_request: "22.5Gi"  # Blank = use defaults.memory_request, then 100Gi
+        cpu_request: 14 
+        memory_request: "23Gi"
 
     build_depth_maps:  # Always uses GPU
-        gpu_resource: "nvidia.com/mig-1g.5gb"  # Blank = use defaults.gpu_resource, then nvidia.com/gpu
-        gpu_count: 2  # Blank = use defaults.gpu_count, then 1
-        cpu_request: 8  # Recommendation: 4x number of GPU slices to get full scheduling. Blank = use defaults.cpu_request, then 4 (GPU mode) or 18 (CPU mode)
-        memory_request: "16Gi"  # Recommendation: 8x number of GPU slices to get full scheduling. Blank = use defaults.memory_request, then 16Gi (GPU) or 100Gi (CPU)
+        gpu_resource: "nvidia.com/mig-1g.5gb"
+        gpu_count: 2
+        cpu_request: 8  # Recommendation: 4x number of GPU slices to get full scheduling
+        memory_request: "16Gi"  # Recommendation: 8x number of GPU slices to get full scheduling
 
     build_point_cloud:
-        cpu_request: 11  # Blank = use defaults.cpu_request, then 18
-        memory_request "34Gi"  # Blank = use defaults.memory_request, then 100Gi
+        cpu_request: 11 
+        memory_request: "34Gi"
 
     build_mesh:
-        gpu_enabled: false  # If true, run on GPU; if false, run on CPU. Blank = default (true)
-        gpu_resource:  # Blank = use defaults.gpu_resource, then nvidia.com/gpu
-        gpu_count:  # Blank = use defaults.gpu_count, then 1
-        cpu_request: 8  # Blank = use defaults.cpu_request, then 4 (GPU mode) or 18 (CPU mode)
-        memory_request: "22Gi"  # Recommendation: 8x number of GPU slices to get full scheduling. Blank = use defaults.memory_request, then 16Gi (GPU) or 100Gi (CPU)
+        gpu_enabled: false # A full GPU node appears to improve compute time by ~10% max, but this is not worth the extra resource use
+        gpu_resource:
+        gpu_count:
+        cpu_request: 8 # Suggested value assumes running on a CPU node. Not extensively benchmarked on GPU.
+        memory_request: "22Gi"  # Suggested value assumes running on a CPU node. Not extensively benchmarked on GPU.
 
     build_dem_orthomosaic:  # Combined step for build_dem + build_orthomosaic
-        cpu_request: 7  # Blank = use defaults.cpu_request, then 18
-        memory_request: "35Gi"  # Blank = use defaults.memory_request, then 100Gi
+        cpu_request: 7
+        memory_request: "35Gi"
 
     # Note: match_photos_secondary and align_cameras_secondary inherit from their primary steps
     # Only specify here if you need different settings for secondary vs primary
@@ -230,5 +234,5 @@ argo:
     #     memory_request:
 
     finalize:
-        cpu_request: 1 # Blank = use defaults.cpu_request, then 18
-        memory_request: "2Gi"  # Blank = use defaults.memory_request, then 100Gi
+        cpu_request: 1
+        memory_request: "2Gi"
