@@ -166,13 +166,13 @@ build_orthomosaic: # (Metashape: buildOrthomosaic, exportRaster)
     tiff_overviews: True # Include coarse-scale raster data in file for quick display in GIS.
     remove_after_export: True # Remove orthomosaic from project after export to reduce the metashape project file size
 
-# Argo workflow resource configuration (for running on OFO Argo cluster)
-# This section is only used when running workflows on Argo and has no effect on local execution
+# Argo workflow resource configuration (for running on OFO Argo cluster) This section is only used
+# when running workflows on Argo via the OFO argo step-based workflow and has no effect otherwise
 argo:
     # Optional: User-specified defaults that apply to all steps (unless overridden at step level)
     # Fallback order: Step-specific value → User defaults → Hardcoded defaults
     defaults:
-        cpu_request: "10"  # Default CPU cores for steps that don't specify
+        cpu_request: "12"  # Default CPU cores for steps that don't specify
         memory_request: "50Gi"  # Default memory for steps that don't specify
         gpu_resource: "nvidia.com/mig-1g.5gb"  # Default GPU type: nvidia.com/gpu (full GPU), nvidia.com/mig-1g.5gb, nvidia.com/mig-2g.10gb, nvidia.com/mig-3g.20gb
         gpu_count: 1  # Default number of GPU resources to request
@@ -181,40 +181,40 @@ argo:
     # Leave values blank to use defaults (e.g., "cpu_request:" with no value)
 
     setup:
-        cpu_request: "18"
-        memory_request: "100Gi"
+        cpu_request: "500m"
+        memory_request: "1.5Gi"
 
     match_photos:
-        gpu_enabled:  # If true, run on GPU; if false, run on CPU. Blank = default (true)
-        gpu_resource:  # Blank = use defaults.gpu_resource, then nvidia.com/gpu
-        gpu_count:  # Blank = use defaults.gpu_count, then 1
-        cpu_request:  # Blank = use defaults.cpu_request, then 4 (GPU mode) or 18 (CPU mode)
-        memory_request:  # Blank = use defaults.memory_request, then 16Gi (GPU) or 100Gi (CPU)
+        gpu_enabled: true # If true, run on GPU; if false, run on CPU. Blank = default (true)
+        gpu_resource: "nvidia.com/mig-1g.5gb"  # Blank = use defaults.gpu_resource, then nvidia.com/gpu
+        gpu_count: 1  # Blank = use defaults.gpu_count, then 1
+        cpu_request: 4  # Recommendation: 4x number of GPU slices to get full scheduling. Blank = use defaults.cpu_request, then 4 (GPU mode) or 18 (CPU mode)
+        memory_request: "8Gi"  # Recommendation: 8x number of GPU slices to get full scheduling. Blank = use defaults.memory_request, then 16Gi (GPU) or 100Gi (CPU)
 
     align_cameras:
-        cpu_request:  # Blank = use defaults.cpu_request, then 18
-        memory_request:  # Blank = use defaults.memory_request, then 100Gi
+        cpu_request: 14  # Blank = use defaults.cpu_request, then 18
+        memory_request: "22.5Gi"  # Blank = use defaults.memory_request, then 100Gi
 
-    build_depth_maps:
-        gpu_resource:  # Blank = use defaults.gpu_resource, then nvidia.com/gpu
-        gpu_count:  # Blank = use defaults.gpu_count, then 1
-        cpu_request:  # Blank = use defaults.cpu_request, then 4
-        memory_request:  # Blank = use defaults.memory_request, then 16Gi
+    build_depth_maps:  # Always uses GPU
+        gpu_resource: "nvidia.com/mig-1g.5gb"  # Blank = use defaults.gpu_resource, then nvidia.com/gpu
+        gpu_count: 2  # Blank = use defaults.gpu_count, then 1
+        cpu_request: 8  # Recommendation: 4x number of GPU slices to get full scheduling. Blank = use defaults.cpu_request, then 4 (GPU mode) or 18 (CPU mode)
+        memory_request: "16Gi"  # Recommendation: 8x number of GPU slices to get full scheduling. Blank = use defaults.memory_request, then 16Gi (GPU) or 100Gi (CPU)
 
     build_point_cloud:
-        cpu_request:  # Blank = use defaults.cpu_request, then 18
-        memory_request:  # Blank = use defaults.memory_request, then 100Gi
+        cpu_request: 11  # Blank = use defaults.cpu_request, then 18
+        memory_request "34Gi"  # Blank = use defaults.memory_request, then 100Gi
 
     build_mesh:
-        gpu_enabled:  # If true, run on GPU; if false, run on CPU. Blank = default (true)
+        gpu_enabled: false  # If true, run on GPU; if false, run on CPU. Blank = default (true)
         gpu_resource:  # Blank = use defaults.gpu_resource, then nvidia.com/gpu
         gpu_count:  # Blank = use defaults.gpu_count, then 1
-        cpu_request:  # Blank = use defaults.cpu_request, then 4 (GPU mode) or 18 (CPU mode)
-        memory_request:  # Blank = use defaults.memory_request, then 16Gi (GPU) or 100Gi (CPU)
+        cpu_request: 8  # Blank = use defaults.cpu_request, then 4 (GPU mode) or 18 (CPU mode)
+        memory_request: "22Gi"  # Recommendation: 8x number of GPU slices to get full scheduling. Blank = use defaults.memory_request, then 16Gi (GPU) or 100Gi (CPU)
 
     build_dem_orthomosaic:  # Combined step for build_dem + build_orthomosaic
-        cpu_request:  # Blank = use defaults.cpu_request, then 18
-        memory_request:  # Blank = use defaults.memory_request, then 100Gi
+        cpu_request: 7  # Blank = use defaults.cpu_request, then 18
+        memory_request: "35Gi"  # Blank = use defaults.memory_request, then 100Gi
 
     # Note: match_photos_secondary and align_cameras_secondary inherit from their primary steps
     # Only specify here if you need different settings for secondary vs primary
@@ -230,5 +230,5 @@ argo:
     #     memory_request:
 
     finalize:
-        cpu_request:  # Blank = use defaults.cpu_request, then 18
-        memory_request:  # Blank = use defaults.memory_request, then 100Gi
+        cpu_request: 1 # Blank = use defaults.cpu_request, then 18
+        memory_request: "2Gi"  # Blank = use defaults.memory_request, then 100Gi
