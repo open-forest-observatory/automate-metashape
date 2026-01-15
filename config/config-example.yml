@@ -58,6 +58,15 @@ add_photos: # (Metashape: addPhotos)
   #   Frame: default, uses radial distortion to handle lens distortion
   #   Spherical: expects image data to come in in the equirectangular format
   sensor_type: Metashape.Sensor.Type.Frame # Sets the camera type. Tested choices: Metashape.Sensor.Type.Frame, Metashape.Sensor.Type.Spherical
+  # These options only apply if you have data collected with two different altitude references
+  # (e.g. using barometric altitude with a time delay between collections) and you want to enforce
+  # a specific altitude offset between the two groups of photos.
+  # Apply the offset
+  apply_paired_altitude_offset: False
+  # Which folders from the photo_path list correspond to the lower altitude photos
+  lower_offset_folders: []
+  # Which folders from the photo_path list correspond to the upper altitude photos
+  upper_offset_folders: []
 
 calibrate_reflectance: # (Metahsape: calibrateReflectance)
     enabled: False

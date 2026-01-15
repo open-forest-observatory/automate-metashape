@@ -957,9 +957,83 @@ class MetashapeWorkflow:
         # Set the sensor type (e.g. Frame camera, Spherical camera)
         self.set_sensor_type(self.cfg["add_photos"]["sensor_type"])
 
+        if self.cfg["add_photos"]["apply_paired_altitude_offset"]:
+            # Apply altitude offset to the cameras
+            self.apply_paired_altitude_offset(
+                self.cfg["add_photos"]["lower_offset_folders"],
+                self.cfg["add_photos"]["upper_offset_folders"],
+                self.cfg["add_photos"]["paired_altitude_offset"],
+            )
+
         self.doc.save()
 
         return True
+
+    def apply_paired_altitude_offset(
+        self, lower_offset_folders, upper_offset_folders, offset
+    ):
+        # Compute the altitude for each camera
+        altitudes = [cam.reference.location[2] for cam in self.doc.chunk.cameras]
+        # Determine which cameras are in each group
+        in_lower_group = [
+            any(folder in cam.photo.path for folder in lower_offset_folders)
+            for cam in self.doc.chunk.cameras
+        ]
+        in_upper_group = [
+            any(folder in cam.photo.path for folder in upper_offset_folders)
+            for cam in self.doc.chunk.cameras
+        ]
+
+        # The shift can't be applied if one of the groups has no cameras
+        if sum(in_lower_group) == 0 or sum(in_upper_group) == 0:
+            raise ValueError(
+                "Cannot apply paired altitude offset: no cameras found in one of the specified groups."
+            )
+
+        if sum(in_lower_group) + sum(in_upper_group) != len(self.doc.chunk.cameras):
+            print(
+                "Warning: Some cameras not in either offset group; they will not be adjusted."
+            )
+
+        # Compute counts
+        n_lower = sum(in_lower_group)
+        n_upper = sum(in_upper_group)
+        n_total = n_lower + n_upper
+
+        # Compute mean altitudes of current locations
+        mean_lower = (
+            sum([alt for alt, in_lower in zip(altitudes, in_lower_group) if in_lower])
+        ) / n_lower
+        mean_upper = (
+            sum([alt for alt, in_upper in zip(altitudes, in_upper_group) if in_upper])
+        ) / n_upper
+
+        current_offset = mean_upper - mean_lower
+
+        # Shift the groups to achieve the desired offsets, preserving the overall mean altitude
+        # by shifting groups with more cameras less
+        lower_adjustment = (current_offset - offset) * n_upper / n_total
+        upper_adjustment = -(current_offset - offset) * n_lower / n_total
+
+        for cam, in_lower in zip(self.doc.chunk.cameras, in_lower_group):
+            if in_lower:
+                cam.reference.location = Metashape.Vector(
+                    [
+                        cam.reference.location[0],
+                        cam.reference.location[1],
+                        cam.reference.location[2] + lower_adjustment,
+                    ]
+                )
+
+        for cam, in_upper in zip(self.doc.chunk.cameras, in_upper_group):
+            if in_upper:
+                cam.reference.location = Metashape.Vector(
+                    [
+                        cam.reference.location[0],
+                        cam.reference.location[1],
+                        cam.reference.location[2] + upper_adjustment,
+                    ]
+                )
 
     def set_sensor_type(self, sensor_type):
         """
