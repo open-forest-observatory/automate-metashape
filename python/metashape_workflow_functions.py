@@ -972,9 +972,13 @@ class MetashapeWorkflow:
     def apply_paired_altitude_offset(
         self, lower_offset_folders, upper_offset_folders, offset
     ):
-        # Compute the altitude for each camera
+        """
+        Shift altitudes of the two groups of cameras such that the difference in mean altitudes
+        is the desired "offset".
+        """
+        # Extract the altitude for each camera
         altitudes = [cam.reference.location[2] for cam in self.doc.chunk.cameras]
-        # Determine which cameras are in each group
+        # Determine which cameras are in each group based on their paths
         in_lower_group = [
             any(folder in cam.photo.path for folder in lower_offset_folders)
             for cam in self.doc.chunk.cameras
@@ -1013,10 +1017,13 @@ class MetashapeWorkflow:
         # Shift the groups to achieve the desired offsets, preserving the overall mean altitude
         # by shifting groups with more cameras less
         lower_adjustment = (current_offset - offset) * n_upper / n_total
+        # Note negative sign
         upper_adjustment = -(current_offset - offset) * n_lower / n_total
 
+        # Apply the computed adjustments to the relevant cameras
         for cam, in_lower in zip(self.doc.chunk.cameras, in_lower_group):
             if in_lower:
+                # It appears that these values cannot be updated in place, so we need to create a new Vector
                 cam.reference.location = Metashape.Vector(
                     [
                         cam.reference.location[0],
