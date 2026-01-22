@@ -988,21 +988,21 @@ class MetashapeWorkflow:
             for cam in self.doc.chunk.cameras
         ]
 
-        # The shift can't be applied if one of the groups has no cameras
-        if sum(in_lower_group) == 0 or sum(in_upper_group) == 0:
-            raise ValueError(
-                "Cannot apply paired altitude offset: no cameras found in one of the specified groups."
-            )
-
-        if sum(in_lower_group) + sum(in_upper_group) != len(self.doc.chunk.cameras):
-            print(
-                "Warning: Some cameras not in either offset group; they will not be adjusted."
-            )
-
         # Compute counts
         n_lower = sum(in_lower_group)
         n_upper = sum(in_upper_group)
         n_total = n_lower + n_upper
+
+        # The shift can't be applied if one of the groups has no cameras
+        if n_lower == 0 or n_upper == 0:
+            raise ValueError(
+                "Cannot apply paired altitude offset: no cameras found in one of the specified groups."
+            )
+
+        if n_lower + n_upper != len(self.doc.chunk.cameras):
+            print(
+                "Warning: Some cameras not in either offset group; they will not be adjusted."
+            )
 
         # Compute mean altitudes of current locations
         mean_lower = (

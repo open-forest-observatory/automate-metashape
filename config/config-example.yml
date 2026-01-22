@@ -65,9 +65,12 @@ add_photos: # (Metashape: addPhotos)
   apply_paired_altitude_offset: False
   # The desired altitude offset (in meters) to obtain between the two groups of photos
   paired_altitude_offset: 0
-  # Which folders from the photo_path list correspond to the lower altitude photos
+  # The below two elements specify which folders of images are assigned to upper and lower groups
+  # when computing an altitiude adjustment. They should be in the same format as the photo_path
+  # element (e.g., ["/path/to/photo/folder1", "/path/to/photo/folder2"])
+  # Lower altitude photo folders
   lower_offset_folders: []
-  # Which folders from the photo_path list correspond to the upper altitude photos
+  # Upper altitude photos folders
   upper_offset_folders: []
 
 calibrate_reflectance: # (Metahsape: calibrateReflectance)
