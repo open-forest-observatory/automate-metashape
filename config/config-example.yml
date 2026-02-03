@@ -9,8 +9,9 @@ project:
 
   # The path to the directory of flight photos
   # If there are multiple photo folders, set path to the folder that contains all the photo folders,
-  # or provide a list of paths via the YAML list syntax (e.g., ["/path/to/photo/folder1", "/path/to/photo/folder2"])
+  # or provide a list of paths via the YAML list syntax (e.g., ["/path/to/photo/folder1", "/path/to/photo/folder2"]). Each separately-provided path will be given its own camera calibration.
   # If there are no photos to add (e.g., this is an existing project that already has photos in it, set to an empty string ("")
+  # If you are running this workflow via the OFO Argo platform and have specified (in the 'argo' section below) to download input imagery from S3, reference the location of those downloaded images with '__DOWNLOADED__'. For example, set photo_path to ["__DOWNLOADED__/000558_images/000558-01", "__DOWNLOADED__/000558_images/000558-02", "__DOWNLOADED__/000559_images/000559-01"]. The first folder beaneath __DOWNLOADED__ is the name of the downloaded zip file (sans extension) and the remainder (optional) is any subfolders that should receive separate camera calibration.
   photo_path: ""
 
   # The path to a secondary directory of flight photos, which are only aligned to the project *after*
@@ -184,6 +185,11 @@ build_orthomosaic: # (Metashape: buildOrthomosaic, exportRaster)
 # when running workflows on Argo via the OFO argo step-based workflow
 # (https://github.com/open-forest-observatory/ofo-argo) and has no effect otherwise
 argo:
+    # Raw (input) imagery download instructions
+    s3_imagery_zip_download:  # List of zip files to download, in the format of an Rclone remote:path for a remote that is configured. Leave blank (or empty string) to skip imagery download and use files already on the PVC. Multiple zip files can be provided in the format ["js2s3:ofo-public/drone/missions_01/000558/images/000558_images.zip", "js2s3:ofo-public/drone/missions_01/000559/images/000559_images.zip"]
+    cleanup_downloaded_imagery: true  # Whether to delete downloaded imagery after workflow completes (default: true)
+    
+    # Resource requests per step
     # Optional: User-specified defaults that apply to all steps (unless overridden at step level)
     # Fallback order: Step-specific value → User defaults defined here → Hardcoded defaults in argo workflow YAML
     defaults:
