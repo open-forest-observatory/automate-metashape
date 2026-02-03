@@ -104,7 +104,7 @@ add_gcps:
     optimize_w_gcps_only: True # Optimize alignment using GCPs only: required for GCP locations to take precedence over photo GPS data. Disabling it makes GCPs essentially irrelevant.
 
 filter_points_usgs:
-    enabled: False
+    enabled: True
     rec_thresh_percent: 20
     rec_thresh_absolute: 15
     proj_thresh_percent: 30
@@ -135,10 +135,10 @@ build_point_cloud: # (Metashape: buildPointCloud, (optionally) classifyGroundPoi
     keep_depth: True # If False, removes depth maps from project data after building point cloud
     max_neighbors: 60 # Maximum number of neighboring photos to use for estimating point cloud. Higher numbers may increase accuracy but dramatically increase processing time.
     classify_ground_points: True # Should ground points be classified as a part of this step? Must be enabled (either here or in build_dem, below) if a digital terrain model (DTM) is needed either for orthomosaic or DTM export. Enabling here is an alternative to enabling as a component of build_dem (below). It depends on which stage you want the classification to be done at. If you already have a point cloud but it's unclassified, then don't do it as part of this stage as it would require computing the point cloud again.
-    export: False # Whether to export point cloud file.
+    export: True # Whether to export point cloud file.
     export_format: Metashape.PointCloudFormatCOPC # Export format. Options: Metashape.PointCloudFormatCOPC, Metashape.PointCloudFormatLAZ, Metashape.PointCloudFormatLAS, or other options indicated in the Metashape Python module documentation. We have observed that COPC export takes about 6x longer than LAZ or LAS export on a 32-core machine, but this is still much faster than using Untwine when the files are not stored on a local volume. PDAL is proably faster but requires a lot of memory. COPC is cloud-optimized point cloud (a subset of LAZ format) and is recommended for cloud native visualization and analysis.
     classes: "ALL" # Point classes to export. Must be a list. Or can set to "ALL" to use all points. An example of a specific class is: Metashape.PointClass.Ground
-    remove_after_export: False # Remove point cloud from project after export of all dependencies (DEMs) to reduce the metashape project file size
+    remove_after_export: True # Remove point cloud from project after export of all dependencies (DEMs) to reduce the metashape project file size
 
 classify_ground_points: # (Metashape: classifyGroundPoints) # classify points, IF SPECIFIED as a component of build_point_cloud (above) or build_dem (below). Must be enabled (in either location) if a digital terrain model (DTM) is needed either for orthomosaic or DTM export. Definitions here: https://www.agisoft.com/forum/index.php?topic=9328.0
     max_angle: 15.0
