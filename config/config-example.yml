@@ -186,7 +186,7 @@ build_orthomosaic: # (Metashape: buildOrthomosaic, exportRaster)
 # (https://github.com/open-forest-observatory/ofo-argo) and has no effect otherwise
 argo:
     # Raw (input) imagery download instructions
-    s3_imagery_zip_download:  # List of zip files to download, in the format of an Rclone remote:path for a remote that is configured. Leave blank (or empty string) to skip imagery download and use files already on the PVC. Multiple zip files can be provided in the format ["js2s3:ofo-public/drone/missions_01/000558/images/000558_images.zip", "js2s3:ofo-public/drone/missions_01/000559/images/000559_images.zip"]
+    s3_imagery_zip_download:  # List of zip files to download, in the format bucket/path/to/file.zip within the Jetstream2 object store. Leave blank (or empty string) to skip imagery download and use files already on the PVC. Multiple zip files can be provided in the format ["ofo-public/drone/missions_01/000558/images/000558_images.zip", "ofo-public/drone/missions_01/000559/images/000559_images.zip"]
     cleanup_downloaded_imagery: true  # Whether to delete downloaded imagery after workflow completes (default: true)
     
     # Resource requests per step
