@@ -1387,7 +1387,7 @@ class MetashapeWorkflow:
                 self.cfg["build_point_cloud"]["export_format"]
                 == Metashape.PointCloudFormatCOPC
             ):
-                export_file_ending = "_points-copc.laz"
+                export_file_ending = "_points.copc.laz"
             else:
                 export_file_ending = "_points.laz"
 
