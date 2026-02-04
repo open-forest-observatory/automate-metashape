@@ -1715,7 +1715,9 @@ class MetashapeWorkflow:
         # write the run configuration to the log file
         with open(self.log_file, "a") as file:
             file.write("\n\n### CONFIGURATION ###\n")
-            documents = yaml.dump(config_full, file, default_flow_style=False)
+            documents = yaml.dump(
+                config_full, file, default_flow_style=False, sort_keys=False
+            )
             file.write("### END CONFIGURATION ###\n")
 
         return True
