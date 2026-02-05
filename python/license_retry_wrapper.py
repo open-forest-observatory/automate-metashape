@@ -7,7 +7,7 @@ If detected, terminates the subprocess immediately and retries after a delay.
 This prevents wasting hours of compute on jobs that will fail at save time.
 
 Environment variables:
-  LICENSE_MAX_RETRIES: Maximum retry attempts (0 = unlimited, default: 0)
+  LICENSE_MAX_RETRIES: Maximum retry attempts (0 = no retries/fail immediately, -1 = unlimited, >0 = that many retries). Default: 0
   LICENSE_RETRY_INTERVAL: Seconds between retries (default: 300)
   LICENSE_CHECK_LINES: Number of lines to monitor for license errors (default: 20)
 """
@@ -37,7 +37,7 @@ def run_with_license_retry():
 
     max_retries = int(os.environ.get("LICENSE_MAX_RETRIES", 0))
     retry_interval = int(os.environ.get("LICENSE_RETRY_INTERVAL", 300))
-    license_check_lines = int(os.environ.get("LICENSE_CHECK_LINES", 20))
+    license_check_lines = int(os.environ.get("LICENSE_CHECK_LINES", 6))
 
     # Find metashape_workflow.py relative to this script
     script_dir = Path(__file__).parent
@@ -86,7 +86,11 @@ def run_with_license_retry():
         _child_process.wait()
 
         if license_error:
-            if max_retries > 0 and attempt >= max_retries:
+            # max_retries: 0 = no retries (fail immediately), -1 = unlimited, >0 = that many retries
+            if max_retries == 0:
+                print("[license-wrapper] No license available and retries disabled (LICENSE_MAX_RETRIES=0)")
+                sys.exit(1)
+            if max_retries > 0 and attempt > max_retries:
                 print(f"[license-wrapper] Max retries ({max_retries}) exceeded")
                 sys.exit(1)
             print(
