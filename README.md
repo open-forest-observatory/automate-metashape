@@ -145,6 +145,47 @@ python metashape_workflow.py --config-file config.yml --step finalize
 
 <br/>
 
+#### License Retry Wrapper
+
+When using a floating license server, license availability can be intermittent—especially in shared environments where multiple users or workflows compete for licenses. Metashape acquires a license at import time, and if no license is available, the workflow will fail when attempting to save the project (after potentially hours of processing).
+
+The `license_retry_wrapper.py` script solves this by:
+1. Monitoring the first few lines of Metashape output for license errors
+2. If a license error is detected, immediately terminating the process (before wasting compute time)
+3. Waiting a configurable interval and retrying
+
+**Usage:**
+
+Instead of calling `metashape_workflow.py` directly, call the wrapper:
+
+```bash
+python {repo_path}/python/license_retry_wrapper.py --config-file config.yml
+```
+
+All command-line arguments are passed through to `metashape_workflow.py`.
+
+**Environment Variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LICENSE_MAX_RETRIES` | `0` | Maximum retry attempts. `0` = unlimited (retry forever) |
+| `LICENSE_RETRY_INTERVAL` | `300` | Seconds to wait between retry attempts |
+| `LICENSE_CHECK_LINES` | `20` | Number of output lines to monitor for license errors |
+
+**Example with custom settings:**
+
+```bash
+export LICENSE_RETRY_INTERVAL=600
+export LICENSE_MAX_RETRIES=10
+python {repo_path}/python/license_retry_wrapper.py --config-file config.yml
+```
+
+**Signal Handling:**
+
+The wrapper forwards SIGTERM and SIGINT signals to the child Metashape process, ensuring graceful shutdown in containerized/orchestrated environments (e.g., Kubernetes pod termination).
+
+<br/>
+
 #### Argo workflow configuration (OFO Kubernetes cluster)
 
 When running via the [OFO Argo workflow orchestration system](https://github.com/open-forest-observatory/ofo-argo), additional configuration options control GPU resource allocation:
@@ -275,6 +316,35 @@ Here is a breakdown of the command:
 If your config.yaml is located anywhere other than `/data/config.yaml` (or the file is named differently), you can specify its location following one additional command line argument `--config-file` at the end of the `docker run` command. For example, if it is located in the container at `/data/configs/project_10/config.yml` (meanining, in the example above, it is located on your local computer at `~/drone_data/configs/project_10/config.yml`), just append `--config-file /data/configs/project_10/config.yml` to the `docker run` command above. So the command above would look like:
 
 `docker run -v </host/data/dir>:/data -e AGISOFT_FLS=$AGISOFT_FLS --gpus all ghcr.io/open-forest-observatory/automate-metashape --config-file /data/configs/project_10/config.yml`
+
+<br/>
+
+#### License Retry Wrapper (Docker)
+
+When using a floating license server in environments where license availability may be intermittent, you can use the license retry wrapper to automatically retry if no license is available.
+
+To use the wrapper instead of running `metashape_workflow.py` directly, override the container's entrypoint:
+
+```bash
+docker run -v </host/data/dir>:/data \
+  -e AGISOFT_FLS=$AGISOFT_FLS \
+  -e LICENSE_RETRY_INTERVAL=300 \
+  -e LICENSE_MAX_RETRIES=0 \
+  --gpus all \
+  --entrypoint python3 \
+  ghcr.io/open-forest-observatory/automate-metashape \
+  /app/python/license_retry_wrapper.py --config-file /data/config.yml
+```
+
+**Environment Variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LICENSE_MAX_RETRIES` | `0` | Maximum retry attempts. `0` = unlimited (retry forever) |
+| `LICENSE_RETRY_INTERVAL` | `300` | Seconds to wait between retry attempts |
+| `LICENSE_CHECK_LINES` | `20` | Number of output lines to monitor for license errors |
+
+The wrapper monitors Metashape's startup output for license errors. If detected, it terminates the process immediately (before wasting compute time on processing that would fail at save), waits the specified interval, and retries. This is particularly useful in orchestrated environments like Kubernetes/Argo where multiple workflows may compete for floating licenses.
 
 <br/>
 
