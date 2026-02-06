@@ -72,7 +72,10 @@ def run_with_license_retry():
             # Only check first N lines for license error
             if line_count < license_check_lines:
                 line_lower = line.lower()
-                if "license not found" in line_lower or "no license found" in line_lower:
+                if (
+                    "license not found" in line_lower
+                    or "no license found" in line_lower
+                ):
                     license_error = True
                     _child_process.terminate()
                     _child_process.wait()
@@ -88,7 +91,9 @@ def run_with_license_retry():
         if license_error:
             # max_retries: 0 = no retries (fail immediately), -1 = unlimited, >0 = that many retries
             if max_retries == 0:
-                print("[license-wrapper] No license available and retries disabled (LICENSE_MAX_RETRIES=0)")
+                print(
+                    "[license-wrapper] No license available and retries disabled (LICENSE_MAX_RETRIES=0)"
+                )
                 sys.exit(1)
             if max_retries > 0 and attempt > max_retries:
                 print(f"[license-wrapper] Max retries ({max_retries}) exceeded")
