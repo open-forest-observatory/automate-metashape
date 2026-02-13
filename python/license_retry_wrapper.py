@@ -12,6 +12,7 @@ Environment variables:
   LICENSE_CHECK_LINES: Number of lines to monitor for license errors (default: 20)
 """
 
+import collections
 import os
 import signal
 import subprocess
@@ -21,6 +22,187 @@ from pathlib import Path
 
 # Global reference to the child process for signal handling
 _child_process = None
+
+
+class OutputMonitor:
+    """
+    Monitor subprocess output with heartbeat, selective pass-through, buffering, and full logging.
+
+    Features:
+    - Circular buffer: Keeps last N lines in memory for error context dump
+    - Full log file: Writes every line to disk (on shared volume, no timestamps added)
+    - Heartbeat: Periodic status messages proving process liveness (with recent line sample)
+    - Selective pass-through: Only prints important lines to console (progress, license, monitor messages)
+    - Full output mode: When LOG_HEARTBEAT_INTERVAL=0, prints all lines like original behavior
+    """
+
+    def __init__(self, log_file_path=None):
+        """
+        Initialize the output monitor.
+
+        Args:
+            log_file_path: Path to full log file (optional). If None, no file logging.
+        """
+        # Configuration from environment variables
+        self.buffer_size = int(os.environ.get("LOG_BUFFER_SIZE", 100))
+        self.heartbeat_interval = int(os.environ.get("LOG_HEARTBEAT_INTERVAL", 60))
+
+        # If heartbeat interval is 0, enable full output mode (print all lines)
+        self.full_output_mode = self.heartbeat_interval == 0
+
+        # State
+        self.buffer = collections.deque(maxlen=self.buffer_size)
+        self.line_count = 0
+        self.start_time = time.time()
+        self.last_heartbeat = self.start_time
+        self.last_content_line = ""  # Track most recent Metashape output line
+        self.log_file = None
+
+        # Important line prefixes to always pass through to console (in sparse mode)
+        self.important_prefixes = (
+            "[progress]",
+            "[license-wrapper]",
+            "[monitor]",
+            "[heartbeat]",
+        )
+
+        # Open full log file if path provided
+        if log_file_path:
+            log_dir = os.path.dirname(log_file_path)
+            if log_dir:
+                os.makedirs(log_dir, exist_ok=True)
+            self.log_file = open(log_file_path, "w", buffering=1)  # Line buffered
+            print(f"[monitor] Full log: {log_file_path}")
+
+        if self.full_output_mode:
+            print("[monitor] Full output mode enabled (LOG_HEARTBEAT_INTERVAL=0)")
+
+    def process_line(self, line):
+        """
+        Process a single line of subprocess output.
+
+        - Adds to circular buffer
+        - Writes to full log file (as-is, no timestamps added)
+        - In full mode: prints every line to console
+        - In sparse mode: only prints important lines + heartbeat with recent line sample
+
+        Args:
+            line: Line of output from subprocess (includes newline)
+
+        Returns:
+            str: The line unchanged (for compatibility with license checking)
+        """
+        self.line_count += 1
+        self.buffer.append(line)
+
+        # Write every line to full log file (no timestamp overhead)
+        if self.log_file:
+            self.log_file.write(line)
+
+        if self.full_output_mode:
+            # Full output mode: print every line (original behavior)
+            print(line, end="")
+        else:
+            # Sparse mode: selective pass-through with heartbeat
+
+            # Track last interesting line (not our own system messages) for heartbeat display
+            if not any(line.startswith(prefix) for prefix in self.important_prefixes):
+                self.last_content_line = line.strip()[:100]  # Truncate to 100 chars
+
+            # Pass through important lines to console
+            if any(line.startswith(prefix) for prefix in self.important_prefixes):
+                print(line, end="")
+
+            # Check if it's time for a heartbeat
+            now = time.time()
+            if now - self.last_heartbeat >= self.heartbeat_interval:
+                elapsed = now - self.start_time
+                last_line_display = (
+                    f" | last: {self.last_content_line}"
+                    if self.last_content_line
+                    else ""
+                )
+                print(
+                    f"[heartbeat] {time.strftime('%H:%M:%S')} | "
+                    f"lines: {self.line_count} | "
+                    f"elapsed: {elapsed:.0f}s{last_line_display}"
+                )
+                self.last_heartbeat = now
+
+        return line
+
+    def dump_buffer(self):
+        """Dump circular buffer contents to console (for error context)."""
+        print(f"\n[monitor] === Last {len(self.buffer)} lines before error ===")
+        for line in self.buffer:
+            print(line, end="")
+        print("[monitor] === End error context ===\n")
+
+    def print_summary(self, exit_code):
+        """Print final summary of processing."""
+        elapsed = time.time() - self.start_time
+        status = "SUCCESS" if exit_code == 0 else f"FAILED (exit code {exit_code})"
+        print(
+            f"[monitor] {status} | "
+            f"total lines: {self.line_count} | "
+            f"elapsed: {elapsed:.0f}s"
+        )
+        if self.log_file:
+            print(f"[monitor] Full log saved to: {self.log_file.name}")
+
+    def close(self):
+        """Clean up resources."""
+        if self.log_file:
+            self.log_file.close()
+
+    def reset(self):
+        """Reset state for a new retry attempt."""
+        self.buffer.clear()
+        self.line_count = 0
+        self.start_time = time.time()
+        self.last_heartbeat = self.start_time
+        self.last_content_line = ""
+        if self.log_file:
+            # Truncate log file for new attempt
+            self.log_file.seek(0)
+            self.log_file.truncate()
+
+
+def _compute_log_path(args):
+    """
+    Derive log file path from CLI arguments (--output-path and --step).
+
+    Places log file on shared volume as a sibling to the output directory:
+    /data/.../photogrammetry/metashape-<step>.log
+
+    Args:
+        args: Command-line arguments list (sys.argv[1:])
+
+    Returns:
+        str: Computed log file path, or fallback to /tmp if args not found
+    """
+    # Allow explicit override via environment variable
+    override = os.environ.get("LOG_OUTPUT_DIR")
+
+    output_path = None
+    step = "unknown"
+    i = 0
+    while i < len(args):
+        if args[i] == "--output-path" and i + 1 < len(args):
+            output_path = args[i + 1]
+        elif args[i] == "--step" and i + 1 < len(args):
+            step = args[i + 1]
+        i += 1
+
+    if override:
+        return os.path.join(override, f"metashape-{step}.log")
+    elif output_path:
+        # Place log as sibling to output dir
+        parent = os.path.dirname(output_path.rstrip("/"))
+        return os.path.join(parent, f"metashape-{step}.log")
+    else:
+        # Fallback to /tmp if we can't determine path from args
+        return f"/tmp/metashape-{step}.log"
 
 
 def _signal_handler(signum, frame):
@@ -46,6 +228,12 @@ def run_with_license_retry():
     # Pass through all command-line arguments
     cmd = [sys.executable, str(workflow_script)] + sys.argv[1:]
 
+    # Compute log file path from arguments
+    log_file_path = _compute_log_path(sys.argv[1:])
+
+    # Create output monitor (persists across retry attempts)
+    monitor = OutputMonitor(log_file_path)
+
     # Set up signal handlers to forward termination signals to child
     signal.signal(signal.SIGTERM, _signal_handler)
     signal.signal(signal.SIGINT, _signal_handler)
@@ -53,6 +241,7 @@ def run_with_license_retry():
     attempt = 0
     while True:
         attempt += 1
+        monitor.reset()
         print(f"[license-wrapper] Starting Metashape workflow (attempt {attempt})...")
 
         _child_process = subprocess.Popen(
@@ -67,10 +256,18 @@ def run_with_license_retry():
         line_count = 0
 
         for line in _child_process.stdout:
-            print(line, end="")
-
-            # Only check first N lines for license error
+            # License check phase: first N lines are always printed directly
+            # (needed for license error detection to work)
             if line_count < license_check_lines:
+                print(line, end="")
+
+                # Also track in monitor (buffer + full log, but skip duplicate console print)
+                monitor.buffer.append(line)
+                monitor.line_count += 1
+                if monitor.log_file:
+                    monitor.log_file.write(line)
+
+                # Check for license error
                 line_lower = line.lower()
                 if (
                     "license not found" in line_lower
@@ -80,11 +277,15 @@ def run_with_license_retry():
                     _child_process.terminate()
                     _child_process.wait()
                     break
+
                 line_count += 1
                 if line_count >= license_check_lines:
                     print(
                         "[license-wrapper] License check passed, proceeding with workflow..."
                     )
+            else:
+                # Post-license-check: use monitor for selective output
+                monitor.process_line(line)
 
         _child_process.wait()
 
@@ -94,9 +295,11 @@ def run_with_license_retry():
                 print(
                     "[license-wrapper] No license available and retries disabled (LICENSE_MAX_RETRIES=0)"
                 )
+                monitor.close()
                 sys.exit(1)
             if max_retries > 0 and attempt > max_retries:
                 print(f"[license-wrapper] Max retries ({max_retries}) exceeded")
+                monitor.close()
                 sys.exit(1)
             print(
                 f"[license-wrapper] No license available. Waiting {retry_interval}s before retry..."
@@ -104,7 +307,13 @@ def run_with_license_retry():
             time.sleep(retry_interval)
             continue
 
-        # Not a license error - exit with subprocess exit code
+        # Process completed (not a license error)
+        if _child_process.returncode != 0:
+            # Non-zero exit: dump error context buffer
+            monitor.dump_buffer()
+
+        monitor.print_summary(_child_process.returncode)
+        monitor.close()
         sys.exit(_child_process.returncode)
 
 

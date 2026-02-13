@@ -297,6 +297,39 @@ class MetashapeWorkflow:
         # Convert the objects in the config to metashape objects
         convert_objects(self.cfg)
 
+    def _make_progress_callback(self, operation_name):
+        """
+        Create a progress callback for Metashape API calls.
+
+        Prints progress updates to stderr at configurable percentage intervals.
+        The callback is called frequently by Metashape but only prints when
+        crossing threshold boundaries (e.g., 10%, 20%, 30%).
+
+        Args:
+            operation_name: Name of the operation (e.g., "matchPhotos", "buildDepthMaps")
+
+        Returns:
+            Callable[[float], None]: Callback function for Metashape progress parameter
+        """
+        import sys
+
+        last_report = [0]  # Use list for closure mutability
+        interval = int(os.environ.get("PROGRESS_INTERVAL_PCT", 1))
+
+        def callback(progress):
+            """Progress callback: receives 0-100 float from Metashape."""
+            pct = int(progress)
+            # Print when crossing interval threshold or reaching 100%
+            if pct >= last_report[0] + interval or pct >= 100:
+                print(
+                    f"[progress] {operation_name}: {pct}%",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                last_report[0] = pct
+
+        return callback
+
     def read_yaml(self):
         with open(self.config_file, "r") as ymlfile:
             self.cfg = yaml.load(ymlfile, Loader=yaml.SafeLoader)
@@ -529,6 +562,7 @@ class MetashapeWorkflow:
                 reference_preselection_mode=self.cfg["match_photos"][
                     "reference_preselection_mode"
                 ],
+                progress=self._make_progress_callback("matchPhotos"),
             )
 
         self.doc.save()
@@ -553,6 +587,7 @@ class MetashapeWorkflow:
                 adaptive_fitting=self.cfg["align_cameras"]["adaptive_fitting"],
                 subdivide_task=self.cfg["project"]["subdivide_task"],
                 reset_alignment=self.cfg["align_cameras"]["reset_alignment"],
+                progress=self._make_progress_callback("alignCameras"),
             )
 
         self.doc.save()
@@ -618,6 +653,7 @@ class MetashapeWorkflow:
                 reference_preselection_mode=self.cfg["match_photos"][
                     "reference_preselection_mode"
                 ],
+                progress=self._make_progress_callback("matchPhotos_secondary"),
             )
 
         self.doc.save()
@@ -639,6 +675,7 @@ class MetashapeWorkflow:
                 adaptive_fitting=self.cfg["align_cameras"]["adaptive_fitting"],
                 subdivide_task=self.cfg["project"]["subdivide_task"],
                 reset_alignment=self.cfg["align_cameras"]["reset_alignment"],
+                progress=self._make_progress_callback("alignCameras_secondary"),
             )
 
         self.doc.save()
@@ -1349,6 +1386,7 @@ class MetashapeWorkflow:
                 reuse_depth=self.cfg["build_depth_maps"]["reuse_depth"],
                 max_neighbors=self.cfg["build_depth_maps"]["max_neighbors"],
                 subdivide_task=self.cfg["project"]["subdivide_task"],
+                progress=self._make_progress_callback("buildDepthMaps"),
             )
 
         self.doc.save()
@@ -1371,6 +1409,7 @@ class MetashapeWorkflow:
                 keep_depth=self.cfg["build_point_cloud"]["keep_depth"],
                 subdivide_task=self.cfg["project"]["subdivide_task"],
                 point_colors=True,
+                progress=self._make_progress_callback("buildPointCloud"),
             )
 
         self.doc.save()
@@ -1446,6 +1485,7 @@ class MetashapeWorkflow:
                     "face_count_custom"
                 ],  # Only used if face_count is custom
                 source_data=Metashape.DepthMapsData,
+                progress=self._make_progress_callback("buildModel"),
             )
 
         # Save the mesh
@@ -1515,6 +1555,7 @@ class MetashapeWorkflow:
                         subdivide_task=self.cfg["project"]["subdivide_task"],
                         projection=projection,
                         resolution=self.cfg["build_dem"]["resolution"],
+                        progress=self._make_progress_callback("buildDem_DSM-ptcloud"),
                     )
 
                 self.doc.chunk.elevation.label = "DSM-ptcloud"
@@ -1544,6 +1585,7 @@ class MetashapeWorkflow:
                         subdivide_task=self.cfg["project"]["subdivide_task"],
                         projection=projection,
                         resolution=self.cfg["build_dem"]["resolution"],
+                        progress=self._make_progress_callback("buildDem_DTM-ptcloud"),
                     )
 
                 self.doc.chunk.elevation.label = "DTM-ptcloud"
@@ -1569,6 +1611,7 @@ class MetashapeWorkflow:
                         subdivide_task=self.cfg["project"]["subdivide_task"],
                         projection=projection,
                         resolution=self.cfg["build_dem"]["resolution"],
+                        progress=self._make_progress_callback("buildDem_DSM-mesh"),
                     )
 
                 self.doc.chunk.elevation.label = "DSM-mesh"
@@ -1644,6 +1687,7 @@ class MetashapeWorkflow:
                 refine_seamlines=self.cfg["build_orthomosaic"]["refine_seamlines"],
                 subdivide_task=self.cfg["project"]["subdivide_task"],
                 projection=projection,
+                progress=self._make_progress_callback(f"buildOrthomosaic_{file_ending}"),
             )
 
         self.doc.save()
