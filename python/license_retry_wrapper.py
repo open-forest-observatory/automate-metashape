@@ -60,10 +60,10 @@ class OutputMonitor:
 
         # Important line prefixes to always pass through to console (in sparse mode)
         self.important_prefixes = (
-            "[progress]",
-            "[license-wrapper]",
-            "[monitor]",
-            "[heartbeat]",
+            "[automate-metashape-progress]",
+            "[automate-metashape-license-wrapper]",
+            "[automate-metashape-monitor]",
+            "[automate-metashape-heartbeat]",
         )
 
         # Open full log file if path provided
@@ -72,10 +72,10 @@ class OutputMonitor:
             if log_dir:
                 os.makedirs(log_dir, exist_ok=True)
             self.log_file = open(log_file_path, "w", buffering=1)  # Line buffered
-            print(f"[monitor] Full log: {log_file_path}")
+            print(f"[automate-metashape-monitor] Full log: {log_file_path}")
 
         if self.full_output_mode:
-            print("[monitor] Full output mode enabled (LOG_HEARTBEAT_INTERVAL=0)")
+            print("[automate-metashape-monitor] Full output mode enabled (LOG_HEARTBEAT_INTERVAL=0)")
 
     def process_line(self, line):
         """
@@ -123,7 +123,7 @@ class OutputMonitor:
                     else ""
                 )
                 print(
-                    f"[heartbeat] {time.strftime('%H:%M:%S')} | "
+                    f"[automate-metashape-heartbeat] {time.strftime('%H:%M:%S')} | "
                     f"lines: {self.line_count} | "
                     f"elapsed: {elapsed:.0f}s{last_line_display}"
                 )
@@ -133,22 +133,22 @@ class OutputMonitor:
 
     def dump_buffer(self):
         """Dump circular buffer contents to console (for error context)."""
-        print(f"\n[monitor] === Last {len(self.buffer)} lines before error ===")
+        print(f"\n[automate-metashape-monitor] === Last {len(self.buffer)} lines before error ===")
         for line in self.buffer:
             print(line, end="")
-        print("[monitor] === End error context ===\n")
+        print("[automate-metashape-monitor] === End error context ===\n")
 
     def print_summary(self, exit_code):
         """Print final summary of processing."""
         elapsed = time.time() - self.start_time
         status = "SUCCESS" if exit_code == 0 else f"FAILED (exit code {exit_code})"
         print(
-            f"[monitor] {status} | "
+            f"[automate-metashape-monitor] {status} | "
             f"total lines: {self.line_count} | "
             f"elapsed: {elapsed:.0f}s"
         )
         if self.log_file:
-            print(f"[monitor] Full log saved to: {self.log_file.name}")
+            print(f"[automate-metashape-monitor] Full log saved to: {self.log_file.name}")
 
     def close(self):
         """Clean up resources."""
@@ -210,7 +210,7 @@ def _signal_handler(signum, frame):
     global _child_process
     if _child_process is not None and _child_process.poll() is None:
         sig_name = signal.Signals(signum).name
-        print(f"[license-wrapper] Received {sig_name}, forwarding to child process...")
+        print(f"[automate-metashape-license-wrapper] Received {sig_name}, forwarding to child process...")
         _child_process.send_signal(signum)
 
 
@@ -242,7 +242,7 @@ def run_with_license_retry():
     while True:
         attempt += 1
         monitor.reset()
-        print(f"[license-wrapper] Starting Metashape workflow (attempt {attempt})...")
+        print(f"[automate-metashape-license-wrapper] Starting Metashape workflow (attempt {attempt})...")
 
         _child_process = subprocess.Popen(
             cmd,
@@ -281,7 +281,7 @@ def run_with_license_retry():
                 line_count += 1
                 if line_count >= license_check_lines:
                     print(
-                        "[license-wrapper] License check passed, proceeding with workflow..."
+                        "[automate-metashape-license-wrapper] License check passed, proceeding with workflow..."
                     )
             else:
                 # Post-license-check: use monitor for selective output
@@ -293,16 +293,16 @@ def run_with_license_retry():
             # max_retries: 0 = no retries (fail immediately), -1 = unlimited, >0 = that many retries
             if max_retries == 0:
                 print(
-                    "[license-wrapper] No license available and retries disabled (LICENSE_MAX_RETRIES=0)"
+                    "[automate-metashape-license-wrapper] No license available and retries disabled (LICENSE_MAX_RETRIES=0)"
                 )
                 monitor.close()
                 sys.exit(1)
             if max_retries > 0 and attempt > max_retries:
-                print(f"[license-wrapper] Max retries ({max_retries}) exceeded")
+                print(f"[automate-metashape-license-wrapper] Max retries ({max_retries}) exceeded")
                 monitor.close()
                 sys.exit(1)
             print(
-                f"[license-wrapper] No license available. Waiting {retry_interval}s before retry..."
+                f"[automate-metashape-license-wrapper] No license available. Waiting {retry_interval}s before retry..."
             )
             time.sleep(retry_interval)
             continue

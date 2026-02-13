@@ -322,7 +322,7 @@ class MetashapeWorkflow:
             # Print when crossing interval threshold or reaching 100%
             if pct >= last_report[0] + interval or pct >= 100:
                 print(
-                    f"[progress] {operation_name}: {pct}%",
+                    f"[automate-metashape-progress] {operation_name}: {pct}%",
                     file=sys.stderr,
                     flush=True,
                 )
