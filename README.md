@@ -189,8 +189,8 @@ The wrapper forwards SIGTERM and SIGINT signals to the child Metashape process, 
 The license retry wrapper includes an output monitor that reduces console log volume during long-running Metashape steps while preserving full debuggability. This is especially useful in orchestrated environments (e.g., Argo/Kubernetes) where verbose Metashape output can overwhelm log storage.
 
 **Features:**
-- **Progress callbacks**: Metashape API calls report structured `[automate-metashape-progress] operation: X%` messages at configurable percentage intervals
-- **Heartbeat**: Periodic liveness messages showing timestamp, line count, elapsed time, and most recent Metashape output line
+- **Progress callbacks**: Metashape API calls report progress at configurable percentage intervals. In sparse mode, progress is folded into the periodic heartbeat line rather than printed separately. In full output mode, progress lines are printed immediately.
+- **Heartbeat**: Periodic liveness messages showing timestamp, output line count, elapsed time, current progress percentage, and most recent Metashape output line
 - **Full log file**: Every line of Metashape output is written to a log file on disk (as a sibling to `--output-path`), even when console output is sparse
 - **Error context buffer**: On failure, the last N lines of output are dumped to console for immediate debugging
 - **Full output mode**: Set `LOG_HEARTBEAT_INTERVAL=0` to print all lines to console (original behavior) while still getting progress callbacks, full log file, and error buffer
@@ -212,7 +212,7 @@ export PROGRESS_INTERVAL_PCT=10
 python {repo_path}/python/license_retry_wrapper.py --config-file config.yml --step build_depth_maps --output-path /data/output
 ```
 
-Console output will be ~20-30 lines per step instead of thousands, with progress milestones and periodic heartbeats. The full log is saved to `/data/metashape-build_depth_maps.log`.
+Console output will be ~10-20 lines per step instead of thousands, with progress included in periodic heartbeat lines. The full log is saved to `/data/metashape-build_depth_maps.log`.
 
 **Example with full output (original behavior):**
 
