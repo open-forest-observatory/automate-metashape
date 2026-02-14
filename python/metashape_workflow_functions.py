@@ -320,13 +320,18 @@ class MetashapeWorkflow:
             """Progress callback: receives 0-100 float from Metashape."""
             pct = int(progress)
             # Print when crossing interval threshold or reaching 100%
-            if pct >= last_report[0] + interval or pct >= 100:
+            if pct >= last_report[0] + interval or (
+                pct >= 100 and last_report[0] < 100
+            ):
+                # Update state before print() to avoid race condition:
+                # print() releases the GIL, allowing other Metashape threads
+                # to pass the check before last_report is updated.
+                last_report[0] = pct
                 print(
                     f"[automate-metashape-progress] {operation_name}: {pct}%",
                     file=sys.stderr,
                     flush=True,
                 )
-                last_report[0] = pct
 
         return callback
 

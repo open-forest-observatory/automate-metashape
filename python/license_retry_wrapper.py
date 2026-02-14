@@ -56,6 +56,7 @@ class OutputMonitor:
         self.start_time = time.time()
         self.last_heartbeat = self.start_time
         self.last_content_line = ""  # Track most recent Metashape output line
+        self.last_progress = ""  # Track most recent progress update (e.g., "buildDepthMaps: 45%")
         self.log_file = None
 
         # Important line prefixes to always pass through to console (in sparse mode)
@@ -106,17 +107,27 @@ class OutputMonitor:
             # Sparse mode: selective pass-through with heartbeat
 
             # Track last interesting line (not our own system messages) for heartbeat display
-            if not any(line.startswith(prefix) for prefix in self.important_prefixes):
-                self.last_content_line = line.strip()[:100]  # Truncate to 100 chars
+            stripped = line.strip()
+            if stripped.startswith("[automate-metashape-progress]"):
+                # Store latest progress for inclusion in heartbeat; don't print separately
+                # Format: "[automate-metashape-progress] operationName: XX%"
+                self.last_progress = stripped.replace("[automate-metashape-progress] ", "", 1)
+            elif not any(line.startswith(prefix) for prefix in self.important_prefixes):
+                self.last_content_line = stripped[:100]  # Truncate to 100 chars
 
-            # Pass through important lines to console
-            if any(line.startswith(prefix) for prefix in self.important_prefixes):
+            # Pass through important lines to console (except progress, which is folded into heartbeat)
+            if any(line.startswith(prefix) for prefix in self.important_prefixes) and not line.startswith("[automate-metashape-progress]"):
                 print(line, end="")
 
             # Check if it's time for a heartbeat
             now = time.time()
             if now - self.last_heartbeat >= self.heartbeat_interval:
                 elapsed = now - self.start_time
+                progress_display = (
+                    f" | {self.last_progress}"
+                    if self.last_progress
+                    else ""
+                )
                 last_line_display = (
                     f" | last: {self.last_content_line}"
                     if self.last_content_line
@@ -125,7 +136,7 @@ class OutputMonitor:
                 print(
                     f"[automate-metashape-heartbeat] {time.strftime('%H:%M:%S')} | "
                     f"lines: {self.line_count} | "
-                    f"elapsed: {elapsed:.0f}s{last_line_display}"
+                    f"elapsed: {elapsed:.0f}s{progress_display}{last_line_display}"
                 )
                 self.last_heartbeat = now
 
@@ -162,6 +173,7 @@ class OutputMonitor:
         self.start_time = time.time()
         self.last_heartbeat = self.start_time
         self.last_content_line = ""
+        self.last_progress = ""
         if self.log_file:
             # Truncate log file for new attempt
             self.log_file.seek(0)
