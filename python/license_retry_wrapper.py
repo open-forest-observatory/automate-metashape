@@ -135,7 +135,7 @@ class OutputMonitor:
                 )
                 print(
                     f"[automate-metashape-heartbeat] {time.strftime('%H:%M:%S')} | "
-                    f"lines: {self.line_count} | "
+                    f"output lines: {self.line_count} | "
                     f"elapsed: {elapsed:.0f}s{progress_display}{last_line_display}"
                 )
                 self.last_heartbeat = now
@@ -155,11 +155,11 @@ class OutputMonitor:
         status = "SUCCESS" if exit_code == 0 else f"FAILED (exit code {exit_code})"
         print(
             f"[automate-metashape-monitor] {status} | "
-            f"total lines: {self.line_count} | "
+            f"total output lines: {self.line_count} | "
             f"elapsed: {elapsed:.0f}s"
         )
         if self.log_file:
-            print(f"[automate-metashape-monitor] Full log saved to: {self.log_file.name}")
+            print(f"[automate-metashape-monitor] Full metashape output log saved to: {self.log_file.name}")
 
     def close(self):
         """Clean up resources."""
