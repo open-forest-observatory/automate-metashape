@@ -57,6 +57,7 @@ class OutputMonitor:
         self.last_heartbeat = self.start_time
         self.last_content_line = ""  # Track most recent Metashape output line
         self.last_progress = ""  # Track most recent progress update (e.g., "buildDepthMaps: 45%")
+        self.current_operation = ""  # Track current operation name for start/complete detection
         self.log_file = None
 
         # Important line prefixes to always pass through to console (in sparse mode)
@@ -112,6 +113,14 @@ class OutputMonitor:
                 # Store latest progress for inclusion in heartbeat; don't print separately
                 # Format: "[automate-metashape-progress] operationName: XX%"
                 self.last_progress = stripped.replace("[automate-metashape-progress] ", "", 1)
+                # Parse operation name (everything before ": XX%")
+                op_name = self.last_progress.split(":")[0]
+                # Detect operation transitions and print start/complete as heartbeat lines
+                if op_name != self.current_operation:
+                    self.current_operation = op_name
+                    print(f"[automate-metashape-heartbeat] {time.strftime('%H:%M:%S')} | {op_name}: started")
+                if "100%" in stripped:
+                    print(f"[automate-metashape-heartbeat] {time.strftime('%H:%M:%S')} | {op_name}: completed")
             elif not any(line.startswith(prefix) for prefix in self.important_prefixes):
                 self.last_content_line = stripped[:100]  # Truncate to 100 chars
 
@@ -174,6 +183,7 @@ class OutputMonitor:
         self.last_heartbeat = self.start_time
         self.last_content_line = ""
         self.last_progress = ""
+        self.current_operation = ""
         if self.log_file:
             # Truncate log file for new attempt
             self.log_file.seek(0)
