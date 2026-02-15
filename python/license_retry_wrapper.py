@@ -124,7 +124,7 @@ class OutputMonitor:
                 if "100%" in stripped:
                     print(f"[automate-metashape-heartbeat] {time.strftime('%H:%M:%S')} | {op_name}: completed")
             elif not any(line.startswith(prefix) for prefix in self.important_prefixes):
-                self.last_content_line = stripped[:100]  # Truncate to 100 chars
+                self.last_content_line = stripped[:200] + ("..." if len(stripped) > 200 else "")
 
             # Pass through important lines to console (except progress, which is folded into heartbeat)
             if any(line.startswith(prefix) for prefix in self.important_prefixes) and not line.startswith("[automate-metashape-progress]"):
