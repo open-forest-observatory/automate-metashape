@@ -58,8 +58,12 @@ class OutputMonitor:
         self.start_time = time.time()
         self.last_heartbeat = self.start_time
         self.last_content_line = ""  # Track most recent Metashape output line
-        self.last_progress = ""  # Track most recent progress update (e.g., "buildDepthMaps: 45%")
-        self.current_operation = ""  # Track current operation name for start/complete detection
+        self.last_progress = (
+            ""  # Track most recent progress update (e.g., "buildDepthMaps: 45%")
+        )
+        self.current_operation = (
+            ""  # Track current operation name for start/complete detection
+        )
         self.log_file = None
 
         # Important line prefixes to always pass through to console (in sparse mode)
@@ -75,11 +79,15 @@ class OutputMonitor:
             log_dir = os.path.dirname(log_file_path)
             if log_dir:
                 os.makedirs(log_dir, exist_ok=True)
-            self.log_file = open(log_file_path, "w")  # Default 8KB buffering; flushed on heartbeat
+            self.log_file = open(
+                log_file_path, "w"
+            )  # Default 8KB buffering; flushed on heartbeat
             print(f"[automate-metashape-monitor] Full log: {log_file_path}")
 
         if self.full_output_mode:
-            print("[automate-metashape-monitor] Full output mode enabled (LOG_HEARTBEAT_INTERVAL=0)")
+            print(
+                "[automate-metashape-monitor] Full output mode enabled (LOG_HEARTBEAT_INTERVAL=0)"
+            )
 
     def process_line(self, line):
         """
@@ -114,20 +122,30 @@ class OutputMonitor:
             if stripped.startswith("[automate-metashape-progress]"):
                 # Store latest progress for inclusion in heartbeat; don't print separately
                 # Format: "[automate-metashape-progress] operationName: XX%"
-                self.last_progress = stripped.replace("[automate-metashape-progress] ", "", 1)
+                self.last_progress = stripped.replace(
+                    "[automate-metashape-progress] ", "", 1
+                )
                 # Parse operation name (everything before ": XX%")
                 op_name = self.last_progress.split(":")[0]
                 # Detect operation transitions and print start/complete as heartbeat lines
                 if op_name != self.current_operation:
                     self.current_operation = op_name
-                    print(f"[automate-metashape-heartbeat] {time.strftime('%H:%M:%S')} | {op_name}: started")
+                    print(
+                        f"[automate-metashape-heartbeat] {time.strftime('%H:%M:%S')} | {op_name}: started"
+                    )
                 if "100%" in stripped:
-                    print(f"[automate-metashape-heartbeat] {time.strftime('%H:%M:%S')} | {op_name}: completed")
+                    print(
+                        f"[automate-metashape-heartbeat] {time.strftime('%H:%M:%S')} | {op_name}: completed"
+                    )
             elif not any(line.startswith(prefix) for prefix in self.important_prefixes):
-                self.last_content_line = stripped[:200] + ("..." if len(stripped) > 200 else "")
+                self.last_content_line = stripped[:200] + (
+                    "..." if len(stripped) > 200 else ""
+                )
 
             # Pass through important lines to console (except progress, which is folded into heartbeat)
-            if any(line.startswith(prefix) for prefix in self.important_prefixes) and not line.startswith("[automate-metashape-progress]"):
+            if any(
+                line.startswith(prefix) for prefix in self.important_prefixes
+            ) and not line.startswith("[automate-metashape-progress]"):
                 print(line, end="")
 
             # Check if it's time for a heartbeat
@@ -135,9 +153,7 @@ class OutputMonitor:
             if now - self.last_heartbeat >= self.heartbeat_interval:
                 elapsed = now - self.start_time
                 progress_display = (
-                    f" | {self.last_progress}"
-                    if self.last_progress
-                    else ""
+                    f" | {self.last_progress}" if self.last_progress else ""
                 )
                 last_line_display = (
                     f" | last: {self.last_content_line}"
@@ -157,7 +173,9 @@ class OutputMonitor:
 
     def dump_buffer(self):
         """Dump circular buffer contents to console (for error context)."""
-        print(f"\n[automate-metashape-monitor] === Last {self.buffer_size} lines before error ===")
+        print(
+            f"\n[automate-metashape-monitor] === Last {self.buffer_size} lines before error ==="
+        )
         for line in self.buffer:
             print(line, end="")
         print("[automate-metashape-monitor] === End error context ===\n")
@@ -172,7 +190,9 @@ class OutputMonitor:
             f"elapsed: {elapsed:.0f}s"
         )
         if self.log_file:
-            print(f"[automate-metashape-monitor] Full metashape output log saved to: {self.log_file.name}")
+            print(
+                f"[automate-metashape-monitor] Full metashape output log saved to: {self.log_file.name}"
+            )
 
     def close(self):
         """Clean up resources."""
@@ -236,7 +256,9 @@ def _signal_handler(signum, frame):
     global _child_process
     if _child_process is not None and _child_process.poll() is None:
         sig_name = signal.Signals(signum).name
-        print(f"[automate-metashape-license-wrapper] Received {sig_name}, forwarding to child process...")
+        print(
+            f"[automate-metashape-license-wrapper] Received {sig_name}, forwarding to child process..."
+        )
         _child_process.send_signal(signum)
 
 
@@ -270,7 +292,9 @@ def run_with_license_retry():
     while True:
         attempt += 1
         monitor.reset()
-        print(f"[automate-metashape-license-wrapper] Starting Metashape workflow (attempt {attempt})...")
+        print(
+            f"[automate-metashape-license-wrapper] Starting Metashape workflow (attempt {attempt})..."
+        )
 
         _child_process = subprocess.Popen(
             cmd,
@@ -326,7 +350,9 @@ def run_with_license_retry():
                 monitor.close()
                 sys.exit(1)
             if max_retries > 0 and attempt > max_retries:
-                print(f"[automate-metashape-license-wrapper] Max retries ({max_retries}) exceeded")
+                print(
+                    f"[automate-metashape-license-wrapper] Max retries ({max_retries}) exceeded"
+                )
                 monitor.close()
                 sys.exit(1)
             print(

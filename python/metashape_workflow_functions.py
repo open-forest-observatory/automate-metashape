@@ -6,6 +6,7 @@ import json
 import os
 import platform
 import re
+
 # Import the fuctionality we need to make time stamps to measure performance
 import time
 from pathlib import Path
@@ -1691,7 +1692,9 @@ class MetashapeWorkflow:
                 refine_seamlines=self.cfg["build_orthomosaic"]["refine_seamlines"],
                 subdivide_task=self.cfg["project"]["subdivide_task"],
                 projection=projection,
-                progress=self._make_progress_callback(f"buildOrthomosaic_{file_ending}"),
+                progress=self._make_progress_callback(
+                    f"buildOrthomosaic_{file_ending}"
+                ),
             )
 
         self.doc.save()
