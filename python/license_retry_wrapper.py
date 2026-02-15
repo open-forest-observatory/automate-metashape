@@ -10,6 +10,8 @@ Environment variables:
   LICENSE_MAX_RETRIES: Maximum retry attempts (0 = no retries/fail immediately, -1 = unlimited, >0 = that many retries). Default: 0
   LICENSE_RETRY_INTERVAL: Seconds between retries (default: 300)
   LICENSE_CHECK_LINES: Number of lines to monitor for license errors (default: 20)
+  LOG_OUTPUT: Write full output to a log file on disk (default: off). Set to "1", "true", or "yes" to enable.
+  LOG_OUTPUT_DIR: Override directory for log file (default: derived from --output-path)
 """
 
 import collections
@@ -73,7 +75,7 @@ class OutputMonitor:
             log_dir = os.path.dirname(log_file_path)
             if log_dir:
                 os.makedirs(log_dir, exist_ok=True)
-            self.log_file = open(log_file_path, "w", buffering=1)  # Line buffered
+            self.log_file = open(log_file_path, "w")  # Default 8KB buffering; flushed on heartbeat
             print(f"[automate-metashape-monitor] Full log: {log_file_path}")
 
         if self.full_output_mode:
@@ -148,12 +150,14 @@ class OutputMonitor:
                     f"elapsed: {elapsed:.0f}s{progress_display}{last_line_display}"
                 )
                 self.last_heartbeat = now
+                if self.log_file:
+                    self.log_file.flush()
 
         return line
 
     def dump_buffer(self):
         """Dump circular buffer contents to console (for error context)."""
-        print(f"\n[automate-metashape-monitor] === Last {len(self.buffer)} lines before error ===")
+        print(f"\n[automate-metashape-monitor] === Last {self.buffer_size} lines before error ===")
         for line in self.buffer:
             print(line, end="")
         print("[automate-metashape-monitor] === End error context ===\n")
@@ -217,14 +221,14 @@ def _compute_log_path(args):
         i += 1
 
     if override:
-        return os.path.join(override, f"metashape-{step}.log")
+        return os.path.join(override, f"metashape-output-log_{step}.log")
     elif output_path:
         # Place log as sibling to output dir
         parent = os.path.dirname(output_path.rstrip("/"))
-        return os.path.join(parent, f"metashape-{step}.log")
+        return os.path.join(parent, f"metashape-output-log_{step}.log")
     else:
         # Fallback to /tmp if we can't determine path from args
-        return f"/tmp/metashape-{step}.log"
+        return f"/tmp/metashape-output-log_{step}.log"
 
 
 def _signal_handler(signum, frame):
@@ -250,8 +254,10 @@ def run_with_license_retry():
     # Pass through all command-line arguments
     cmd = [sys.executable, str(workflow_script)] + sys.argv[1:]
 
-    # Compute log file path from arguments
-    log_file_path = _compute_log_path(sys.argv[1:])
+    # Compute log file path if file logging is enabled
+    log_file_path = None
+    if os.environ.get("LOG_OUTPUT", "").lower() in ("1", "true", "yes"):
+        log_file_path = _compute_log_path(sys.argv[1:])
 
     # Create output monitor (persists across retry attempts)
     monitor = OutputMonitor(log_file_path)
