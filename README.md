@@ -168,7 +168,7 @@ All command-line arguments are passed through to `metashape_workflow.py`.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LICENSE_MAX_RETRIES` | `0` | Maximum retry attempts. `0` = unlimited (retry forever) |
+| `LICENSE_MAX_RETRIES` | `0` | Maximum retry attempts. `0` = no retries (fail immediately), `-1` = unlimited, `>0` = that many retries |
 | `LICENSE_RETRY_INTERVAL` | `300` | Seconds to wait between retry attempts |
 | `LICENSE_CHECK_LINES` | `20` | Number of output lines to monitor for license errors |
 
@@ -183,6 +183,44 @@ python {repo_path}/python/license_retry_wrapper.py --config-file config.yml
 **Signal Handling:**
 
 The wrapper forwards SIGTERM and SIGINT signals to the child Metashape process, ensuring graceful shutdown in containerized/orchestrated environments (e.g., Kubernetes pod termination).
+
+#### Output Monitoring and Heartbeat
+
+The license retry wrapper includes an output monitor that reduces console log volume during long-running Metashape steps while preserving full debuggability. This is especially useful in orchestrated environments (e.g., Argo/Kubernetes) where verbose Metashape output can overwhelm log storage.
+
+**Features:**
+- **Progress callbacks**: Metashape API calls report progress at configurable percentage intervals. In sparse mode, progress is folded into the periodic heartbeat line rather than printed separately. In full output mode, progress lines are printed immediately.
+- **Heartbeat**: Periodic liveness messages showing timestamp, output line count, elapsed time, current progress percentage, and most recent Metashape output line
+- **Full log file** (opt-in): When enabled via `LOG_OUTPUT=1`, every line of Metashape output is written to a log file on disk (as a sibling to `--output-path`), even when console output is sparse
+- **Error context buffer**: On failure, the last N lines of output are dumped to console for immediate debugging
+- **Full output mode**: Set `LOG_HEARTBEAT_INTERVAL=0` to print all lines to console (original behavior) while still getting progress callbacks, optional log file, and error buffer
+
+**Environment Variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PROGRESS_INTERVAL_PCT` | `1` | Print progress every N percent (e.g., `10` prints at 10%, 20%, 30%...) |
+| `LOG_HEARTBEAT_INTERVAL` | `60` | Seconds between heartbeat status lines. `0` = full output mode (print all lines, no filtering) |
+| `LOG_BUFFER_SIZE` | `100` | Number of lines kept in circular buffer for error context dump on failure |
+| `LOG_OUTPUT` | _(off)_ | Write full output to a log file on disk. Set to `1`, `true`, or `yes` to enable |
+| `LOG_OUTPUT_DIR` | _(unset)_ | Optional override for full log file directory. If not set, log is placed as a sibling to `--output-path` |
+
+**Example with sparse output (default):**
+
+```bash
+export LOG_HEARTBEAT_INTERVAL=60
+export PROGRESS_INTERVAL_PCT=10
+python {repo_path}/python/license_retry_wrapper.py --config-file config.yml --step build_depth_maps --output-path /data/output
+```
+
+Console output will be ~10-20 lines per step instead of thousands, with progress included in periodic heartbeat lines. If `LOG_OUTPUT=1` is set, the full log is saved to `/data/metashape-output-log_build_depth_maps.log`.
+
+**Example with full output (original behavior):**
+
+```bash
+export LOG_HEARTBEAT_INTERVAL=0
+python {repo_path}/python/license_retry_wrapper.py --config-file config.yml
+```
 
 <br/>
 
@@ -329,7 +367,7 @@ To use the wrapper instead of running `metashape_workflow.py` directly, override
 docker run -v </host/data/dir>:/data \
   -e AGISOFT_FLS=$AGISOFT_FLS \
   -e LICENSE_RETRY_INTERVAL=300 \
-  -e LICENSE_MAX_RETRIES=0 \
+  -e LICENSE_MAX_RETRIES=-1 \
   --gpus all \
   --entrypoint python3 \
   ghcr.io/open-forest-observatory/automate-metashape \
@@ -340,11 +378,18 @@ docker run -v </host/data/dir>:/data \
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LICENSE_MAX_RETRIES` | `0` | Maximum retry attempts. `0` = unlimited (retry forever) |
+| `LICENSE_MAX_RETRIES` | `0` | Maximum retry attempts. `0` = no retries (fail immediately), `-1` = unlimited, `>0` = that many retries |
 | `LICENSE_RETRY_INTERVAL` | `300` | Seconds to wait between retry attempts |
 | `LICENSE_CHECK_LINES` | `20` | Number of output lines to monitor for license errors |
+| `PROGRESS_INTERVAL_PCT` | `1` | Print progress every N percent (e.g., `10` prints at 10%, 20%, 30%...) |
+| `LOG_HEARTBEAT_INTERVAL` | `60` | Seconds between heartbeat status lines. `0` = full output mode (print all lines) |
+| `LOG_BUFFER_SIZE` | `100` | Number of lines kept in circular buffer for error context dump on failure |
+| `LOG_OUTPUT` | _(off)_ | Write full output to a log file on disk. Set to `1`, `true`, or `yes` to enable |
+| `LOG_OUTPUT_DIR` | _(unset)_ | Optional override for full log file directory |
 
 The wrapper monitors Metashape's startup output for license errors. If detected, it terminates the process immediately (before wasting compute time on processing that would fail at save), waits the specified interval, and retries. This is particularly useful in orchestrated environments like Kubernetes/Argo where multiple workflows may compete for floating licenses.
+
+The wrapper also includes an output monitor with progress callbacks, periodic heartbeat messages, error context buffering, and optional full log file output (`LOG_OUTPUT=1`). See the [Output Monitoring and Heartbeat](#output-monitoring-and-heartbeat) section above for details.
 
 <br/>
 
