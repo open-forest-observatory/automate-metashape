@@ -26,6 +26,7 @@ from pathlib import Path
 _child_process = None
 
 
+
 class OutputMonitor:
     """
     Monitor subprocess output with heartbeat, selective pass-through, buffering, and full logging.
@@ -265,6 +266,10 @@ def _signal_handler(signum, frame):
 def run_with_license_retry():
     global _child_process
 
+    # Ensure wrapper's own stdout is line-buffered so prints reach Argo/container
+    # logs promptly. This does NOT affect the log file (separate file handle).
+    sys.stdout.reconfigure(line_buffering=True)  # type: ignore[attr-defined]
+
     max_retries = int(os.environ.get("LICENSE_MAX_RETRIES", 0))
     retry_interval = int(os.environ.get("LICENSE_RETRY_INTERVAL", 300))
     license_check_lines = int(os.environ.get("LICENSE_CHECK_LINES", 6))
@@ -296,12 +301,17 @@ def run_with_license_retry():
             f"[automate-metashape-license-wrapper] Starting Metashape workflow (attempt {attempt})..."
         )
 
+        # PYTHONUNBUFFERED ensures the child's stdout is unbuffered so output
+        # reaches us immediately over the pipe (otherwise Python block-buffers
+        # ~8KB when stdout is not a TTY, causing minutes of silence).
+        child_env = {**os.environ, "PYTHONUNBUFFERED": "1"}
         _child_process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
+            env=child_env,
         )
 
         license_error = False
