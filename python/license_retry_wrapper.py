@@ -26,7 +26,6 @@ from pathlib import Path
 _child_process = None
 
 
-
 class OutputMonitor:
     """
     Monitor subprocess output with heartbeat, selective pass-through, buffering, and full logging.
