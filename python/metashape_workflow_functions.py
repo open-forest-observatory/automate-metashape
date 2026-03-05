@@ -960,6 +960,9 @@ class MetashapeWorkflow:
                 # never having performed an explicit copy operation.
                 self.doc.chunk.addSensor(sensor)
 
+                # Query the sensor from the list to make sure it's the same object as in the list
+                sensor = self.doc.chunk.sensors[-1]
+
                 # Assign the sensor to all cameras in the group
                 for cam in self.doc.chunk.cameras:
                     if cam.group == grp:
