@@ -943,23 +943,34 @@ class MetashapeWorkflow:
 
         if self.cfg["add_photos"]["separate_calibration_per_path"]:
             # Assign a different (new) sensor (i.e. independent calibration) to each group of photos
-            for grp in self.doc.chunk.camera_groups:
 
+            # Record the number of initial (distinct) sensors, since these will be removed at the end
+            n_initial_sensors = len(self.doc.chunk.sensors)
+
+            # Add one sensor per group
+            for grp in self.doc.chunk.camera_groups:
                 # Get the template for the sensor from the first photo in the group
                 for cam in self.doc.chunk.cameras:
                     if cam.group == grp:
                         sensor = cam.sensor
                         break
 
-                self.doc.chunk.addSensor(self.doc.chunk.cameras[0].sensor)
+                # Add the representative sensor to the list of sensors
+                # Note, each sensor in this list appears to have a difference memory address, despite
+                # never having performed an explicit copy operation.
+                self.doc.chunk.addSensor(sensor)
+
+                # Query the sensor from the list to make sure it's the same object as in the list
                 sensor = self.doc.chunk.sensors[-1]
 
+                # Assign the sensor to all cameras in the group
                 for cam in self.doc.chunk.cameras:
                     if cam.group == grp:
                         cam.sensor = sensor
 
-            # Remove the first (deafult) sensor, which should no longer be assigned to any photos
-            self.doc.chunk.remove(self.doc.chunk.sensors[0])
+            # Remove the first (default) sensor(s), which should no longer be assigned to any photos
+            for _ in range(n_initial_sensors):
+                self.doc.chunk.remove(self.doc.chunk.sensors[0])
 
         ## If specified, change the accuracy of the cameras to match the RTK flag (RTK fix if flag = 50, otherwise no fix
         if self.cfg["add_photos"]["use_rtk"]:
