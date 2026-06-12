@@ -457,7 +457,9 @@ class MetashapeWorkflow:
 
         # Load the project
         self.doc = Metashape.Document()
-        self.doc.open(project_file)
+        # Note that this will always open the project in editable mode, even if it's currently open
+        # elsewhere or or the previous run did not shut down properly.
+        self.doc.open(project_file, ignore_lock=True)
 
         # Set up instance variables (same as project_setup)
         self.project_name = project_name
