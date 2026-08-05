@@ -1472,14 +1472,26 @@ class MetashapeWorkflow:
                 self.cfg["project"]["output_path"],
                 self.project_name + export_file_ending,
             )
+            # Get the CRS to export in
+            export_CRS = self.get_export_CRS()
+
             if self.cfg["build_point_cloud"]["classes"] == "ALL":
+                # The COPC format requires a valid CRS, not the "LOCAL" option
+                # The comparison operator is not implemented so the wkt string must be used. This
+                # works for the local CRS as well.
+                export_format = (
+                    self.cfg["build_point_cloud"]["export_format"]
+                    if export_CRS.wkt != Metashape.CoordinateSystem("LOCAL").wkt
+                    else Metashape.PointCloudFormatLAZ
+                )
+
                 # call without classes argument (Metashape then defaults to all classes)
                 with self.benchmark.monitor("exportPointCloud"):
                     self.doc.chunk.exportPointCloud(
                         path=output_file,
                         source_data=Metashape.PointCloudData,
-                        format=self.cfg["build_point_cloud"]["export_format"],
-                        crs=self.get_export_CRS(),
+                        crs=export_CRS,
+                        format=export_format,
                         subdivide_task=self.cfg["project"]["subdivide_task"],
                     )
                 self.written_paths["point_cloud_all_classes"] = output_file  # export
@@ -1490,7 +1502,7 @@ class MetashapeWorkflow:
                         path=output_file,
                         source_data=Metashape.PointCloudData,
                         format=Metashape.PointCloudFormatLAZ,
-                        crs=self.get_export_CRS(),
+                        crs=export_CRS,
                         classes=self.cfg["build_point_cloud"]["classes"],
                         subdivide_task=self.cfg["project"]["subdivide_task"],
                     )
