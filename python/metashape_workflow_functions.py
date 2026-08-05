@@ -548,6 +548,25 @@ class MetashapeWorkflow:
 
         self.doc.save()
 
+    def get_export_CRS(self):
+        """
+        If the model is georeferenced, return the "project" -> "project_crs" from the config.
+        Otherwise, return the local CRS. This avoids errors trying to transform to the project CRS
+        when the model is not georeferenced.
+
+        Note, this could cause problems if GCPs were used, as this would still return the local CRS.
+        But GCPs are not currently used in practice.
+        """
+        # Check if any cameras have a reference location
+        if any(
+            [camera.reference.location is not None for camera in self.doc.chunk.cameras]
+        ):
+            # Return the project CRS
+            return Metashape.CoordinateSystem(self.cfg["project"]["project_crs"])
+
+        # Otherwise, return the specifier for the local (unitless) coordinate system
+        return Metashape.CoordinateSystem("LOCAL")
+
     def match_photos(self):
         """
         Match photos step: Find tie points between photos.
@@ -1460,9 +1479,7 @@ class MetashapeWorkflow:
                         path=output_file,
                         source_data=Metashape.PointCloudData,
                         format=self.cfg["build_point_cloud"]["export_format"],
-                        crs=Metashape.CoordinateSystem(
-                            self.cfg["project"]["project_crs"]
-                        ),
+                        crs=self.get_export_CRS(),
                         subdivide_task=self.cfg["project"]["subdivide_task"],
                     )
                 self.written_paths["point_cloud_all_classes"] = output_file  # export
@@ -1473,9 +1490,7 @@ class MetashapeWorkflow:
                         path=output_file,
                         source_data=Metashape.PointCloudData,
                         format=Metashape.PointCloudFormatLAZ,
-                        crs=Metashape.CoordinateSystem(
-                            self.cfg["project"]["project_crs"]
-                        ),
+                        crs=self.get_export_CRS(),
                         classes=self.cfg["build_point_cloud"]["classes"],
                         subdivide_task=self.cfg["project"]["subdivide_task"],
                     )
@@ -1528,7 +1543,7 @@ class MetashapeWorkflow:
             with self.benchmark.monitor("exportModel"):
                 self.doc.chunk.exportModel(
                     path=output_file,
-                    crs=Metashape.CoordinateSystem(self.cfg["project"]["project_crs"]),
+                    crs=self.get_export_CRS(),
                     save_metadata_xml=True,
                     shift=shift,
                 )
