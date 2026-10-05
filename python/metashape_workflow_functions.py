@@ -3,6 +3,7 @@ import collections
 import datetime
 import glob
 import json
+import math
 import os
 import platform
 import re
@@ -318,6 +319,10 @@ class MetashapeWorkflow:
 
         def callback(progress):
             """Progress callback: receives 0-100 float from Metashape."""
+            # Metashape sometimes reports NaN (e.g. a sub-stage with no work items,
+            # giving 0/0). Skip these; raising here would abort the Metashape call.
+            if progress is None or not math.isfinite(progress):
+                return
             pct = int(progress)
             # Print when crossing interval threshold or reaching 100%
             if pct >= last_report[0] + interval or (
